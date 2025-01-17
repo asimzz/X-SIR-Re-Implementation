@@ -5,6 +5,9 @@ import requests
 import argparse
 from langcodes import Language
 from call_openai import CallOpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def valid_location():
     res = requests.get('https://ipinfo.io', timeout=5).text
