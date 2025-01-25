@@ -68,9 +68,9 @@ def main(args):
     # Load data
     done_data = read_jsonl(args.output_file) if os.path.isfile(args.output_file) else []
     detect_data = read_jsonl(args.detect_file)
-    if len(detect_data) == len(done_data):
-        print("All data has been processed. Exiting...")
-        return
+    # if len(detect_data) == len(done_data):
+    #     print("All data has been processed. Exiting...")
+    #     return
 
     # Detect
     detect_data = detect_data[len(done_data):]
