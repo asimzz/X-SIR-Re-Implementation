@@ -41,6 +41,8 @@ for i in "${!MODEL_NAMES[@]}"; do
     MODEL_NAME=${MODEL_NAMES[$i]}
     MODEL_ABBR=${MODEL_ABBRS[$i]}
 
+    echo "Generating semantic mappings for $MODEL_NAME"
+    
     python3 $WORK_DIR/src_watermark/xsir/generate_semantic_mappings.py \
         --model $MODEL_NAME \
         --dictionary $DATA_DIR/dictionary/dictionary.txt \
