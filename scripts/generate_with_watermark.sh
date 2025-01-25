@@ -18,15 +18,15 @@ MODEL_NAMES=(
     "meta-llama/Llama-2-7b-hf"
     # "baichuan-inc/Baichuan2-7B-Base"
     # "baichuan-inc/Baichuan-7B"
-    "google/gemma-2b"
-    "mistralai/Mistral-7B-v0.1"
+    # "google/gemma-2b"
+    # "mistralai/Mistral-7B-v0.1"
 )
 
 MODEL_ABBRS=(
     "llama2-7b"
     # "baichuan2-7b"
     # "baichuan-7b"
-    "gemma-2b"
+    # "gemma-2b"
     # "mistral-7b"
 )
 
