@@ -208,15 +208,15 @@ class WatermarkLogitsProcessor(LogitsProcessor):
         self.watermark_base = watermark_base
 
     def _bias_logits(self, scores: torch.Tensor, batched_bias: torch.Tensor, greenlist_bias: float) -> torch.Tensor:
-        # Debug: Inspect scores before applying bias
-        print("Scores before bias:", scores)
-        print("Any NaNs in scores:", torch.isnan(scores).any())
-        print("Any infinities in scores:", torch.isinf(scores).any())
-        print("Any negative values in scores:", (scores < 0).any())
+        # # Debug: Inspect scores before applying bias
+        # print("Scores before bias:", scores)
+        # print("Any NaNs in scores:", torch.isnan(scores).any())
+        # print("Any infinities in scores:", torch.isinf(scores).any())
+        # print("Any negative values in scores:", (scores < 0).any())
 
         # Handle invalid values
         if torch.isnan(scores).any() or torch.isinf(scores).any() or (scores < 0).any():
-            print("Invalid values detected in scores. Replacing with zeros.")
+            # print("Invalid values detected in scores. Replacing with zeros.")
             scores = torch.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
             scores = torch.clamp(scores, min=0.0)  # Ensure no negative values
 
@@ -227,11 +227,11 @@ class WatermarkLogitsProcessor(LogitsProcessor):
         # Apply bias
         scores = scores + batched_bias_tensor * greenlist_bias
 
-        # Debug: Inspect scores after applying bias
-        print("Scores after bias:", scores)
-        print("Any NaNs in scores after bias:", torch.isnan(scores).any())
-        print("Any infinities in scores after bias:", torch.isinf(scores).any())
-        print("Any negative values in scores after bias:", (scores < 0).any())
+        # # Debug: Inspect scores after applying bias
+        # print("Scores after bias:", scores)
+        # print("Any NaNs in scores after bias:", torch.isnan(scores).any())
+        # print("Any infinities in scores after bias:", torch.isinf(scores).any())
+        # print("Any negative values in scores after bias:", (scores < 0).any())
 
         return scores
     
