@@ -135,6 +135,12 @@ class WatermarkLogitsProcessor(WatermarkBase, LogitsProcessor):
         return green_tokens_mask
 
     def _bias_greenlist_logits(self, scores: torch.Tensor, greenlist_mask: torch.Tensor, greenlist_bias: float) -> torch.Tensor:
+        # Handle invalid values
+        if torch.isnan(scores).any() or torch.isinf(scores).any() or (scores < 0).any():
+            # print("Invalid values detected in scores. Replacing with zeros.")
+            scores = torch.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
+            scores = torch.clamp(scores, min=0.0)  # Ensure no negative values
+        
         scores[greenlist_mask] = scores[greenlist_mask] + greenlist_bias
         return scores
 
