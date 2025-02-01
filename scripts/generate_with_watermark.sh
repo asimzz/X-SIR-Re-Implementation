@@ -29,17 +29,15 @@ MODEL_ABBRS=(
 )
 
 WATERMARK_METHODS=(
-    "kgw"
+    # "kgw"
     # "uw"
-    # # "sir"
-    # "xsir"
+    # "sir"
+    "xsir"
 )
 
 TGT_LANGS=(
     "de"
     "fr"
-    "zh"
-    "ja"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
