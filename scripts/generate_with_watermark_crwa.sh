@@ -57,7 +57,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         python3 $ATTACK_DIR/translate.py \
                 --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-                --model gpt-3.5-turbo-1106 \
+                --model openai/gpt-3.5-turbo \
                 --src_lang $ORG_LANG \
                 --tgt_lang $PVT_LANG
 
@@ -73,7 +73,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         python3 $ATTACK_DIR/translate.py \
                 --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-crwa.mod.jsonl \
-                --model gpt-3.5-turbo-1106 \
+                --model openai/gpt-3.5-turbo \
                 --src_lang $PVT_LANG \
                 --tgt_lang $ORG_LANG
 
