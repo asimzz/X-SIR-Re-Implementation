@@ -22,6 +22,16 @@ def read_jsonl(file_path):
 
 def main(args):
     assert os.getenv("OPENROUTER_API_KEY"), "Set the OPENROUTER_API_KEY environment variable"
+    # Load data
+    input_data = read_jsonl(args.input_file)
+
+    output_data = []
+    if os.path.exists(args.output_file):
+        output_data = read_jsonl(args.output_file)
+
+    if len(input_data[:100]) == len(output_data):
+        print("Translation already done. Skipping...")
+        return
 
     def input_to_requests_func(input_file: str, output_file: str) -> list:
         rqs = []

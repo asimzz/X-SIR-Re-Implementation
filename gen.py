@@ -48,9 +48,9 @@ def main(args):
         if os.path.dirname(args.output_file) != "":
             os.makedirs(os.path.dirname(args.output_file), exist_ok=True)
 
-    # if len(input_data) == len(output_data):
-    #     print("Data already generated. Skipping...")
-    #     return
+    if len(input_data) == len(output_data):
+        print("Data already generated. Skipping...")
+        return
 
     prompt_list = [d["prompt"] for d in input_data[len(output_data):]]
 
