@@ -60,7 +60,7 @@ def main(args):
                     "metadata": {"row_id": i, "prompt": prompt} 
                 }
                 rqs.append(rq)
-        return rqs
+        return rqs[:100]
 
     def response_to_output_func(response: dict, output_file_path: str):
         translation = response["response"]["choices"][0]["message"]["content"]
