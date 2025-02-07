@@ -23,12 +23,13 @@ def read_jsonl(file_path):
 def main(args):
     assert os.getenv("OPENROUTER_API_KEY"), "Set the OPENROUTER_API_KEY environment variable"
     # Load data
-    input_data = read_jsonl(args.input_file)
+    input_data = read_jsonl(args.input_file)[:100]
 
     output_data = []
     if os.path.exists(args.output_file):
         output_data = read_jsonl(args.output_file)
 
+    print(f"{len(input_data)} prompts found. {len(output_data)} translations found.")
     if len(input_data[:100]) == len(output_data):
         print("Translation already done. Skipping...")
         return
@@ -47,13 +48,13 @@ def main(args):
                 if i in done_ids:
                     continue
                 prompt = json.loads(line.strip())["prompt"]
-                response = json.loads(line.strip())["response"]
+                translate_part = json.loads(line.strip())[f"{args.translate_part}"]
                 rq = {
                     "model": args.model,
                     "messages": [
                         {
                             "role": "user",
-                            "content": f"Translate the following {Language.make(language=args.src_lang).display_name()} text to {Language.make(language=args.tgt_lang).display_name()}:\n\n{response}"
+                            "content": f"Translate the following {Language.make(language=args.src_lang).display_name()} text to {Language.make(language=args.tgt_lang).display_name()}:\n\n{translate_part}"
                         }
                     ],
                     "temperature": args.temperature,
@@ -124,5 +125,6 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0.0, help="Temperature")
     parser.add_argument("--src_lang", type=str, required=True, help="Source language")
     parser.add_argument("--tgt_lang", type=str, required=True, help="Target language")
+    parser.add_argument("--translate_part", type=str, required=True, help="Part to translate")
     args = parser.parse_args()
     main(args)

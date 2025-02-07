@@ -59,7 +59,8 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
                 --model openai/gpt-3.5-turbo \
                 --src_lang $ORG_LANG \
-                --tgt_lang $PVT_LANG
+                --tgt_lang $PVT_LANG \
+                --translate_part prompt
 
         # Generate with watermark
         python3 $WORK_DIR/gen.py \
@@ -75,7 +76,8 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-crwa.mod.jsonl \
                 --model openai/gpt-3.5-turbo \
                 --src_lang $PVT_LANG \
-                --tgt_lang $ORG_LANG
+                --tgt_lang $ORG_LANG \
+                --translate_part response
 
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
