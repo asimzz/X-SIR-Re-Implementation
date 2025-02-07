@@ -57,7 +57,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         python3 $ATTACK_DIR/translate.py \
                 --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-                --model openai/gpt-3.5-turbo \
+                --model sophosympatheia/rogue-rose-103b-v0.2:free \
                 --src_lang $ORG_LANG \
                 --tgt_lang $PVT_LANG \
                 --translate_part prompt
@@ -74,7 +74,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         python3 $ATTACK_DIR/translate.py \
                 --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-crwa.mod.jsonl \
-                --model openai/gpt-3.5-turbo \
+                --model sophosympatheia/rogue-rose-103b-v0.2:free \
                 --src_lang $PVT_LANG \
                 --tgt_lang $ORG_LANG \
                 --translate_part response
