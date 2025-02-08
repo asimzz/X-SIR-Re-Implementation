@@ -40,7 +40,7 @@ def main(args):
         f"Translating {args.translate_part} from {args.src_lang} to {args.tgt_lang} using model {args.model}"
     )
     print(f"{len(input_data)} prompts found. {len(output_data)} translations found.")
-    if len(input_data[:100]) == len(output_data):
+    if len(input_data[:99]) == len(output_data):
         print("Translation already done. Skipping...")
         return
 
@@ -72,7 +72,7 @@ def main(args):
                     },
                 }
                 rqs.append(rq)
-        return rqs["101"]
+        return rqs[:100]
 
     def response_to_output_func(response: dict, output_file_path: str):
         translation = response["response"]["choices"][0]["message"]["content"]
