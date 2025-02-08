@@ -48,11 +48,6 @@ def main(args):
         rqs = []
         done_ids = []
 
-        if os.path.isfile(output_file):
-            with open(output_file, "r") as f:
-                for line in f:
-                    done_ids.append(json.loads(line.strip())["id"])
-
         with open(input_file, "r") as f:
             for i, line in enumerate(f):
                 if i in done_ids:
@@ -73,25 +68,27 @@ def main(args):
                         "row_id": i,
                         "prompt": prompt,
                         "response": response,
-                        "translate_part": translate_part,
+                        "translate_part": args.translate_part,
                     },
                 }
                 rqs.append(rq)
-        return rqs[:100]
+        return rqs["101"]
 
     def response_to_output_func(response: dict, output_file_path: str):
         translation = response["response"]["choices"][0]["message"]["content"]
-        id = response["metadata"]["row_id"]
-        prompt = response["metadata"]["prompt"]
-        response = response["metadata"]["response"]
-        translation_part = response["metadata"]["translate_part"]
+        metadata = response["metadata"]
+        id = metadata["row_id"]
+        prompt = metadata["prompt"]
+        prompt_response = metadata["response"]
+        translation_part = metadata["translate_part"]
         if translation_part == "prompt":
             prompt = translation
         elif translation_part == "response":
-            response = translation
+            prompt_response = translation
 
         json_string = json.dumps(
-            {"id": id, "prompt": prompt, "response": response}, ensure_ascii=False
+            {"id": id, "prompt": prompt, "response": prompt_response},
+            ensure_ascii=False,
         )
         with open(output_file_path, "a") as f:
             f.write(json_string + "\n")
