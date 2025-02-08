@@ -14,10 +14,13 @@ from dataclasses import dataclass, field
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
+REQUESTS_PER_MINUTE = 5
+REQUEST_INTERVAL = 60.0 / REQUESTS_PER_MINUTE  # Interval between requests
+
 def api_endpoint_from_url(request_url):
-    match = re.search(r"^https://[^/]+/v\d+/(.+)$", request_url)
+    match = re.search(r"^https://[^/]+/v\\d+/(.+)$", request_url)
     if match is None:
-        match = re.search(r"^https://[^/]+/openrouter/[^/]+/(.+?)(\?|$)", request_url)
+        match = re.search(r"^https://[^/]+/openrouter/[^/]+/(.+?)(\\?|$)", request_url)
     if match:
         return match[1]
     return "unknown"
@@ -38,7 +41,7 @@ class StatusTracker:
     num_rate_limit_errors: int = 0
     num_api_errors: int = 0
     num_other_errors: int = 0
-    time_of_last_rate_limit_error: int = 0
+    time_of_last_request: float = 0.0
 
 @dataclass
 class APIRequest:
@@ -64,18 +67,30 @@ class APIRequest:
             async with session.post(
                 url=request_url, headers=request_header, json=self.request_json
             ) as response:
-                response = await response.json()
-            if "error" in response:
-                status_tracker.num_api_errors += 1
-                error = response
-                if "Rate limit" in response["error"].get("message", ""):
-                    status_tracker.time_of_last_rate_limit_error = time.time()
+                response_json = await response.json()
+                
+                if response.status == 429:
                     status_tracker.num_rate_limit_errors += 1
-                    status_tracker.num_api_errors -= 1
-
+                    logging.warning("Rate limit exceeded. Retrying in 60 seconds.")
+                    await asyncio.sleep(60)
+                    retry_queue.put_nowait(self)
+                    return
+                elif "error" in response_json:
+                    status_tracker.num_api_errors += 1
+                    error = response_json
+                else:
+                    data = {
+                        "response": response_json,
+                        "metadata": self.metadata if self.metadata else None
+                    }
+                    self.response_to_output_func(data, save_filepath)
+                    status_tracker.num_tasks_in_progress -= 1
+                    status_tracker.num_tasks_succeeded += 1
+                    progress_bar.update(n=1)
+                    return
         except Exception as e:
             status_tracker.num_other_errors += 1
-            error = e
+            error = {"error": {"message": str(e), "code": "unknown"}}
 
         if error:
             self.result.append(error)
@@ -88,16 +103,6 @@ class APIRequest:
                 logging.error(f"Request {self.request_json} failed after all attempts.")
                 status_tracker.num_tasks_in_progress -= 1
                 status_tracker.num_tasks_failed += 1
-        else:
-            data = {
-                "response": response,
-                "metadata": self.metadata if self.metadata else None
-            }
-            self.response_to_output_func(data, save_filepath)
-            status_tracker.num_tasks_in_progress -= 1
-            status_tracker.num_tasks_succeeded += 1
-            progress_bar.update(n=1)
-            logging.debug(f"Request {self.task_id} saved to {save_filepath}")
 
 class CallOpenRouter:
     def __init__(
@@ -153,23 +158,26 @@ class CallOpenRouter:
             return
 
         async with aiohttp.ClientSession() as session:
-            while True:
-                if self.next_request is None:
-                    if not self.queue_of_requests_to_retry.empty():
-                        self.next_request = self.queue_of_requests_to_retry.get_nowait()
-                    elif requests:
-                        request_json = requests.pop(0)
-                        self.next_request = APIRequest(
-                            task_id=next(self.task_id_generator),
-                            request_json=request_json,
-                            attempts_left=self.max_attempts,
-                            metadata=request_json.pop("metadata", None),
-                            response_to_output_func=self.response_to_output_func
-                        )
-                        self.status_tracker.num_tasks_started += 1
-                        self.status_tracker.num_tasks_in_progress += 1
+            while requests or not self.queue_of_requests_to_retry.empty():
+                if time.time() - self.status_tracker.time_of_last_request < REQUEST_INTERVAL:
+                    await asyncio.sleep(REQUEST_INTERVAL - (time.time() - self.status_tracker.time_of_last_request))
+                
+                if not self.queue_of_requests_to_retry.empty():
+                    self.next_request = self.queue_of_requests_to_retry.get_nowait()
+                elif requests:
+                    request_json = requests.pop(0)
+                    self.next_request = APIRequest(
+                        task_id=next(self.task_id_generator),
+                        request_json=request_json,
+                        attempts_left=self.max_attempts,
+                        metadata=request_json.pop("metadata", None),
+                        response_to_output_func=self.response_to_output_func
+                    )
+                    self.status_tracker.num_tasks_started += 1
+                    self.status_tracker.num_tasks_in_progress += 1
 
                 if self.next_request:
+                    self.status_tracker.time_of_last_request = time.time()
                     asyncio.create_task(
                         self.next_request.call_api(
                             session=session,
@@ -182,11 +190,6 @@ class CallOpenRouter:
                         )
                     )
                     self.next_request = None
-
-                if self.status_tracker.num_tasks_in_progress == 0:
-                    break
-
-                await asyncio.sleep(0.01)
 
         if self.post_run_func:
             self.post_run_func(self.output_file_path)
