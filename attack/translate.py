@@ -29,6 +29,7 @@ def main(args):
     if os.path.exists(args.output_file):
         output_data = read_jsonl(args.output_file)
 
+    print(f"Translating {args.translate_part} from {args.src_lang} to {args.tgt_lang} using model {args.model}")
     print(f"{len(input_data)} prompts found. {len(output_data)} translations found.")
     if len(input_data[:100]) == len(output_data):
         print("Translation already done. Skipping...")
@@ -48,6 +49,7 @@ def main(args):
                 if i in done_ids:
                     continue
                 prompt = json.loads(line.strip())["prompt"]
+                response = json.loads(line.strip())["response"]
                 translate_part = json.loads(line.strip())[f"{args.translate_part}"]
                 rq = {
                     "model": args.model,
@@ -58,7 +60,7 @@ def main(args):
                         }
                     ],
                     "temperature": args.temperature,
-                    "metadata": {"row_id": i, "prompt": prompt} 
+                    "metadata": {"row_id": i, "prompt": prompt, "response": response, "translate_part": translate_part} 
                 }
                 rqs.append(rq)
         return rqs[:100]
@@ -67,12 +69,18 @@ def main(args):
         translation = response["response"]["choices"][0]["message"]["content"]
         id = response["metadata"]["row_id"]
         prompt = response["metadata"]["prompt"]
+        response = response["metadata"]["response"]
+        translation_part = response["metadata"]["translate_part"]
+        if translation_part == "prompt":
+            prompt = translation
+        elif translation_part == "response":
+            response = translation
 
         json_string = json.dumps(
             {
                 "id": id,
                 "prompt": prompt,
-                "response": translation
+                "response": response
             },
             ensure_ascii=False
         )
