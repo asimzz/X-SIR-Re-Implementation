@@ -30,7 +30,7 @@ def main(args):
         "OPENROUTER_API_KEY"
     ), "Set the OPENROUTER_API_KEY environment variable"
     # Load data
-    input_data = read_jsonl(args.input_file)[:100]
+    input_data = read_jsonl(args.input_file)
 
     output_data = []
     if os.path.exists(args.output_file):
