@@ -28,8 +28,12 @@ def f1_at_fpr(y_true, y_scores, fpr_target):
     return f1
 
 def main(args):
-    hm_list = read_jsonl(args.hm_zscore)
+    hm_list = read_jsonl(args.hm_zscore)[:99]
     wm_list = read_jsonl(args.wm_zscore)
+    
+    if len(hm_list) != len(wm_list):
+        print("The number of zscores in the human and watermark files are not the same.")
+        return
 
     hm_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in hm_list]
     hm_true = [0 for x in hm_list]
