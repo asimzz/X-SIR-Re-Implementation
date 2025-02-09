@@ -47,8 +47,6 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         if [ $WATERMARK_METHOD == "kgw" ]; then
             WATERMARK_METHOD_FLAG="--watermark_method kgw"
-        elif [ $WATERMARK_METHOD == "sir" ] || [ $WATERMARK_METHOD == "xsir" ]; then
-            WATERMARK_METHOD_FLAG="--watermark_method xsir  --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_$MODEL_ABBR.json"
         else
             echo "Unknown watermark method: $WATERMARK_METHOD"
             exit 1
