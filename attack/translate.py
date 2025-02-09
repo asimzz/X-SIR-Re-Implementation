@@ -40,7 +40,7 @@ def main(args):
         f"Translating {args.translate_part} from {args.src_lang} to {args.tgt_lang} using model {args.model}"
     )
     print(f"{len(input_data)} prompts found. {len(output_data)} translations found.")
-    if len(input_data[:99]) == len(output_data) or len(input_data[:98]) == len(output_data):
+    if len(input_data) == len(output_data):
         print("Translation already done. Skipping...")
         return
 
