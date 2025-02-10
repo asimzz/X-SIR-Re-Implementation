@@ -3,8 +3,10 @@ import json
 import argparse
 from tqdm import tqdm
 from deep_translator import GoogleTranslator
-from utils import read_jsonl
 
+def read_jsonl(file_path):
+    with open(file_path, "r") as f:
+        return [json.loads(line) for line in f]
 
 def main(args):
     # Initialize the translator
