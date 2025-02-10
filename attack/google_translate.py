@@ -6,7 +6,13 @@ from deep_translator import GoogleTranslator
 
 def main(args):
     # Initialize the translator
-    translator = GoogleTranslator(source="en", target="zh-CN")
+    src_lang = args.src_lang
+    tgt_lang = args.tgt_lang
+    if src_lang == "zh":
+        src_lang = "zh-CN"
+    if tgt_lang == "zh":
+        tgt_lang = "zh-CN"
+    translator = GoogleTranslator(source=src_lang, target=tgt_lang)
 
     translated_samples = []
 
