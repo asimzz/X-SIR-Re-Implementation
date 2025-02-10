@@ -51,10 +51,24 @@ for i in "${!MODEL_NAMES[@]}"; do
             exit 1
         fi
 
-        echo "$MODEL_NAME $WATERMARK_METHOD CWRA Attack"
+        echo "$MODEL_NAME $WATERMARK_METHOD Without CWRA Attack"
         python3 $WORK_DIR/eval_detection.py \
             --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
             --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.z_score.jsonl
+
+        echo "======================================="
+
+        echo "$MODEL_NAME $WATERMARK_METHOD With CWRA Attack"
+        python3 $WORK_DIR/eval_detection.py \
+            --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl
+
+        echo "======================================="
+
+        echo "$MODEL_NAME $WATERMARK_METHOD With CWRA Attack (Back Translation)"
+        python3 $WORK_DIR/eval_detection.py \
+            --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.z_score.jsonl
 
         echo "======================================="
     done
