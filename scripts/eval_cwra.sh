@@ -3,16 +3,9 @@ set -u # Treat unset variables as an error when substituting.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR=$SCRIPT_DIR/..
-DATA_DIR=$WORK_DIR/data
+FIGURE_DIR=$WORK_DIR/data/figures
 GEN_DIR=$WORK_DIR/gen
 ATTACK_DIR=$WORK_DIR/attack
-
-# Parameters for SIR/X-SIR
-MAPPING_DIR=$WORK_DIR/data/mapping
-TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert_10K.pth
-EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
-
-BATCH_SIZE=4
 
 MODEL_NAMES=(
     "meta-llama/Llama-2-7b-hf"
@@ -54,21 +47,24 @@ for i in "${!MODEL_NAMES[@]}"; do
         echo "$MODEL_NAME $WATERMARK_METHOD Without CWRA Attack"
         python3 $WORK_DIR/eval_detection.py \
             --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.z_score.jsonl
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.z_score.jsonl \
+            --roc_curve $FIGURE_DIR/$MODEL_ABBR/$WATERMARK_METHOD/no_cwra-$PVT_LANG.txt
 
         echo "======================================="
 
         echo "$MODEL_NAME $WATERMARK_METHOD With CWRA Attack"
         python3 $WORK_DIR/eval_detection.py \
             --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl \
+            --roc_curve $FIGURE_DIR/$MODEL_ABBR/$WATERMARK_METHOD/cwra_attack-$PVT_LANG.txt
 
         echo "======================================="
 
         echo "$MODEL_NAME $WATERMARK_METHOD With CWRA Attack (Back Translation)"
         python3 $WORK_DIR/eval_detection.py \
             --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.z_score.jsonl
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.z_score.jsonl \
+            --roc_curve $FIGURE_DIR/$MODEL_ABBR/$WATERMARK_METHOD/cwra_attack_back-$PVT_LANG.txt
 
         echo "======================================="
     done
