@@ -54,8 +54,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         echo "$MODEL_NAME $WATERMARK_METHOD CWRA Attack"
         python3 $WORK_DIR/eval_detection.py \
             --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-crwa.mod.z_score.jsonl
-
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl
 
         echo "======================================="
     done
