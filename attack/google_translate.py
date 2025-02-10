@@ -12,7 +12,9 @@ def main(args):
 
     with open(args.input_file, "r", encoding="utf-8") as lines:
         translation_part = args.translation_part
-        for line in tqdm(lines, desc=f"Translating {translation_part}", unit=translation_part):
+        for line in tqdm(
+            lines, desc=f"Translating {translation_part}", unit=translation_part
+        ):
             data = json.loads(line)
             if translation_part in data:
                 translation = translator.translate(data[translation_part])
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--tgt_lang", type=str, required=True, help="Target language")
     parser.add_argument(
         "--translation_part",
-        type=["prompt, response"],
+        type=str,
         required=True,
         help="Part of the JSON to translate",
     )
