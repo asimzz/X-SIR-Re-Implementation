@@ -4,9 +4,11 @@ import argparse
 from tqdm import tqdm
 from deep_translator import GoogleTranslator
 
+
 def read_jsonl(file_path):
     with open(file_path, "r") as f:
         return [json.loads(line) for line in f]
+
 
 def main(args):
     # Initialize the translator
@@ -22,8 +24,9 @@ def main(args):
         output_data = read_jsonl(args.output_file)
 
     print(
-        f"Translating {args.translate_part} from {args.src_lang} to {args.tgt_lang} using model {args.model}"
+        f"Translating {args.translation_part} from {args.src_lang} to {args.tgt_lang}"
     )
+
     print(f"{len(input_data)} prompts found. {len(output_data)} translations found.")
     if len(input_data) == len(output_data):
         print("Translation already done. Skipping...")
