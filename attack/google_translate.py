@@ -1,23 +1,43 @@
+import os
 import json
 import argparse
 from tqdm import tqdm
 from deep_translator import GoogleTranslator
+from utils import read_jsonl
 
 
 def main(args):
     # Initialize the translator
     src_lang = args.src_lang
     tgt_lang = args.tgt_lang
+    translation_part = args.translation_part
+
+    # Load data
+    input_data = read_jsonl(args.input_file)
+
+    output_data = []
+    if os.path.exists(args.output_file):
+        output_data = read_jsonl(args.output_file)
+
+    print(
+        f"Translating {args.translate_part} from {args.src_lang} to {args.tgt_lang} using model {args.model}"
+    )
+    print(f"{len(input_data)} prompts found. {len(output_data)} translations found.")
+    if len(input_data) == len(output_data):
+        print("Translation already done. Skipping...")
+        return
+
+    # Check if the source or target languages are Chinese
     if src_lang == "zh":
         src_lang = "zh-CN"
     if tgt_lang == "zh":
         tgt_lang = "zh-CN"
-    translator = GoogleTranslator(source=src_lang, target=tgt_lang)
 
+    # Initialize the translator
+    translator = GoogleTranslator(source=src_lang, target=tgt_lang)
     translated_samples = []
 
     with open(args.input_file, "r", encoding="utf-8") as lines:
-        translation_part = args.translation_part
         for line in tqdm(
             lines, desc=f"Translating {translation_part}", unit=translation_part
         ):
