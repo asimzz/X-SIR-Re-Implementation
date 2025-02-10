@@ -52,13 +52,12 @@ for i in "${!MODEL_NAMES[@]}"; do
             exit 1
         fi
 
-        # python3 $ATTACK_DIR/translate.py \
-        #         --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl \
-        #         --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-        #         --model sophosympatheia/rogue-rose-103b-v0.2:free \
-        #         --src_lang $ORG_LANG \
-        #         --tgt_lang $PVT_LANG \
-        #         --translate_part prompt
+        python3 $ATTACK_DIR/google_translate.py \
+                --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
+                --src_lang $ORG_LANG \
+                --tgt_lang $PVT_LANG \
+                --translation_part prompt
 
         # Generate with watermark
         python3 $WORK_DIR/gen.py \
@@ -69,13 +68,19 @@ for i in "${!MODEL_NAMES[@]}"; do
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
             $WATERMARK_METHOD_FLAG
 
-        python3 $ATTACK_DIR/translate.py \
-                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+        python3 $ATTACK_DIR/google_translate.py \
+                --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-                --model sophosympatheia/rogue-rose-103b-v0.2:free \
-                --src_lang $PVT_LANG \
-                --tgt_lang $ORG_LANG \
-                --translate_part response
+                --src_lang $ORG_LANG \
+                --tgt_lang $PVT_LANG \
+                --translation_part response
+        # python3 $ATTACK_DIR/google_translate.py \
+        #         --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
+        #         --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
+        #         --src_lang $ORG_LANG \
+        #         --tgt_lang $PVT_LANG \
+        #         --translation_part response
+
 
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
