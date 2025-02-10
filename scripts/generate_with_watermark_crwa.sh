@@ -52,28 +52,28 @@ for i in "${!MODEL_NAMES[@]}"; do
             exit 1
         fi
 
-        python3 $ATTACK_DIR/google_translate.py \
-                --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-                --src_lang $ORG_LANG \
-                --tgt_lang $PVT_LANG \
-                --translation_part prompt
+        # python3 $ATTACK_DIR/google_translate.py \
+        #         --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
+        #         --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
+        #         --src_lang $ORG_LANG \
+        #         --tgt_lang $PVT_LANG \
+        #         --translation_part prompt
 
-        # Generate with watermark
-        python3 $WORK_DIR/gen.py \
-            --base_model $MODEL_NAME \
-            --fp16 \
-            --batch_size $BATCH_SIZE \
-            --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
-            $WATERMARK_METHOD_FLAG
+        # # Generate with watermark
+        # python3 $WORK_DIR/gen.py \
+        #     --base_model $MODEL_NAME \
+        #     --fp16 \
+        #     --batch_size $BATCH_SIZE \
+        #     --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
+        #     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+        #     $WATERMARK_METHOD_FLAG
 
-        python3 $ATTACK_DIR/google_translate.py \
-                --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-                --src_lang $PVT_LANG \
-                --tgt_lang $ORG_LANG \
-                --translation_part response
+        # python3 $ATTACK_DIR/google_translate.py \
+        #         --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+        #         --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
+        #         --src_lang $PVT_LANG \
+        #         --tgt_lang $ORG_LANG \
+        #         --translation_part response
         # python3 $ATTACK_DIR/google_translate.py \
         #         --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
         #         --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
@@ -84,8 +84,8 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
-            --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl \
+            --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.z_score.jsonl \
             $WATERMARK_METHOD_FLAG
     done
 done
