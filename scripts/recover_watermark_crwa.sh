@@ -52,18 +52,17 @@ for i in "${!MODEL_NAMES[@]}"; do
             exit 1
         fi
 
-        python3 $ATTACK_DIR/translate.py \
-                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-crwa.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-crwa-back.mod.jsonl \
-                --model sophosympatheia/rogue-rose-103b-v0.2:free \
+        python3 $ATTACK_DIR/google_translate.py \
+                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
                 --src_lang $ORG_LANG \
                 --tgt_lang $PVT_LANG \
-                --translate_part response
+                --translation_part response
 
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
-            --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-crwa-back.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-crwa-back.mod.z_score.jsonl \
+            --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
+            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.z_score.jsonl \
             $WATERMARK_METHOD_FLAG
     done
 done
