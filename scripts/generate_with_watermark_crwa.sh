@@ -32,7 +32,7 @@ WATERMARK_METHODS=(
 )
 
 ORG_LANG="en"
-PVT_LANG="zh"
+PVT_LANG="fr"
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
