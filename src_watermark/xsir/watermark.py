@@ -107,7 +107,7 @@ class WatermarkContext(WatermarkBase):
 
     def get_context_sentence(self, input_ids: torch.LongTensor):
         input_sentence = self.target_tokenizer.decode(input_ids, skip_special_tokens=True)
-        input_tokens = self.target_tokenizer.tokenize(input_sentence, add_special_tokens=False)
+        input_tokens = self.target_tokenizer.tokenize(input_sentence)
 
         word_2d = [input_tokens[x: x + self.chunk_length] for x in range(0, len(input_tokens), self.chunk_length)]
 
@@ -117,7 +117,7 @@ class WatermarkContext(WatermarkBase):
             return self.target_tokenizer.convert_tokens_to_string([tok for group in word_2d[:-1] for tok in group])
 
     def get_text_split(self, sentence):
-        words = self.target_tokenizer.tokenize(sentence, add_special_tokens=False)
+        words = self.target_tokenizer.tokenize(sentence)
         return [words[x: x + self.chunk_length] for x in range(0, len(words), self.chunk_length)]
 
     def scale_vector(self, v):
