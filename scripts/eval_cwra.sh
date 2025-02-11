@@ -21,6 +21,7 @@ MODEL_ABBRS=(
 
 WATERMARK_METHODS=(
     "kgw"
+    "xsir"
 )
 
 ORG_LANG="en"
@@ -37,12 +38,6 @@ for i in "${!MODEL_NAMES[@]}"; do
     MODEL_ABBR=${MODEL_ABBRS[$i]}
 
     for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
-        if [ $WATERMARK_METHOD == "kgw" ]; then
-            WATERMARK_METHOD_FLAG="--watermark_method kgw"
-        else
-            echo "Unknown watermark method: $WATERMARK_METHOD"
-            exit 1
-        fi
 
         echo "$MODEL_NAME $WATERMARK_METHOD Without CWRA Attack"
         python3 $WORK_DIR/eval_detection.py \
@@ -60,6 +55,9 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         echo "======================================="
 
+        if [ $WATERMARK_METHOD == "xsir" ]; then
+            continue
+        fi
         echo "$MODEL_NAME $WATERMARK_METHOD With CWRA Attack (Back Translation)"
         python3 $WORK_DIR/eval_detection.py \
             --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
