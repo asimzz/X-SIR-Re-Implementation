@@ -16,6 +16,7 @@ BATCH_SIZE=8
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
+    "CohereForAI/aya-101"
     # "meta-llama/Llama-2-7b-hf"
     # "baichuan-inc/Baichuan2-7B-Base"
     # "baichuan-inc/Baichuan-7B"
@@ -24,6 +25,7 @@ MODEL_NAMES=(
 
 MODEL_ABBRS=(
     "bloom-7b1"
+    "aya-101"
     # "llama2-7b"
     # "baichuan2-7b"
     # "baichuan-7b"

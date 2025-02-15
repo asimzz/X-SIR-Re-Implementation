@@ -8,24 +8,28 @@ GEN_DIR=$WORK_DIR/gen
 ATTACK_DIR=$WORK_DIR/attack
 
 MODEL_NAMES=(
-    "meta-llama/Llama-2-7b-hf"
-    "baichuan-inc/Baichuan2-7B-Base"
-    "baichuan-inc/Baichuan-7B"
+    "bigscience/bloom-7b1"
+    "CohereForAI/aya-101"
+    # "meta-llama/Llama-2-7b-hf"
+    # "baichuan-inc/Baichuan2-7B-Base"
+    # "baichuan-inc/Baichuan-7B"
 )
 
 MODEL_ABBRS=(
-    "llama2-7b"
-    "baichuan2-7b"
-    "baichuan-7b"
+    "bloom-7b1"
+    "aya-101"
+    # "llama2-7b"
+    # "baichuan2-7b"
+    # "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
     "kgw"
-    "xsir"
+    # "xsir"
 )
 
 ORG_LANG="en"
-PVT_LANG="zh"
+PVT_LANG="fr"
 
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
