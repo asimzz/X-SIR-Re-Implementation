@@ -15,24 +15,23 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=4
 
 MODEL_NAMES=(
+    "bigscience/bloom-7b1"
+    "CohereForAI/aya-23-8B"
     "meta-llama/Llama-2-7b-hf"
     "baichuan-inc/Baichuan2-7B-Base"
     "baichuan-inc/Baichuan-7B"
-    "mistralai/Mistral-7B-v0.1"
 )
 
 MODEL_ABBRS=(
+    "bloom-7b1"
+    "aya-23-8B"
     "llama2-7b"
     "baichuan2-7b"
     "baichuan-7b"
-    "mistral-7b"
 )
 
 WATERMARK_METHODS=(
     "kgw"
-    # "uw"
-    # # "sir"
-    # "xsir"
 )
 
 TGT_LANGS=(
@@ -74,12 +73,12 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         # Translate to other languages
         for TGT_LANG in "${TGT_LANGS[@]}"; do
-            python3 $ATTACK_DIR/translate.py \
+            python3 $ATTACK_DIR/google_translate.py \
                 --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
-                --model gpt-3.5-turbo-1106 \
                 --src_lang en \
-                --tgt_lang $TGT_LANG
+                --tgt_lang $TGT_LANG \
+                --translation_part prompt
         done
 
         # Paraphrase
