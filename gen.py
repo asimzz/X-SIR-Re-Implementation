@@ -57,7 +57,7 @@ def main(args):
     # Load model & tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)
     try:
-        if "aya" in args.base_model:
+        if "aya-101" in args.base_model:
             model = AutoModelForSeq2SeqLM.from_pretrained(
                 args.base_model,
                 device_map="auto",
