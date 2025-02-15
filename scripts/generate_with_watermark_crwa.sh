@@ -15,20 +15,23 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=8
 
 MODEL_NAMES=(
-    "meta-llama/Llama-2-7b-hf"
-    "baichuan-inc/Baichuan2-7B-Base"
-    "baichuan-inc/Baichuan-7B"
+    "bigscience/bloom-7b1"
+    # "meta-llama/Llama-2-7b-hf"
+    # "baichuan-inc/Baichuan2-7B-Base"
+    # "baichuan-inc/Baichuan-7B"
+
 )
 
 MODEL_ABBRS=(
-    "llama2-7b"
-    "baichuan2-7b"
-    "baichuan-7b"
+    "bloom-7b1"
+    # "llama2-7b"
+    # "baichuan2-7b"
+    # "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
     "kgw"
-    "xsir"
+    # "xsir"
 )
 
 ORG_LANG="en"
