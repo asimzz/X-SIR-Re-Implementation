@@ -9,16 +9,18 @@ ATTACK_DIR=$WORK_DIR/attack
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
-    "CohereForAI/aya-101"
-    # "meta-llama/Llama-2-7b-hf"
+    "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-2-7b-hf"
+    # "CohereForAI/aya-101"
     # "baichuan-inc/Baichuan2-7B-Base"
     # "baichuan-inc/Baichuan-7B"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
-    "aya-101"
-    # "llama2-7b"
+    "aya-23-8B"
+    "llama2-7b"
+    # "aya-101"
     # "baichuan2-7b"
     # "baichuan-7b"
 )
@@ -29,7 +31,7 @@ WATERMARK_METHODS=(
 )
 
 ORG_LANG="en"
-PVT_LANG="fr"
+PVT_LANG="zh"
 
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then

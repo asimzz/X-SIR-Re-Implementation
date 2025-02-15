@@ -16,23 +16,19 @@ BATCH_SIZE=8
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
-    # "CohereForAI/aya-101"
-    CohereForAI/aya-23-8B
-    # "CohereForAI/aya-expanse-8b"
-    # "meta-llama/Llama-2-7b-hf"
-    # "baichuan-inc/Baichuan2-7B-Base"
-    # "baichuan-inc/Baichuan-7B"
+    "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-2-7b-hf"
+    "baichuan-inc/Baichuan2-7B-Base"
+    "baichuan-inc/Baichuan-7B"
 
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
-    # "aya-101"
     "aya-23-8B"
-    # "aya-expanse-8b"
-    # "llama2-7b"
-    # "baichuan2-7b"
-    # "baichuan-7b"
+    "llama2-7b"
+    "baichuan2-7b"
+    "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
@@ -41,7 +37,7 @@ WATERMARK_METHODS=(
 )
 
 ORG_LANG="en"
-PVT_LANG="fr"
+PVT_LANG="zh"
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
