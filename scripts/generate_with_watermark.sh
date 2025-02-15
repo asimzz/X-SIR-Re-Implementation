@@ -35,6 +35,8 @@ WATERMARK_METHODS=(
 )
 
 TGT_LANGS=(
+    "ar"
+    "tr"
     "de"
     "fr"
     "zh"
@@ -78,7 +80,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
                 --src_lang en \
                 --tgt_lang $TGT_LANG \
-                --translation_part prompt
+                --translation_part response
         done
 
         # Paraphrase
