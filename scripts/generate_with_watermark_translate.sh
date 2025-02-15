@@ -68,7 +68,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             --base_model $MODEL_NAME \
             --fp16 \
             --batch_size $BATCH_SIZE \
-            --input_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
+            --input_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             $WATERMARK_METHOD_FLAG
 
@@ -81,13 +81,6 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --tgt_lang $TGT_LANG \
                 --translation_part response
         done
-
-        # Compute watermark strength
-        python3 $WORK_DIR/detect.py \
-            --base_model $MODEL_NAME \
-            --detect_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            $WATERMARK_METHOD_FLAG
 
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
