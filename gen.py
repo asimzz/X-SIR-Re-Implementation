@@ -57,22 +57,13 @@ def main(args):
     # Load model & tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)
     try:
-        if "aya-101" in args.base_model:
-            model = AutoModelForSeq2SeqLM.from_pretrained(
-                args.base_model,
-                device_map="auto",
-                attn_implementation="flash_attention_2" if is_flash_attn_2_available() and (args.fp16 or args.bf16) else "eager",
-                torch_dtype=torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32,
-                trust_remote_code=True
-            )
-        else:
-            model = AutoModelForCausalLM.from_pretrained(
-                args.base_model,
-                device_map="auto",
-                attn_implementation="flash_attention_2" if is_flash_attn_2_available() and (args.fp16 or args.bf16) else "eager",
-                torch_dtype=torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32,
-                trust_remote_code=True
-        )
+        model = AutoModelForCausalLM.from_pretrained(
+            args.base_model,
+            device_map="auto",
+            attn_implementation="flash_attention_2" if is_flash_attn_2_available() and (args.fp16 or args.bf16) else "eager",
+            torch_dtype=torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32,
+            trust_remote_code=True
+    )
     except ValueError as e:
         if "does not support Flash Attention 2.0" in str(e):
             model = AutoModelForCausalLM.from_pretrained(

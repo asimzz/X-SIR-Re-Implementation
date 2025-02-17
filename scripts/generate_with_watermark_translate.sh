@@ -59,7 +59,8 @@ for i in "${!MODEL_NAMES[@]}"; do
         if [ $WATERMARK_METHOD == "kgw" ]; then
             WATERMARK_METHOD_FLAG="--watermark_method kgw"
         elif [ $WATERMARK_METHOD == "sir" ] || [ $WATERMARK_METHOD == "xsir" ]; then
-            WATERMARK_METHOD_FLAG="--watermark_method xsir  --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_$MODEL_ABBR.json"
+            WATERMARK_METHOD_FLAG="--watermark_method xsir  --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_$MODEL_ABBR.json \ "
+            WATERMARK_TYPE_FLAG="--watermark_type window --window_size 1"
         else
             echo "Unknown watermark method: $WATERMARK_METHOD"
             exit 1
@@ -73,6 +74,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             --input_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             $WATERMARK_METHOD_FLAG
+            $WATERMARK_TYPE_FLAG
 
         # Translate to other languages
         for TGT_LANG in "${TGT_LANGS[@]}"; do
@@ -89,6 +91,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.z_score.jsonl \
             $WATERMARK_METHOD_FLAG
+            $WATERMARK_TYPE_FLAG
 
 
         for TGT_LANG in "${TGT_LANGS[@]}"; do
@@ -97,6 +100,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
+                $WATERMARK_TYPE_FLAG
         done
     done
 done
