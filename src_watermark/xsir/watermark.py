@@ -21,7 +21,7 @@ class WatermarkBase:
         target_tokenizer,
     ):
         self.target_tokenizer =  target_tokenizer
-        self.vocab_size = len(self.target_tokenizer)
+        self.vocab_size = self.target_tokenizer.vocab_size
         self.gamma = gamma
         self.delta = delta
 
@@ -225,6 +225,9 @@ class WatermarkLogitsProcessor(LogitsProcessor):
         batched_bias_tensor = torch.Tensor(batched_bias_np).to(self.watermark_base.device)
 
         # Apply bias
+        print("Scores shape:", scores.shape)
+        print("Batched bias shape:", batched_bias_tensor.shape)
+        print("Greenlist bias:", greenlist_bias)
         scores = scores + batched_bias_tensor * greenlist_bias
 
         # # Debug: Inspect scores after applying bias
