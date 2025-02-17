@@ -10,6 +10,7 @@ ATTACK_DIR=$WORK_DIR/attack
 # Parameters for SIR/X-SIR
 MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert_10K.pth
+EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 BATCH_SIZE=8
 
