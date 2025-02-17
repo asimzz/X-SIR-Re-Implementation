@@ -31,6 +31,7 @@ MODEL_ABBRS=(
 
 WATERMARK_METHODS=(
     "kgw"
+    "xsir"
 )
 
 TGT_LANGS=(

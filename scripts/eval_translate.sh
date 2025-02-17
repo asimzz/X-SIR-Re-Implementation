@@ -16,18 +16,26 @@ BATCH_SIZE=32
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
+    "CohereForAI/aya-23-8B"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
+    "aya-23-8B"
 )
 
 WATERMARK_METHODS=(
     "kgw"
+    "xsir"
 )
 
 TGT_LANGS=(
    "ar"
+   "tr"
+   "de"
+   "fr"
+   "zh"
+   "ja"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
