@@ -58,6 +58,7 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         if [ $WATERMARK_METHOD == "kgw" ]; then
             WATERMARK_METHOD_FLAG="--watermark_method kgw"
+            WATERMARK_TYPE_FLAG=""
         elif [ $WATERMARK_METHOD == "sir" ] || [ $WATERMARK_METHOD == "xsir" ]; then
             WATERMARK_METHOD_FLAG="--watermark_method xsir  --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_$MODEL_ABBR.json \ "
             WATERMARK_TYPE_FLAG="--watermark_type window --window_size 1"
