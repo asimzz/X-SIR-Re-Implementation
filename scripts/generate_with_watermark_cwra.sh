@@ -71,7 +71,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             echo "Translating prompts $ORG_LANG to $PVT_LANG"
             python3 $ATTACK_DIR/google_translate.py \
                     --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
-                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
+                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
                     --translation_part prompt
@@ -82,28 +82,28 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --base_model $MODEL_NAME \
                 --fp16 \
                 --batch_size $BATCH_SIZE \
-                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl \
                 $WATERMARK_METHOD_FLAG
 
             python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
-                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.z_score.jsonl \
+                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
 
             # Apply CWRA attack
             python3 $ATTACK_DIR/google_translate.py \
-                    --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
-                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
+                    --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl \
+                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl \
                     --src_lang $PVT_LANG \
                     --tgt_lang $ORG_LANG \
                     --translation_part response
 
             python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
-                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl \
+                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
 
             if [ $WATERMARK_METHOD == "xsir" ]; then
@@ -111,8 +111,8 @@ for i in "${!MODEL_NAMES[@]}"; do
             fi
             # Back translation
             python3 $ATTACK_DIR/google_translate.py \
-                    --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
+                    --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl \
+                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
                     --translation_part response
@@ -120,8 +120,8 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
-                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.z_score.jsonl \
+                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
         done
     done
