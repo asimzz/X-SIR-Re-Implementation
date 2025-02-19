@@ -37,7 +37,7 @@ WATERMARK_METHODS=(
 )
 
 ORG_LANG="en"
-PVT_LANGS= (
+PVT_LANGS=(
     "ar"
     "tr"
     "de"
