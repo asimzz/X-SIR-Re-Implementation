@@ -37,7 +37,14 @@ WATERMARK_METHODS=(
 )
 
 ORG_LANG="en"
-PVT_LANG="zh"
+PVT_LANGS= (
+    "ar"
+    "tr"
+    "de"
+    "fr"
+    "zh"
+    "ja"
+)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -60,58 +67,62 @@ for i in "${!MODEL_NAMES[@]}"; do
             exit 1
         fi
 
-        python3 $ATTACK_DIR/google_translate.py \
-                --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-                --src_lang $ORG_LANG \
-                --tgt_lang $PVT_LANG \
-                --translation_part prompt
+        for PVT_LANG in "${PVT_LANGS[@]}"; do
+            echo "Translating prompts $ORG_LANG to $PVT_LANG"
+            python3 $ATTACK_DIR/google_translate.py \
+                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
+                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
+                    --src_lang $ORG_LANG \
+                    --tgt_lang $PVT_LANG \
+                    --translation_part prompt
 
-        # Generate with watermark
-        python3 $WORK_DIR/gen.py \
-            --base_model $MODEL_NAME \
-            --fp16 \
-            --batch_size $BATCH_SIZE \
-            --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
-            $WATERMARK_METHOD_FLAG
+            echo "Generating with watermark using $WATERMARK_METHOD for $MODEL_NAME from $ORG_LANG to $PVT_LANG"
+            # Generate with watermark
+            python3 $WORK_DIR/gen.py \
+                --base_model $MODEL_NAME \
+                --fp16 \
+                --batch_size $BATCH_SIZE \
+                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+                $WATERMARK_METHOD_FLAG
 
-        python3 $WORK_DIR/detect.py \
-            --base_model $MODEL_NAME \
-            --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.z_score.jsonl \
-            $WATERMARK_METHOD_FLAG
+            python3 $WORK_DIR/detect.py \
+                --base_model $MODEL_NAME \
+                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.z_score.jsonl \
+                $WATERMARK_METHOD_FLAG
 
-        # Apply CWRA attack
-        python3 $ATTACK_DIR/google_translate.py \
-                --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-                --src_lang $PVT_LANG \
-                --tgt_lang $ORG_LANG \
-                --translation_part response
+            # Apply CWRA attack
+            python3 $ATTACK_DIR/google_translate.py \
+                    --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa.mod.jsonl \
+                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
+                    --src_lang $PVT_LANG \
+                    --tgt_lang $ORG_LANG \
+                    --translation_part response
 
-        python3 $WORK_DIR/detect.py \
-            --base_model $MODEL_NAME \
-            --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl \
-            $WATERMARK_METHOD_FLAG
+            python3 $WORK_DIR/detect.py \
+                --base_model $MODEL_NAME \
+                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.z_score.jsonl \
+                $WATERMARK_METHOD_FLAG
 
-        if [ $WATERMARK_METHOD == "xsir" ]; then
-            continue
-        fi
-        # Back translation
-        python3 $ATTACK_DIR/google_translate.py \
-                --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
-                --src_lang $ORG_LANG \
-                --tgt_lang $PVT_LANG \
-                --translation_part response
+            if [ $WATERMARK_METHOD == "xsir" ]; then
+                continue
+            fi
+            # Back translation
+            python3 $ATTACK_DIR/google_translate.py \
+                    --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-crwa.mod.jsonl \
+                    --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
+                    --src_lang $ORG_LANG \
+                    --tgt_lang $PVT_LANG \
+                    --translation_part response
 
 
-        python3 $WORK_DIR/detect.py \
-            --base_model $MODEL_NAME \
-            --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.z_score.jsonl \
-            $WATERMARK_METHOD_FLAG
+            python3 $WORK_DIR/detect.py \
+                --base_model $MODEL_NAME \
+                --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-crwa-back.mod.z_score.jsonl \
+                $WATERMARK_METHOD_FLAG
+        done
     done
 done
