@@ -16,17 +16,19 @@ BATCH_SIZE=32
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
-    "CohereForAI/aya-23-8B"
+    # "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-2-7b-hf"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
-    "aya-23-8B"
+    # "llama2-7b"
+    # "aya-23-8B"
 )
 
 WATERMARK_METHODS=(
     "kgw"
-    "xsir"
+    # "xsir"
 )
 
 TGT_LANGS=(

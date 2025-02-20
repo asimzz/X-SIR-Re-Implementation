@@ -16,8 +16,8 @@ BATCH_SIZE=8
 
 MODEL_NAMES=(
     # "bigscience/bloom-7b1"
-    # "CohereForAI/aya-23-8B"
-    "meta-llama/Llama-2-7b-hf"
+    # # "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-2-7b-hf"
     "baichuan-inc/Baichuan2-7B-Base"
     "baichuan-inc/Baichuan-7B"
 
@@ -25,25 +25,25 @@ MODEL_NAMES=(
 
 MODEL_ABBRS=(
     # "bloom-7b1"
-    # "aya-23-8B"
-    "llama2-7b"
+    # # "aya-23-8B"
+    # "llama2-7b"
     "baichuan2-7b"
     "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
     "kgw"
-    # "xsir"
+    "xsir"
 )
 
 ORG_LANG="en"
 PVT_LANGS=(
-    "ar"
-    "tr"
-    "de"
-    "fr"
+    # "ar"
+    # "tr"
+    # "de"
+    # "fr"
     "zh"
-    "ja"
+    # "ja"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -70,7 +70,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         for PVT_LANG in "${PVT_LANGS[@]}"; do
             echo "Translating prompts $ORG_LANG to $PVT_LANG"
             python3 $ATTACK_DIR/google_translate.py \
-                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
+                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
