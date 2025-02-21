@@ -19,9 +19,11 @@ class WatermarkBase:
         gamma: float,
         delta: float,
         target_tokenizer,
+        vocab_size=None
     ):
         self.target_tokenizer =  target_tokenizer
         self.vocab_size = self.target_tokenizer.vocab_size
+        self.vocab_size = vocab_size if vocab_size is not None else max(len(self.target_tokenizer.get_vocab()), self.target_tokenizer.vocab_size)
         self.gamma = gamma
         self.delta = delta
 
@@ -60,8 +62,9 @@ class WatermarkContext(WatermarkBase):
         embedding_model: str = "",
         mapping_file: str = "",
         transform_model_path: str = "transform_model.pth",
+        vocab_size=None
     ):
-        super().__init__(gamma, delta, target_tokenizer)
+        super().__init__(gamma, delta, target_tokenizer, vocab_size)
         assert embedding_model in ["perceptiveshawty/compositional-bert-large-uncased", "paraphrase-multilingual-mpnet-base-v2"], f"embedding_model {embedding_model} not supported"
 
         self.device = device
@@ -164,8 +167,9 @@ class WatermarkWindow(WatermarkBase):
         gamma: float = 0.5,
         delta: float = 2.0,
         hash_key: int = 15485863,
+        vocab_size=None
     ):
-        super().__init__(gamma, delta, target_tokenizer)
+        super().__init__(gamma, delta, target_tokenizer, vocab_size)
         self.device = device
         self.rng = torch.Generator(device=device)
         self.hash_key = hash_key
@@ -224,10 +228,12 @@ class WatermarkLogitsProcessor(LogitsProcessor):
         batched_bias_np = np.array(batched_bias)
         batched_bias_tensor = torch.Tensor(batched_bias_np).to(self.watermark_base.device)
 
-        # Apply bias
-        print("Scores shape:", scores.shape)
-        print("Batched bias shape:", batched_bias_tensor.shape)
-        print("Greenlist bias:", greenlist_bias)
+        # # Apply bias
+        # print("Scores shape:", scores.shape)
+        # print("Batched bias shape:", batched_bias_tensor.shape)
+        # print("Greenlist bias:", greenlist_bias)
+        scores_true_size = batched_bias_tensor.shape[1]
+        scores = scores[:,:scores_true_size] + batched_bias_tensor * greenlist_bias
         scores = scores + batched_bias_tensor * greenlist_bias
 
         # # Debug: Inspect scores after applying bias

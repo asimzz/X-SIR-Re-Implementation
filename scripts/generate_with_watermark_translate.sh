@@ -16,22 +16,24 @@ BATCH_SIZE=8
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
-    # "CohereForAI/aya-23-8B"
-    # "meta-llama/Llama-2-7b-hf"
-    # "baichuan-inc/Baichuan2-7B-Base"
-    # "baichuan-inc/Baichuan-7B"
+    "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.1-8B-Instruct"
+    "meta-llama/Llama-2-7b-hf"
+    "baichuan-inc/Baichuan2-7B-Base"
+    "baichuan-inc/Baichuan-7B"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
-    # "aya-23-8B"
-    # "llama2-7b"
-    # "baichuan2-7b"
-    # "baichuan-7b"
+    "aya-23-8B"
+    "llama-3.1-8B"
+    "llama2-7b"
+    "baichuan2-7b"
+    "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
-    "kgw"
+    # "kgw"
     "xsir"
 )
 
@@ -59,7 +61,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         if [ $WATERMARK_METHOD == "kgw" ]; then
             WATERMARK_METHOD_FLAG="--watermark_method kgw"
         elif [ $WATERMARK_METHOD == "sir" ] || [ $WATERMARK_METHOD == "xsir" ]; then
-            WATERMARK_METHOD_FLAG="--watermark_method xsir  --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_$MODEL_ABBR.json --watermark_type window --window_size 1"
+            WATERMARK_METHOD_FLAG="--watermark_method xsir  --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_$MODEL_ABBR.json"
         else
             echo "Unknown watermark method: $WATERMARK_METHOD"
             exit 1
