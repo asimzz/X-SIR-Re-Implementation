@@ -213,7 +213,9 @@ class WatermarkLogitsProcessor(LogitsProcessor):
 
     def _bias_logits(self, scores: torch.Tensor, batched_bias: torch.Tensor, greenlist_bias: float) -> torch.Tensor:
         scores_vocab_size = scores.shape[1]
-        bias_vocab_size = batched_bias.shape[1]
+        batched_bias_np = np.array(batched_bias) 
+        batched_bias_tensor = torch.Tensor(batched_bias_np).to(self.watermark_base.device)
+        bias_vocab_size = batched_bias_tensor.shape[1]
 
         if scores_vocab_size > bias_vocab_size:
             # Expand bias tensor to match scores tensor size
