@@ -212,37 +212,18 @@ class WatermarkLogitsProcessor(LogitsProcessor):
         self.watermark_base = watermark_base
 
     def _bias_logits(self, scores: torch.Tensor, batched_bias: torch.Tensor, greenlist_bias: float) -> torch.Tensor:
-        # # Debug: Inspect scores before applying bias
-        # print("Scores before bias:", scores)
-        # print("Any NaNs in scores:", torch.isnan(scores).any())
-        # print("Any infinities in scores:", torch.isinf(scores).any())
-        # print("Any negative values in scores:", (scores < 0).any())
+        scores_vocab_size = scores.shape[1]
+        bias_vocab_size = batched_bias.shape[1]
 
-        # Handle invalid values
-        if torch.isnan(scores).any() or torch.isinf(scores).any() or (scores < 0).any():
-            # print("Invalid values detected in scores. Replacing with zeros.")
-            scores = torch.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
-            scores = torch.clamp(scores, min=0.0)  # Ensure no negative values
+        if scores_vocab_size > bias_vocab_size:
+            # Expand bias tensor to match scores tensor size
+            bias_padded = torch.zeros((batched_bias.shape[0], scores_vocab_size), device=scores.device)
+            bias_padded[:, :bias_vocab_size] = batched_bias  # Fill with actual bias values
+            batched_bias = bias_padded
 
-        # Convert batched_bias to a tensor
-        batched_bias_np = np.array(batched_bias)
-        batched_bias_tensor = torch.Tensor(batched_bias_np).to(self.watermark_base.device)
-
-        # # Apply bias
-        # print("Scores shape:", scores.shape)
-        # print("Batched bias shape:", batched_bias_tensor.shape)
-        # print("Greenlist bias:", greenlist_bias)
-        scores_true_size = batched_bias_tensor.shape[1]
-        scores = scores[:,:scores_true_size] + batched_bias_tensor * greenlist_bias
-        scores = scores + batched_bias_tensor * greenlist_bias
-
-        # # Debug: Inspect scores after applying bias
-        # print("Scores after bias:", scores)
-        # print("Any NaNs in scores after bias:", torch.isnan(scores).any())
-        # print("Any infinities in scores after bias:", torch.isinf(scores).any())
-        # print("Any negative values in scores after bias:", (scores < 0).any())
-
+        scores = scores + batched_bias * greenlist_bias
         return scores
+
     
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         batched_bias = [None for _ in range(input_ids.shape[0])]
