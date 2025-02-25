@@ -18,22 +18,22 @@ MODEL_NAMES=(
     "bigscience/bloom-7b1"
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.1-8B-Instruct"
-    # "meta-llama/Llama-2-7b-hf"
-    # "baichuan-inc/Baichuan2-7B-Base"
-    # "baichuan-inc/Baichuan-7B"
+    "meta-llama/Llama-2-7b-hf"
+    "baichuan-inc/Baichuan2-7B-Base"
+    "baichuan-inc/Baichuan-7B"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
     "aya-23-8B"
     "llama-3.1-8B"
-    # "llama2-7b"
-    # "baichuan2-7b"
-    # "baichuan-7b"
+    "llama2-7b"
+    "baichuan2-7b"
+    "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
-    "kgw"
+    # "kgw"
     "xsir"
 )
 
@@ -72,7 +72,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             --base_model $MODEL_NAME \
             --fp16 \
             --batch_size $BATCH_SIZE \
-            --input_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
+            --input_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             $WATERMARK_METHOD_FLAG
 
