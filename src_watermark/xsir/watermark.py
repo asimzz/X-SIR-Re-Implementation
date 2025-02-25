@@ -219,11 +219,11 @@ class WatermarkLogitsProcessor(LogitsProcessor):
 
         if scores_vocab_size > bias_vocab_size:
             # Expand bias tensor to match scores tensor size
-            bias_padded = torch.zeros((batched_bias.shape[0], scores_vocab_size), device=scores.device)
-            bias_padded[:, :bias_vocab_size] = batched_bias  # Fill with actual bias values
-            batched_bias = bias_padded
+            bias_padded = torch.zeros((batched_bias_tensor.shape[0], scores_vocab_size), device=scores.device)
+            bias_padded[:, :bias_vocab_size] = batched_bias_tensor  # Fill with actual bias values
+            batched_bias_tensor = bias_padded
 
-        scores = scores + batched_bias * greenlist_bias
+        scores = scores + batched_bias_tensor * greenlist_bias
         return scores
 
     
