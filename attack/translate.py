@@ -54,13 +54,13 @@ def main(args):
                     continue
                 prompt = json.loads(line.strip())["prompt"]
                 response = json.loads(line.strip())["response"]
-                translate_part = json.loads(line.strip())[f"{args.translate_part}"]
+                # translate_part = json.loads(line.strip())[f"{args.translate_part}"]
                 rq = {
                     "model": args.model,
                     "messages": [
                         {
                             "role": "user",
-                            "content": f"Translate the following {Language.make(language=args.src_lang).display_name()} text to {Language.make(language=args.tgt_lang).display_name()}:\n\n{translate_part}",
+                            "content": f"Translate the following {Language.make(language=args.src_lang).display_name()} text to {Language.make(language=args.tgt_lang).display_name()}:\n\n{response}",
                         }
                     ],
                     "temperature": args.temperature,

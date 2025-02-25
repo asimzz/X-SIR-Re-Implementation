@@ -15,7 +15,7 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=8
 
 MODEL_NAMES=(
-    "bigscience/bloom-7b1"
+    # "bigscience/bloom-7b1"
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.1-8B-Instruct"
     "meta-llama/Llama-2-7b-hf"
@@ -24,7 +24,7 @@ MODEL_NAMES=(
 )
 
 MODEL_ABBRS=(
-    "bloom-7b1"
+    # "bloom-7b1"
     "aya-23-8B"
     "llama-3.1-8B"
     "llama2-7b"
@@ -39,11 +39,11 @@ WATERMARK_METHODS=(
 
 TGT_LANGS=(
     "ar"
-    "tr"
-    "de"
-    "fr"
-    "zh"
-    "ja"
+    # "tr"
+    # "de"
+    # "fr"
+    # "zh"
+    # "ja"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -78,12 +78,13 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         # Translate to other languages
         for TGT_LANG in "${TGT_LANGS[@]}"; do
-            python3 $ATTACK_DIR/google_translate.py \
+            python3 $ATTACK_DIR/translate.py \
                 --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
+                --model deepseek/deepseek-r1:free \
                 --src_lang en \
                 --tgt_lang $TGT_LANG \
-                --translation_part response
+                --translate_part response
         done
 
         python3 $WORK_DIR/detect.py \
