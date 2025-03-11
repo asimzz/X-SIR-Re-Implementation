@@ -11,10 +11,14 @@ python3 $SCRIPT_DIR/build_dictionary.py \
         $SCRIPT_DIR/download/en-fr.txt \
         $SCRIPT_DIR/download/en-ja.txt \
         $SCRIPT_DIR/download/en-zh.txt \
+        $SCRIPT_DIR/download/en-ar.txt \
+        $SCRIPT_DIR/download/en-tr.txt \
         $SCRIPT_DIR/download/fr-de.txt \
         $SCRIPT_DIR/download/fr-en.txt \
         $SCRIPT_DIR/download/ja-en.txt \
         $SCRIPT_DIR/download/zh-en.txt \
+        $SCRIPT_DIR/download/ar-en.txt \
+        $SCRIPT_DIR/download/tr-en.txt \
     --output_file $SCRIPT_DIR/dictionary.txt \
     # --add_meta_symbols
 

@@ -15,15 +15,27 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=16
 
 MODEL_NAMES=(
-   "bigscience/bloom-7b1"
-   "CohereForAI/aya-23-8B"
-   "meta-llama/Llama-3.1-8B-Instruct"
+    "bigscience/bloom-7b1"
+    "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.1-8B-Instruct"
+    "meta-llama/Llama-3.2-1B"
+    "meta-llama/Llama-2-7b-hf"
+    "google/mt5-base"
+    "facebook/m2m100_418M"
+    "baichuan-inc/Baichuan2-7B-Base"
+    "baichuan-inc/Baichuan-7B"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
     "aya-23-8B"
     "llama-3.1-8B"
+    "llama-3.2-1B"
+    "llama2-7b"
+    "mt5-base"
+    "m2m100_418M"
+    "baichuan2-7b"
+    "baichuan-7b"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
