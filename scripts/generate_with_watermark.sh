@@ -9,7 +9,7 @@ ATTACK_DIR=$WORK_DIR/attack
 
 # Parameters for SIR/X-SIR
 MAPPING_DIR=$WORK_DIR/data/mapping
-TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert_10K.pth
+TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_seed_456.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 BATCH_SIZE=32
@@ -18,7 +18,7 @@ MODEL_NAMES=(
     "meta-llama/Llama-2-7b-hf"
     "baichuan-inc/Baichuan2-7B-Base"
     "baichuan-inc/Baichuan-7B"
-    "google/gemma-2b"
+    # "google/gemma-2b"
     "mistralai/Mistral-7B-v0.1"
 )
 
@@ -26,7 +26,7 @@ MODEL_ABBRS=(
     "llama2-7b"
     "baichuan2-7b"
     "baichuan-7b"
-    "gemma-2b"
+    # "gemma-2b"
     "mistral-7b"
 )
 
@@ -68,22 +68,22 @@ for i in "${!MODEL_NAMES[@]}"; do
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             $WATERMARK_METHOD_FLAG
 
-        # Translate to other languages
-        for TGT_LANG in "${TGT_LANGS[@]}"; do
-            python3 $ATTACK_DIR/translate.py \
-                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
-                --model gpt-3.5-turbo-1106 \
-                --src_lang en \
-                --tgt_lang $TGT_LANG
-        done
+        # # Translate to other languages
+        # for TGT_LANG in "${TGT_LANGS[@]}"; do
+        #     python3 $ATTACK_DIR/translate.py \
+        #         --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
+        #         --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
+        #         --model gpt-3.5-turbo-1106 \
+        #         --src_lang en \
+        #         --tgt_lang $TGT_LANG
+        # done
 
-        # Paraphrase
-        python3 $ATTACK_DIR/paraphrase.py \
-            --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-para.mod.jsonl \
-            --model gpt-3.5-turbo-1106 \
-            --temperature 0.2
+        # # Paraphrase
+        # python3 $ATTACK_DIR/paraphrase.py \
+        #     --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
+        #     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-para.mod.jsonl \
+        #     --model gpt-3.5-turbo-1106 \
+        #     --temperature 0.2
 
         # Compute watermark strength
         python3 $WORK_DIR/detect.py \
@@ -95,20 +95,20 @@ for i in "${!MODEL_NAMES[@]}"; do
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
             --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.z_score.jsonl \
+            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/surrogate/mc4.en.mod.z_score.jsonl \
             $WATERMARK_METHOD_FLAG
 
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
             --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-para.mod.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-para.mod.z_score.jsonl \
+            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/surrogate/mc4.en-para.mod.z_score.jsonl \
             $WATERMARK_METHOD_FLAG
 
         for TGT_LANG in "${TGT_LANGS[@]}"; do
             python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
                 --detect_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.z_score.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/surrogate/mc4.en-$TGT_LANG.mod.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
         done
     done
