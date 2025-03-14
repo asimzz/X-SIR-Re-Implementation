@@ -16,18 +16,16 @@ BATCH_SIZE=32
 
 MODEL_NAMES=(
     "meta-llama/Llama-2-7b-hf"
-    "google/gemma-2b"
-    "mistralai/Mistral-7B-v0.1"
     "baichuan-inc/Baichuan2-7B-Base"
     "baichuan-inc/Baichuan-7B"
+    "mistralai/Mistral-7B-v0.1"
 )
 
 MODEL_ABBRS=(
     "llama2-7b"
-    "gemma-2b"
-    "mistral-7b"
     "baichuan2-7b"
     "baichuan-7b"
+    "mistral-7b"
 )
 
 WATERMARK_METHODS=(
@@ -59,19 +57,19 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         echo "$MODEL_NAME $WATERMARK_METHOD No-attack"
         python3 $WORK_DIR/eval_detection.py \
-            --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.z_score.jsonl
+            --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.surrogate.z_score.jsonl \
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.surrogate.z_score.jsonl
 
         echo "$MODEL_NAME $WATERMARK_METHOD Paraphrase"
         python3 $WORK_DIR/eval_detection.py \
-            --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-para.mod.z_score.jsonl
+            --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.surrogate.z_score.jsonl \
+            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-para.mod.surrogate.z_score.jsonl
 
         for TGT_LANG in "${TGT_LANGS[@]}"; do
             echo "$MODEL_NAME $WATERMARK_METHOD Translation ($TGT_LANG)"
             python3 $WORK_DIR/eval_detection.py \
-                --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-                --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.z_score.jsonl
+                --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.surrogate.z_score.jsonl \
+                --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.surrogate.z_score.jsonl
         done
 
         echo "======================================="
