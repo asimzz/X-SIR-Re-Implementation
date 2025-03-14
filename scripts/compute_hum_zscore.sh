@@ -59,9 +59,8 @@ for i in "${!MODEL_NAMES[@]}"; do
         python3 $WORK_DIR/detect.py \
             --base_model $MODEL_NAME \
             --detect_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
-            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
+            --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.surrogate.z_score.jsonl \
             $WATERMARK_METHOD_FLAG
 
-       
     done
 done
