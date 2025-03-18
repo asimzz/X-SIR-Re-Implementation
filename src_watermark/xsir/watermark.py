@@ -114,7 +114,7 @@ class WatermarkContext(WatermarkBase):
 
         word_2d = [input_tokens[x: x + self.chunk_length] for x in range(0, len(input_tokens), self.chunk_length)]
 
-        if len(word_2d[-1]) == self.chunk_length:
+        if len(word_2d) > 0 and len(word_2d[-1]) == self.chunk_length:
             return input_sentence
         else:
             return self.target_tokenizer.convert_tokens_to_string([tok for group in word_2d[:-1] for tok in group])
