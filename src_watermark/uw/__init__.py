@@ -12,6 +12,5 @@ from .contextcode import All_ContextCodeExtractor, PrevN_ContextCodeExtractor
 from .monkeypatch import patch_model
 from .detect import Detector
 
-from .test import *
 
 #  from .gamma import Gamma_Test
