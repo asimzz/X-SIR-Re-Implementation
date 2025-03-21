@@ -9,43 +9,31 @@ ATTACK_DIR=$WORK_DIR/attack
 
 # Parameters for SIR/X-SIR
 MAPPING_DIR=$WORK_DIR/data/mapping
-TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert_10K.pth
+TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
-BATCH_SIZE=8
+BATCH_SIZE=32
 
 MODEL_NAMES=(
-    # "bigscience/bloom-7b1"
-    # "CohereForAI/aya-23-8B"
-    # "meta-llama/Llama-3.1-8B-Instruct"
-    # "meta-llama/Llama-3.2-1B"
-    "meta-llama/Llama-2-7b-hf"
-    # "google/mt5-base"
-    # "facebook/m2m100_418M"
     "baichuan-inc/Baichuan2-7B-Base"
     "baichuan-inc/Baichuan-7B"
+    "meta-llama/Llama-2-7b-hf"
 )
 
 MODEL_ABBRS=(
-    # "bloom-7b1"
-    # "aya-23-8B"
-    # "llama-3.1-8B"
-    # "llama-3.2-1B"
-    "llama2-7b"
-    # "mt5-base"
-    # "m2m100_418M"
     "baichuan2-7b"
     "baichuan-7b"
+    "llama2-7b"
 )
 
 WATERMARK_METHODS=(
-    # "kgw"
+    "kgw"
     "xsir"
 )
 
 TGT_LANGS=(
-    "ar"
-    "tr"
+    "it"
+    "es"
     "de"
     "fr"
     "zh"
