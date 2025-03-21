@@ -39,7 +39,7 @@ def f1_at_fpr(y_true, y_scores, fpr_target):
 
 
 def main(args):
-    hm_list = read_jsonl(args.hm_zscore)[:100]
+    hm_list = read_jsonl(args.hm_zscore)
     wm_list = read_jsonl(args.wm_zscore)
 
     if len(hm_list) != len(wm_list):

@@ -16,31 +16,30 @@ BATCH_SIZE=32
 
 MODEL_NAMES=(
     "meta-llama/Llama-2-7b-hf"
-    # "google/gemma-2b"
+    "baichuan-inc/Baichuan2-7B-Base"
+    "baichuan-inc/Baichuan-7B"
     # "mistralai/Mistral-7B-v0.1"
-    # "baichuan-inc/Baichuan2-7B-Base"
-    # "baichuan-inc/Baichuan-7B"
 )
 
 MODEL_ABBRS=(
     "llama2-7b"
-    # "gemma-2b"
+    "baichuan2-7b"
+    "baichuan-7b"
     # "mistral-7b"
-    # "baichuan2-7b"
-    # "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
-    # "kgw"
-    # "sir"
+    "kgw"
     "xsir"
 )
 
 TGT_LANGS=(
+    "it"
+    "es"
     "de"
     "fr"
-    # "zh"
-    # "ja"
+    "zh"
+    "ja"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then

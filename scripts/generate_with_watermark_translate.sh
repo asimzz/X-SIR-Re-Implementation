@@ -66,7 +66,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             --base_model $MODEL_NAME \
             --fp16 \
             --batch_size $BATCH_SIZE \
-            --input_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
+            --input_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             $WATERMARK_METHOD_FLAG
 
