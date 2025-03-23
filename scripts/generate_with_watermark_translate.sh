@@ -15,14 +15,14 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=8
 
 MODEL_NAMES=(
-    "baichuan-inc/Baichuan2-7B-Base"
     "baichuan-inc/Baichuan-7B"
+    "baichuan-inc/Baichuan2-7B-Base"
     "meta-llama/Llama-2-7b-hf"
 )
 
 MODEL_ABBRS=(
-    "baichuan2-7b"
     "baichuan-7b"
+    "baichuan2-7b"
     "llama2-7b"
 )
 
