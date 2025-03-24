@@ -65,6 +65,5 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --detect_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
-        done
     done
 done
