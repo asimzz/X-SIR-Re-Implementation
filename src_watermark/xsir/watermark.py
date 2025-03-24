@@ -19,11 +19,9 @@ class WatermarkBase:
         gamma: float,
         delta: float,
         target_tokenizer,
-        vocab_size=None
     ):
         self.target_tokenizer =  target_tokenizer
-        self.vocab_size = self.target_tokenizer.vocab_size
-        self.vocab_size = vocab_size if vocab_size is not None else max(len(self.target_tokenizer.get_vocab()), self.target_tokenizer.vocab_size)
+        self.vocab_size = len(self.target_tokenizer)
         self.gamma = gamma
         self.delta = delta
 
@@ -62,9 +60,8 @@ class WatermarkContext(WatermarkBase):
         embedding_model: str = "",
         mapping_file: str = "",
         transform_model_path: str = "transform_model.pth",
-        vocab_size=None
     ):
-        super().__init__(gamma, delta, target_tokenizer, vocab_size)
+        super().__init__(gamma, delta, target_tokenizer)
         assert embedding_model in ["perceptiveshawty/compositional-bert-large-uncased", "paraphrase-multilingual-mpnet-base-v2"], f"embedding_model {embedding_model} not supported"
 
         self.device = device
@@ -110,17 +107,17 @@ class WatermarkContext(WatermarkBase):
 
     def get_context_sentence(self, input_ids: torch.LongTensor):
         input_sentence = self.target_tokenizer.decode(input_ids, skip_special_tokens=True)
-        input_tokens = self.target_tokenizer.tokenize(input_sentence)
+        input_tokens = self.target_tokenizer.tokenize(input_sentence, add_special_tokens=False)
 
         word_2d = [input_tokens[x: x + self.chunk_length] for x in range(0, len(input_tokens), self.chunk_length)]
 
-        if len(word_2d) > 0 and len(word_2d[-1]) == self.chunk_length:
+        if len(word_2d[-1]) == self.chunk_length:
             return input_sentence
         else:
             return self.target_tokenizer.convert_tokens_to_string([tok for group in word_2d[:-1] for tok in group])
 
     def get_text_split(self, sentence):
-        words = self.target_tokenizer.tokenize(sentence)
+        words = self.target_tokenizer.tokenize(sentence, add_special_tokens=False)
         return [words[x: x + self.chunk_length] for x in range(0, len(words), self.chunk_length)]
 
     def scale_vector(self, v):
@@ -167,9 +164,8 @@ class WatermarkWindow(WatermarkBase):
         gamma: float = 0.5,
         delta: float = 2.0,
         hash_key: int = 15485863,
-        vocab_size=None
     ):
-        super().__init__(gamma, delta, target_tokenizer, vocab_size)
+        super().__init__(gamma, delta, target_tokenizer)
         self.device = device
         self.rng = torch.Generator(device=device)
         self.hash_key = hash_key
@@ -212,20 +208,10 @@ class WatermarkLogitsProcessor(LogitsProcessor):
         self.watermark_base = watermark_base
 
     def _bias_logits(self, scores: torch.Tensor, batched_bias: torch.Tensor, greenlist_bias: float) -> torch.Tensor:
-        scores_vocab_size = scores.shape[1]
         batched_bias_np = np.array(batched_bias) 
         batched_bias_tensor = torch.Tensor(batched_bias_np).to(self.watermark_base.device)
-        bias_vocab_size = batched_bias_tensor.shape[1]
-
-        if scores_vocab_size > bias_vocab_size:
-            # Expand bias tensor to match scores tensor size
-            bias_padded = torch.zeros((batched_bias_tensor.shape[0], scores_vocab_size), device=scores.device)
-            bias_padded[:, :bias_vocab_size] = batched_bias_tensor  # Fill with actual bias values
-            batched_bias_tensor = bias_padded
-
         scores = scores + batched_bias_tensor * greenlist_bias
         return scores
-
     
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         batched_bias = [None for _ in range(input_ids.shape[0])]
