@@ -9,7 +9,7 @@ import tqdm
 import torch
 import argparse
 from transformers.utils import is_flash_attn_2_available
-from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer, LogitsProcessorList, GenerationConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, LogitsProcessorList, GenerationConfig
 from src_watermark.xsir.watermark import (
     WatermarkWindow as XSIRWindow,
     WatermarkContext as XSIRContext,
@@ -59,11 +59,11 @@ def main(args):
     try:
         model = AutoModelForCausalLM.from_pretrained(
             args.base_model,
-            device_map=None,
+            device_map="auto",
             attn_implementation="flash_attention_2" if is_flash_attn_2_available() and (args.fp16 or args.bf16) else "eager",
             torch_dtype=torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32,
             trust_remote_code=True
-            ).to(device)
+        )
     except ValueError as e:
         if "does not support Flash Attention 2.0" in str(e):
             model = AutoModelForCausalLM.from_pretrained(
@@ -92,8 +92,7 @@ def main(args):
             watermark_model = XSIRWindow(
                 device,
                 args.window_size,
-                tokenizer,
-                vocab_size=model.config.vocab_size,
+                tokenizer
             )
             logits_processor = XSIRLogitsProcessor(watermark_model)
         elif args.watermark_type == "context":
@@ -104,8 +103,7 @@ def main(args):
                 mapping_file=args.mapping_file,
                 delta=args.delta,
                 transform_model_path=args.transform_model,
-                embedding_model=args.embedding_model,
-                vocab_size=model.config.vocab_size,
+                embedding_model=args.embedding_model
             )
             logits_processor = XSIRLogitsProcessor(watermark_model)
         else:
