@@ -15,17 +15,11 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=16
 
 MODEL_NAMES=(
-    "meta-llama/Llama-2-7b-hf"
-    "google/mt5-base"
-    "baichuan-inc/Baichuan2-7B-Base"
-    "baichuan-inc/Baichuan-7B"
+    "utter-project/EuroLLM-9B-Instruct"
 )
 
 MODEL_ABBRS=(
-    "llama2-7b"
-    "mt5-base"
-    "baichuan2-7b"
-    "baichuan-7b"
+    "EuroLLM-9B-Instruct"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
