@@ -68,11 +68,11 @@ def main():
     for c in valid_clusters:
         all_valid_tokens.extend(c)
     assert len(all_valid_tokens) == len(vocab), f"len(all_valid_tokens)={len(all_valid_tokens)} len(vocab)={len(vocab)}"
-    assert len(all_valid_tokens) == tokenizer.vocab_size, f"len(all_valid_tokens)={len(all_valid_tokens)} tokenizer.vocab_size={tokenizer.vocab_size}"
+    # assert len(all_valid_tokens) == tokenizer.vocab_size, f"len(all_valid_tokens)={len(all_valid_tokens)} tokenizer.vocab_size={tokenizer.vocab_size}"
 
     # Generate mappings
     clustre_mapping = [random.randint(0, 300 - 1) for _ in range(len(valid_clusters))]
-    mapping = [None for _ in range(tokenizer.vocab_size)]
+    mapping = [None for _ in range(len(vocab))]
     for i, c in enumerate(valid_clusters):
         for token in c:
             token_id = tokenizer.convert_tokens_to_ids(token)
@@ -95,7 +95,7 @@ def main():
         json.dump(valid_clusters, f, indent=4, ensure_ascii=False)
 
     # Print statistics
-    print(f"Vocabulary size: {tokenizer.vocab_size}")
+    print(f"Vocabulary size: {len(vocab)}")
     print(f"Number of clusters: {len(valid_clusters)}")
     print(f"Number of clusters with size >= 2: {len([cc for cc in valid_clusters if len(cc) >= 2])}")
     print(f"Number of tokens in the cc with size >= 2: {sum([len(cc) for cc in valid_clusters if len(cc) >= 2])}")
