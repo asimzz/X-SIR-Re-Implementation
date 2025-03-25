@@ -92,7 +92,8 @@ def main(args):
             watermark_model = XSIRWindow(
                 device,
                 args.window_size,
-                tokenizer
+                tokenizer,
+                vocab_size=model.config.vocab_size,
             )
             logits_processor = XSIRLogitsProcessor(watermark_model)
         elif args.watermark_type == "context":
@@ -103,7 +104,8 @@ def main(args):
                 mapping_file=args.mapping_file,
                 delta=args.delta,
                 transform_model_path=args.transform_model,
-                embedding_model=args.embedding_model
+                embedding_model=args.embedding_model,
+                vocab_size=model.config.vocab_size,
             )
             logits_processor = XSIRLogitsProcessor(watermark_model)
         else:
