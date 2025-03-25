@@ -16,13 +16,15 @@ BATCH_SIZE=8
 
 MODEL_NAMES=(
     "facebook/xglm-564M"
-    "mistralai/Mistral-Small-24B-Instruct-2501"
+    "baichuan-inc/Baichuan2-7B-Base"
+    # "mistralai/Mistral-Small-24B-Instruct-2501"
     "utter-project/EuroLLM-9B-Instruct"
 )
 
 MODEL_ABBRS=(
     "xglm-564M"
-    "Mistral-Small-24B-Instruct-2501"
+    "baichuan2-7b"
+    # "Mistral-Small-24B-Instruct-2501"
     "EuroLLM-9B-Instruct"
 )
 

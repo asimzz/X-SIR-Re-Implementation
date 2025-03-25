@@ -104,8 +104,8 @@ if __name__ == "__main__":
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
 
     # X-SIR
-    parser.add_argument('--watermark_type', type=str, default="window")
-    parser.add_argument('--window_size', type=int, default=10)
+    parser.add_argument('--watermark_type', type=str, default="context")
+    parser.add_argument('--window_size', type=int, default=5)
     parser.add_argument('--chunk_size', type=int, default=10)
     parser.add_argument('--mapping_file', type=str, default="mapping.json")
     parser.add_argument('--transform_model', type=str, default="model/transform_model_x-sbert_test.pth")
