@@ -13,15 +13,15 @@ TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert_10K.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    "mistralai/Mistral-Small-24B-Instruct-2501"
     "facebook/xglm-564M"
+    "mistralai/Mistral-Small-24B-Instruct-2501"
     "utter-project/EuroLLM-9B-Instruct"
 
 )
 
 MODEL_ABBRS=(
-    "Mistral-Small-24B-Instruct-2501"
     "xglm-564M"
+    "Mistral-Small-24B-Instruct-2501"
     "EuroLLM-9B-Instruct"
 )
 
