@@ -15,20 +15,20 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=8
 
 MODEL_NAMES=(
-    # "bigscience/bloom-7b1"
-    # # "CohereForAI/aya-23-8B"
-    # "meta-llama/Llama-2-7b-hf"
+    "bigscience/bloom-7b1"
+    "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.2-1B"
+    "facebook/xglm-564M"
     "baichuan-inc/Baichuan2-7B-Base"
-    "baichuan-inc/Baichuan-7B"
 
 )
 
 MODEL_ABBRS=(
-    # "bloom-7b1"
-    # # "aya-23-8B"
-    # "llama2-7b"
+    "bloom-7b1"
+    "aya-23-8B"
+    "llama-3.2-1B"
+    "xglm-564M"
     "baichuan2-7b"
-    "baichuan-7b"
 )
 
 WATERMARK_METHODS=(
@@ -38,7 +38,7 @@ WATERMARK_METHODS=(
 
 ORG_LANG="en"
 PVT_LANGS=(
-    # "ar"
+    "it"
     # "tr"
     # "de"
     # "fr"
@@ -68,7 +68,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         fi
 
         for PVT_LANG in "${PVT_LANGS[@]}"; do
-            echo "Translating prompts $ORG_LANG to $PVT_LANG"
+            echo "Translating prompts from $ORG_LANG to $PVT_LANG"
             python3 $ATTACK_DIR/google_translate.py \
                     --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl \
