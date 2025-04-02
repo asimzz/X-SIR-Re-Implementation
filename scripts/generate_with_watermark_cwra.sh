@@ -9,26 +9,26 @@ ATTACK_DIR=$WORK_DIR/attack
 
 # Parameters for SIR/X-SIR
 MAPPING_DIR=$WORK_DIR/data/mapping
-TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert_10K.pth
+TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 BATCH_SIZE=8
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
-    "CohereForAI/aya-23-8B"
-    "meta-llama/Llama-3.2-1B"
     "facebook/xglm-564M"
-    "baichuan-inc/Baichuan2-7B-Base"
+    # "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-3.2-1B"
+    # "baichuan-inc/Baichuan2-7B-Base"
 
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
-    "aya-23-8B"
-    "llama-3.2-1B"
     "xglm-564M"
-    "baichuan2-7b"
+    # "aya-23-8B"
+    # "llama-3.2-1B"
+    # "baichuan2-7b"
 )
 
 WATERMARK_METHODS=(
@@ -39,11 +39,8 @@ WATERMARK_METHODS=(
 ORG_LANG="en"
 PVT_LANGS=(
     "it"
-    # "tr"
-    # "de"
-    # "fr"
-    "zh"
-    # "ja"
+    "es"
+    "pt"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
