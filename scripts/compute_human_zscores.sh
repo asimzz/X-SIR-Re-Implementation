@@ -14,23 +14,23 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
-    "CohereForAI/aya-23-8B"
-    "meta-llama/Llama-3.2-1B"
+    # "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-3.2-1B"
     "facebook/xglm-564M"
-    "baichuan-inc/Baichuan2-7B-Base"
+    # "baichuan-inc/Baichuan2-7B-Base"
 
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
-    "aya-23-8B"
-    "llama-3.2-1B"
+    # "aya-23-8B"
+    # "llama-3.2-1B"
     "xglm-564M"
-    "baichuan2-7b"
+    # "baichuan2-7b"
 )
 
 WATERMARK_METHODS=(
-    "kgw"
+    # "kgw"
     "xsir"
 )
 
@@ -58,7 +58,7 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
-                --detect_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
+                --detect_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
     done
