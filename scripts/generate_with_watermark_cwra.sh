@@ -17,18 +17,18 @@ BATCH_SIZE=8
 MODEL_NAMES=(
     "facebook/xglm-564M"
     "bigscience/bloom-7b1"
-    # "CohereForAI/aya-23-8B"
-    # "meta-llama/Llama-3.2-1B"
-    # "baichuan-inc/Baichuan2-7B-Base"
+    "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.2-1B"
+    "baichuan-inc/Baichuan2-7B-Base"
 
 )
 
 MODEL_ABBRS=(
     "xglm-564M"
     "bloom-7b1"
-    # "aya-23-8B"
-    # "llama-3.2-1B"
-    # "baichuan2-7b"
+    "aya-23-8B"
+    "llama-3.2-1B"
+    "baichuan2-7b"
 )
 
 WATERMARK_METHODS=(
@@ -67,7 +67,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         for PVT_LANG in "${PVT_LANGS[@]}"; do
             echo "Translating prompts from $ORG_LANG to $PVT_LANG"
             python3 $ATTACK_DIR/google_translate.py \
-                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl \
+                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
