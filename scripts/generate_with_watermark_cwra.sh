@@ -15,18 +15,18 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 BATCH_SIZE=8
 
 MODEL_NAMES=(
-    "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
     "baichuan-inc/Baichuan2-7B-Base"
+    "CohereForAI/aya-23-8B"
     "facebook/xglm-564M"
     "bigscience/bloom-7b1"
 
 )
 
 MODEL_ABBRS=(
-    "aya-23-8B"
     "llama-3.2-1B"
     "baichuan2-7b"
+    "aya-23-8B"
     "xglm-564M"
     "bloom-7b1"
 )
