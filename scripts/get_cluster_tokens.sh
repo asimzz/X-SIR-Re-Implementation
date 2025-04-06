@@ -5,28 +5,35 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR=$SCRIPT_DIR/..
 DATA_DIR=$WORK_DIR/data
 GEN_DIR=$WORK_DIR/gen
-ATTACK_DIR=$WORK_DIR/attack
-
-# Parameters for SIR/X-SIR
 MAPPING_DIR=$WORK_DIR/data/mapping
-TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
-EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
+
+BATCH_SIZE=8
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
+    "facebook/xglm-564M"
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
-    "facebook/xglm-564M"
     "baichuan-inc/Baichuan2-7B-Base"
+
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
+    "xglm-564M"
     "aya-23-8B"
     "llama-3.2-1B"
-    "xglm-564M"
     "baichuan2-7b"
 )
+
+ORG_LANG="en"
+PVT_LANGS=(
+    "it"
+    "es"
+    "pt"
+)
+
+WATERMARK_METHOD="xsir"
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -37,10 +44,12 @@ for i in "${!MODEL_NAMES[@]}"; do
     MODEL_NAME=${MODEL_NAMES[$i]}
     MODEL_ABBR=${MODEL_ABBRS[$i]}
 
-    echo "Generating semantic mappings for $MODEL_NAME"
-    
-    python3 $WORK_DIR/src_watermark/xsir/generate_semantic_mappings.py \
-        --model $MODEL_NAME \
-        --dictionary $DATA_DIR/dictionary/dictionary.txt \
-        --output_file $DATA_DIR/mapping/xsir/300_mapping_$MODEL_ABBR.json
+
+    for PVT_LANG in "${PVT_LANGS[@]}"; do
+    echo "Computing cluster tokens for $MODEL_NAME using $WATERMARK_METHOD for $PVT_LANG"
+        python3 $WORK_DIR/src_watermark/xsir/cluster_tokens.py \
+            --base_model $MODEL_NAME \
+            --clusters_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_${MODEL_ABBR}_clusters.json \
+            --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl
+    done
 done

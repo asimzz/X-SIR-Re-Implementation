@@ -6,36 +6,34 @@ WORK_DIR=$SCRIPT_DIR/..
 FIGURE_DIR=$WORK_DIR/data/figures
 GEN_DIR=$WORK_DIR/gen
 ATTACK_DIR=$WORK_DIR/attack
+MAPPING_DIR=$WORK_DIR/data/mapping
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
+    "facebook/xglm-564M"
     "CohereForAI/aya-23-8B"
-    # # "meta-llama/Llama-2-7b-hf"
-    # "baichuan-inc/Baichuan2-7B-Base"
-    # "baichuan-inc/Baichuan-7B"
+    "meta-llama/Llama-3.2-1B"
+    "baichuan-inc/Baichuan2-7B-Base"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
+    "xglm-564M"
     "aya-23-8B"
-    # # "llama2-7b"
-    # "baichuan2-7b"
-    # "baichuan-7b"
+    "llama-3.2-1B"
+    "baichuan2-7b"
 )
 
 WATERMARK_METHODS=(
-    "kgw"
-    # "xsir"
+    # "kgw"
+    "xsir"
 )
 
 ORG_LANG="en"
 PVT_LANGS=(
-    "ar"
-    "tr"
-    "de"
-    "fr"
-    # "zh"
-    # "ja"
+    "it"
+    "es"
+    "pt"
 )
 
 
@@ -76,6 +74,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --roc_curve $FIGURE_DIR/$MODEL_ABBR/$WATERMARK_METHOD/cwra_attack_back-$PVT_LANG.txt
 
             echo "======================================="
+        done
+        for PVT_LANG in "${PVT_LANGS[@]}"; do
+        echo "Computing cluster tokens for $MODEL_NAME using $WATERMARK_METHOD for $PVT_LANG"
+            python3 $WORK_DIR/src_watermark/xsir/cluster_tokens.py \
+                --base_model $MODEL_NAME \
+                --clusters_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_${MODEL_ABBR}_clusters.json \
+                --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl
         done
     done
 done

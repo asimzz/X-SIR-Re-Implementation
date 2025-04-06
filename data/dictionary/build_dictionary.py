@@ -1,51 +1,7 @@
 # Build a unified dictionary from external dictionaries
-
-import random
 import argparse
 from tqdm import tqdm
-from opencc import OpenCC
-from itertools import permutations
-
-# set seed
-random.seed(0)
-
-S2T = OpenCC('s2t')
-T2S = OpenCC('t2s')
-
-def transform(token, append_meta_symbols):
-    def capitalize(s):
-        return s.capitalize()
-
-    def s2t(s):
-        return S2T.convert(s)
-
-    def t2s(s):
-        return T2S.convert(s)
-
-    def add_meta_symbols(s):
-        # TODO: currently we only consider the sentencepiece meta symbol (U+2581)
-        return f"▁{s}"
-
-    # all permutations of the transformations
-    transformations = []
-
-    if append_meta_symbols:
-        for r in range(1, 5):
-            transformations.extend(permutations([capitalize, s2t, t2s, add_meta_symbols], r))
-    else:
-        for r in range(1, 4):
-            transformations.extend(permutations([capitalize, s2t, t2s], r))
-
-    res = [token]
-    for t in transformations:
-        new_token = token
-        for f in t:
-            new_token = f(new_token)
-        res.append(new_token)
-
-    # deduplicate
-    res = list(set(res))
-    return res
+from utils import transform
 
 def augment_dictionary(raw_entries, append_meta_symbols):
     augmented_entries = []
@@ -60,6 +16,7 @@ def augment_dictionary(raw_entries, append_meta_symbols):
     # deduplicate
     augmented_entries = list(set(augmented_entries))
     return augmented_entries
+
 
 def main(args):
     # Read data
@@ -79,11 +36,20 @@ def main(args):
         for src, tgt in augmented_entries:
             f.write(f"{src}\t{tgt}\n")
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build a unified dictionary from external dictionaries")
-    parser.add_argument("--dicts", type=str, nargs="+", help="multiple external dictionaries")
+    parser = argparse.ArgumentParser(
+        description="Build a unified dictionary from external dictionaries"
+    )
+    parser.add_argument(
+        "--dicts", type=str, nargs="+", help="multiple external dictionaries"
+    )
     parser.add_argument("--output_file", type=str, help="output dictionary")
-    parser.add_argument("--append_meta_symbols", action="store_true", help="append meta symbols to the tokens")
+    parser.add_argument(
+        "--append_meta_symbols",
+        action="store_true",
+        help="append meta symbols to the tokens",
+    )
 
     args = parser.parse_args()
     main(args)

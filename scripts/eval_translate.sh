@@ -16,28 +16,32 @@ BATCH_SIZE=32
 
 MODEL_NAMES=(
     "bigscience/bloom-7b1"
-    # "CohereForAI/aya-23-8B"
-    # "meta-llama/Llama-2-7b-hf"
+    "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.2-1B"
+    "facebook/xglm-564M"
+    "baichuan-inc/Baichuan2-7B-Base"
 )
 
 MODEL_ABBRS=(
     "bloom-7b1"
-    # "llama2-7b"
-    # "aya-23-8B"
+    "aya-23-8B"
+    "llama-3.2-1B"
+    "xglm-564M"
+    "baichuan2-7b"
 )
 
 WATERMARK_METHODS=(
-    "kgw"
-    # "xsir"
+    # "kgw"
+    "xsir"
 )
 
 TGT_LANGS=(
-   "ar"
-   "tr"
-   "de"
-   "fr"
-   "zh"
-   "ja"
+    "it"
+    "es"
+    "de"
+    "fr"
+    "zh"
+    "ja"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
