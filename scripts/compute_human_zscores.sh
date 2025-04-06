@@ -13,20 +13,20 @@ TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    "bigscience/bloom-7b1"
+    "ALLaM-AI/ALLaM-7B-Instruct-preview"
+    "silma-ai/SILMA-9B-Instruct-v1.0"
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
     "facebook/xglm-564M"
-    "baichuan-inc/Baichuan2-7B-Base"
 
 )
 
 MODEL_ABBRS=(
-    "bloom-7b1"
+    "allama-7B"
+    "silma-9B"
     "aya-23-8B"
     "llama-3.2-1B"
     "xglm-564M"
-    "baichuan2-7b"
 )
 
 WATERMARK_METHODS=(
