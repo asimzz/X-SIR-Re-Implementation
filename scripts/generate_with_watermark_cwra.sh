@@ -12,7 +12,7 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
-BATCH_SIZE=8
+BATCH_SIZE=32
 
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
@@ -32,7 +32,7 @@ MODEL_ABBRS=(
 )
 
 WATERMARK_METHODS=(
-    # "kgw"
+    "kgw"
     "xsir"
 )
 
@@ -66,11 +66,12 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         for PVT_LANG in "${PVT_LANGS[@]}"; do
             echo "Translating prompts from $ORG_LANG to $PVT_LANG"
-            python3 $ATTACK_DIR/google_translate.py \
-                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
+            python3 $ATTACK_DIR/translate.py \
+                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
+                    --model llama-4-scout-17b-16e-instruct \
                     --translation_part prompt
 
             echo "Generating with watermark using $WATERMARK_METHOD for $MODEL_NAME from $ORG_LANG to $PVT_LANG"
@@ -90,11 +91,12 @@ for i in "${!MODEL_NAMES[@]}"; do
                 $WATERMARK_METHOD_FLAG
 
             # Apply CWRA attack
-            python3 $ATTACK_DIR/google_translate.py \
+            python3 $ATTACK_DIR/translate.py \
                     --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl \
                     --src_lang $PVT_LANG \
                     --tgt_lang $ORG_LANG \
+                    --model llama-4-scout-17b-16e-instruct \
                     --translation_part response
 
             python3 $WORK_DIR/detect.py \
@@ -107,11 +109,12 @@ for i in "${!MODEL_NAMES[@]}"; do
                 continue
             fi
             # Back translation
-            python3 $ATTACK_DIR/google_translate.py \
+            python3 $ATTACK_DIR/translate.py \
                     --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
+                    --model llama-4-scout-17b-16e-instruct \
                     --translation_part response
 
 

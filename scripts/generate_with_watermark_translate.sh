@@ -12,31 +12,33 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
-BATCH_SIZE=8
+BATCH_SIZE=32
 
 MODEL_NAMES=(
-    "bigscience/bloom-7b1"
-    "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
-    "facebook/xglm-564M"
     "baichuan-inc/Baichuan2-7B-Base"
+    "CohereForAI/aya-23-8B"
+    "facebook/xglm-564M"
+    "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
-    "bloom-7b1"
-    "aya-23-8B"
     "llama-3.2-1B"
-    "xglm-564M"
     "baichuan2-7b"
+    "aya-23-8B"
+    "xglm-564M"
+    "bloom-7b1"
 )
 
 WATERMARK_METHODS=(
+    "kgw"
     "xsir"
 )
 
 TGT_LANGS=(
     "it"
     "es"
+    "pt"
     "de"
     "fr"
     "zh"
@@ -69,7 +71,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             --base_model $MODEL_NAME \
             --fp16 \
             --batch_size $BATCH_SIZE \
-            --input_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
+            --input_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             $WATERMARK_METHOD_FLAG
 
@@ -82,11 +84,12 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         # Translate to other languages (Translation Attack)
         for TGT_LANG in "${TGT_LANGS[@]}"; do
-            python3 $ATTACK_DIR/google_translate.py \
+            python3 $ATTACK_DIR/translate.py \
                 --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
                 --src_lang en \
                 --tgt_lang $TGT_LANG \
+                --model llama-4-scout-17b-16e-instruct \
                 --translation_part response
         done
 
