@@ -84,12 +84,11 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         # Translate to other languages (Translation Attack)
         for TGT_LANG in "${TGT_LANGS[@]}"; do
-            python3 $ATTACK_DIR/translate.py \
+            python3 $ATTACK_DIR/google_translate.py \
                 --input_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.jsonl \
                 --src_lang en \
                 --tgt_lang $TGT_LANG \
-                --model llama-4-scout-17b-16e-instruct \
                 --translation_part response
         done
 

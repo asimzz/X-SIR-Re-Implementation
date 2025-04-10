@@ -13,20 +13,20 @@ TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    "bigscience/bloom-7b1"
-    # "CohereForAI/aya-23-8B"
-    # "meta-llama/Llama-3.2-1B"
+    "meta-llama/Llama-3.2-1B"
+    "baichuan-inc/Baichuan2-7B-Base"
+    "CohereForAI/aya-23-8B"
     "facebook/xglm-564M"
-    # "baichuan-inc/Baichuan2-7B-Base"
+    "bigscience/bloom-7b1"
 
 )
 
 MODEL_ABBRS=(
-    "bloom-7b1"
-    "aya-23-8B"
     "llama-3.2-1B"
-    "xglm-564M"
     "baichuan2-7b"
+    "aya-23-8B"
+    "xglm-564M"
+    "bloom-7b1"
 )
 
 WATERMARK_METHODS=(
@@ -58,7 +58,7 @@ for i in "${!MODEL_NAMES[@]}"; do
 
         python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
-                --detect_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
+                --detect_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
                 --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
     done
