@@ -33,6 +33,7 @@ MODEL_ABBRS=(
 
 WATERMARK_METHODS=(
     "kgw"
+    "kgw"
     "xsir"
 )
 
@@ -72,6 +73,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
                     --model llama-4-scout-17b-16e-instruct \
+                    --model llama-4-scout-17b-16e-instruct \
                     --translation_part prompt
 
             echo "Generating with watermark using $WATERMARK_METHOD for $MODEL_NAME from $ORG_LANG to $PVT_LANG"
@@ -92,10 +94,12 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             # Apply CWRA attack
             python3 $ATTACK_DIR/translate.py \
+            python3 $ATTACK_DIR/translate.py \
                     --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl \
                     --src_lang $PVT_LANG \
                     --tgt_lang $ORG_LANG \
+                    --model llama-4-scout-17b-16e-instruct \
                     --model llama-4-scout-17b-16e-instruct \
                     --translation_part response
 
@@ -110,10 +114,12 @@ for i in "${!MODEL_NAMES[@]}"; do
             fi
             # Back translation
             python3 $ATTACK_DIR/translate.py \
+            python3 $ATTACK_DIR/translate.py \
                     --input_file  $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
+                    --model llama-4-scout-17b-16e-instruct \
                     --model llama-4-scout-17b-16e-instruct \
                     --translation_part response
 
