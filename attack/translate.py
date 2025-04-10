@@ -4,8 +4,8 @@ import asyncio
 import requests
 import argparse
 from langcodes import Language
-from call_openrouter import (
-    CallOpenRouter,
+from call_openai import (
+    CallOpenAI,
 )  # Updated to use OpenRouter-specific API call handling
 from dotenv import load_dotenv
 
@@ -120,9 +120,9 @@ def main(args):
 
         return num_requests == num_done
 
-    openrouter_caller = CallOpenRouter(
-        request_url="https://openrouter.ai/api/v1/chat/completions",
-        api_key=os.getenv("OPENROUTER_API_KEY"),
+    openrouter_caller = CallOpenAI(
+        request_url="https://api.cerebras.ai/v1",
+        api_key=os.getenv("OPENAI_API_KEY"),
         input_file_path=args.input_file,
         output_file_path=args.output_file,
         max_attempts=5,
