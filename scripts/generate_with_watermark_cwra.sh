@@ -32,8 +32,6 @@ MODEL_ABBRS=(
 )
 
 WATERMARK_METHODS=(
-    "kgw"
-    "kgw"
     "xsir"
 )
 
