@@ -12,7 +12,7 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
-BATCH_SIZE=32
+BATCH_SIZE=8
 
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
@@ -31,7 +31,6 @@ MODEL_ABBRS=(
 )
 
 WATERMARK_METHODS=(
-    "kgw"
     "xsir"
 )
 
@@ -71,7 +70,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             --base_model $MODEL_NAME \
             --fp16 \
             --batch_size $BATCH_SIZE \
-            --input_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
+            --input_file $DATA_DIR/dataset/mc4/mc4.en-100.jsonl \
             --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.jsonl \
             $WATERMARK_METHOD_FLAG
 
