@@ -68,7 +68,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         for PVT_LANG in "${PVT_LANGS[@]}"; do
             echo "Translating prompts from $ORG_LANG to $PVT_LANG"
             python3 $ATTACK_DIR/google_translate.py \
-                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl \
+                    --input_file $DATA_DIR/dataset/mc4/mc4.$ORG_LANG-100.jsonl \
                     --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl \
                     --src_lang $ORG_LANG \
                     --tgt_lang $PVT_LANG \
