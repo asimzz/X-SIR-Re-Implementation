@@ -40,6 +40,14 @@ PVT_LANGS=(
     "it"
     "es"
     "pt"
+    "de"
+    "fr"
+    "zh"
+    "ja"
+    "ar"
+    "tr"
+    "sw"
+    "am"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
