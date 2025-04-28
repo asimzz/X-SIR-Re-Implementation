@@ -12,7 +12,7 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
-BATCH_SIZE=32
+BATCH_SIZE=8
 
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
