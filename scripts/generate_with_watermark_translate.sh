@@ -35,16 +35,16 @@ WATERMARK_METHODS=(
 )
 
 TGT_LANGS=(
-    "it"
-    "es"
-    "pt"
-    "de"
-    "fr"
-    "zh"
-    "ja"
-    "ar"
-    "tr"
-    "sw"
+    # "it"
+    # "es"
+    # "pt"
+    # "de"
+    # "fr"
+    # "zh"
+    # "ja"
+    # "tr"
+    # "sw"
+    # "ar"
     "am"
 )
 

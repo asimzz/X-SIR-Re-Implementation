@@ -10,20 +10,20 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 BATCH_SIZE=8
 
 MODEL_NAMES=(
+    "meta-llama/Llama-3.2-1B"
+    "baichuan-inc/Baichuan2-7B-Base"
     "bigscience/bloom-7b1"
     "facebook/xglm-564M"
     "CohereForAI/aya-23-8B"
-    "meta-llama/Llama-3.2-1B"
-    "baichuan-inc/Baichuan2-7B-Base"
 
 )
 
 MODEL_ABBRS=(
+    "llama-3.2-1B"
+    "baichuan2-7b"
     "bloom-7b1"
     "xglm-564M"
     "aya-23-8B"
-    "llama-3.2-1B"
-    "baichuan2-7b"
 )
 
 ORG_LANG="en"
@@ -31,11 +31,19 @@ PVT_LANGS=(
     "it"
     "es"
     "pt"
+    "de"
+    "fr"
+    "zh"
+    "ja"
+    "ar"
+    "tr"
+    "sw"
+    "am"
 )
 
 ATTACK_TYPES=(
-    "cwra"
-    # "translation"
+    # "cwra"
+    "translation"
 )
 
 WATERMARK_METHOD="xsir"
