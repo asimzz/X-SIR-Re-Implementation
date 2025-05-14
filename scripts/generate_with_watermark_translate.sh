@@ -26,7 +26,15 @@ MODEL_ABBRS=(
 )
 
 WATERMARK_METHODS=("xsir")
-TGT_LANGS=("am")
+TGT_LANGS=(
+    "it"
+    "es"
+    "pt"
+    "tr"
+    "ar"
+    "sw"
+    "am"
+    )
 SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
