@@ -84,7 +84,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 python3 $ATTACK_DIR/translate.py \
                     --input_file $OUT_DIR/mc4.en.mod.jsonl \
                     --output_file $OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl \
-                    --model gpt-4o-mini \
+                    --model gpt-3.5-turbo-1106 \
                     --src_lang en \
                     --tgt_lang $TGT_LANG
 

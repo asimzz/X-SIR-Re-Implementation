@@ -17,19 +17,6 @@ from dataclasses import (dataclass, field) # for storing API inputs, outputs, an
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
-MODEL_TO_ENCODING_OVERRIDE = {
-    "gpt-4o-mini": "cl100k_base",
-    "gpt-4o": "cl100k_base",
-    "gpt-4-turbo": "cl100k_base",
-    "gpt-3.5-turbo": "cl100k_base",
-}
-
-def get_encoding_for_model(model: str):
-    encoding_name = MODEL_TO_ENCODING_OVERRIDE.get(model)
-    if encoding_name:
-        return tiktoken.get_encoding(encoding_name)
-    return tiktoken.encoding_for_model(model)
-
 def api_endpoint_from_url(request_url):
     """Extract the API endpoint from the request URL."""
     match = re.search("^https://[^/]+/v\\d+/(.+)$", request_url)
@@ -53,7 +40,7 @@ def num_tokens_consumed_from_request(
     model: str,
 ):
     """Count the number of tokens in the request. Only supports completion and embedding requests."""
-    encoding = get_encoding_for_model(model)
+    encoding = tiktoken.encoding_for_model(model)
     # if completions request, tokens = prompt + n * max_tokens
     if api_endpoint.endswith("completions"):
         max_tokens = request_json.get("max_tokens", 15)
