@@ -1,5 +1,5 @@
-set -e # Exit immediately if a command exits with a non-zero status.
-set -u # Treat unset variables as an error when substituting.
+set -e
+set -u
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR=$SCRIPT_DIR/..
@@ -14,26 +14,18 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
-    "baichuan-inc/Baichuan2-7B-Base"
     "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
     "bigscience/bloom-7b1"
-
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
-    "baichuan2-7b"
     "aya-23-8B"
-    "xglm-564M"
     "bloom-7b1"
 )
 
-WATERMARK_METHODS=(
-    "kgw"
-    "xsir"
-)
-
+WATERMARK_METHODS=("xsir")
+SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -44,22 +36,27 @@ for i in "${!MODEL_NAMES[@]}"; do
     MODEL_NAME=${MODEL_NAMES[$i]}
     MODEL_ABBR=${MODEL_ABBRS[$i]}
 
-    for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
-        echo "Generating with watermark for $MODEL_NAME using $WATERMARK_METHOD"
+    for SEED in "${SEEDS[@]}"; do
+        for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
+            echo "Generating detection for $MODEL_NAME using $WATERMARK_METHOD (seed=$SEED)"
 
-        if [ $WATERMARK_METHOD == "kgw" ]; then
-            WATERMARK_METHOD_FLAG="--watermark_method kgw"
-        elif [ $WATERMARK_METHOD == "sir" ] || [ $WATERMARK_METHOD == "xsir" ]; then
-            WATERMARK_METHOD_FLAG="--watermark_method xsir  --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_$MODEL_ABBR.json"
-        else
-            echo "Unknown watermark method: $WATERMARK_METHOD"
-            exit 1
-        fi
+            if [ $WATERMARK_METHOD == "kgw" ]; then
+                WATERMARK_METHOD_FLAG="--watermark_method kgw"
+            elif [ $WATERMARK_METHOD == "sir" ] || [ $WATERMARK_METHOD == "xsir" ]; then
+                WATERMARK_METHOD_FLAG="--watermark_method xsir \
+                    --transform_model $TRANSFORM_MODEL \
+                    --embedding_model $EMBEDDING_MODEL \
+                    --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+            else
+                echo "Unknown watermark method: $WATERMARK_METHOD"
+                exit 1
+            fi
 
-        python3 $WORK_DIR/detect.py \
+            python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
                 --detect_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}/mc4.en.hum.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
+        done
     done
 done
