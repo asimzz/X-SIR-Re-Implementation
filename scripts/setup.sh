@@ -28,5 +28,9 @@ echo "🐍 Using Python version: $(python --version)"
 echo "📥 Installing required Python packages..."
 pip install --upgrade pip
 pip install -r requirements.txt
+pip install python-dotenv
+pip install bitsandbytes
+pip install deep-translator
+
 
 echo "✅ Environment setup complete!"

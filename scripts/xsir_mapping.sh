@@ -17,7 +17,6 @@ MODEL_NAMES=(
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
     "facebook/xglm-564M"
-    "baichuan-inc/Baichuan2-7B-Base"
 )
 
 MODEL_ABBRS=(
@@ -25,7 +24,6 @@ MODEL_ABBRS=(
     "aya-23-8B"
     "llama-3.2-1B"
     "xglm-564M"
-    "baichuan2-7b"
 )
 
 SEEDS=(0 42 123)
