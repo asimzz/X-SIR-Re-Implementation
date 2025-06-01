@@ -36,7 +36,28 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
 ORG_LANG="en"
-PVT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da")
+PVT_LANGS=(
+    # High-resource languages
+    "fr"
+    "de"
+    "it"
+    "es"
+    "pt"
+    # Medium-resource languages
+    "pl"
+    "nl"
+    "ru"
+    "hi"
+    "ko"
+    "ja"
+    # Low-resource languages
+    "bn"
+    "fa"
+    "vi"
+    "he"
+    "uk"
+    "ta"
+)
 
 # Sanity check for model configuration consistency
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then

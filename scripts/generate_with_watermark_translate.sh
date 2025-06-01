@@ -34,7 +34,28 @@ MODEL_ABBRS=(
 # Settings
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
-TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da")
+TGT_LANGS=(
+    # High-resource languages
+    "fr"
+    "de"
+    "it"
+    "es"
+    "pt"
+    # Medium-resource languages
+    "pl"
+    "nl"
+    "ru"
+    "hi"
+    "ko"
+    "ja"
+    # Low-resource languages
+    "bn"
+    "fa"
+    "vi"
+    "he"
+    "uk"
+    "ta"
+)
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
