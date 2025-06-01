@@ -52,7 +52,7 @@ TGT_LANGS=(
     "bn"
     "fa"
     "vi"
-    "he"
+    "iw" # Hebrew
     "uk"
     "ta"
 )
