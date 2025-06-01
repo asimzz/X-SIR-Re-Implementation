@@ -5,7 +5,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 python3 $SCRIPT_DIR/build_dictionary.py \
     --dicts \
-        # High-Resource Languages
         $SCRIPT_DIR/download/en-de.txt \
         $SCRIPT_DIR/download/en-fr.txt \
         $SCRIPT_DIR/download/en-es.txt \
@@ -36,7 +35,6 @@ python3 $SCRIPT_DIR/build_dictionary.py \
         $SCRIPT_DIR/download/pt-fr.txt \
         $SCRIPT_DIR/download/pt-es.txt \
         $SCRIPT_DIR/download/pt-it.txt \
-        # Medium-Resource Languages
         $SCRIPT_DIR/download/en-pl.txt \
         $SCRIPT_DIR/download/en-nl.txt \
         $SCRIPT_DIR/download/en-ru.txt \
@@ -49,7 +47,6 @@ python3 $SCRIPT_DIR/build_dictionary.py \
         $SCRIPT_DIR/download/hi-en.txt \
         $SCRIPT_DIR/download/ko-en.txt \
         $SCRIPT_DIR/download/ja-en.txt \
-        # Low-Resource Languages
         $SCRIPT_DIR/download/en-bn.txt \
         $SCRIPT_DIR/download/en-fa.txt \
         $SCRIPT_DIR/download/en-vi.txt \
