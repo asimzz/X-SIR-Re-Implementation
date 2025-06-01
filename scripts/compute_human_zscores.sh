@@ -15,12 +15,14 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "facebook/xglm-564M"
     "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
+    "xglm-564M"
     "bloom-7b1"
 )
 
