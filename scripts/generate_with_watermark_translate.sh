@@ -33,7 +33,7 @@ MODEL_ABBRS=(
 
 # Settings
 WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+SEEDS=(42 123)
 TGT_LANGS=(
     # High-resource languages
     "fr"
