@@ -19,16 +19,16 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    # "meta-llama/Llama-3.2-1B"
-    "CohereForAI/aya-23-8B"
-    "bigscience/bloom-7b1"
-    "facebook/xglm-564M"
+    "meta-llama/Llama-3.2-1B"
+    # "CohereForAI/aya-23-8B"
+    # "bigscience/bloom-7b1"
+    # "facebook/xglm-564M"
 )
 MODEL_ABBRS=(
-    # "llama-3.2-1B"
-    "aya-23-8B"
-    "bloom-7b1"
-    "xglm-564M"
+    "llama-3.2-1B"
+    # "aya-23-8B"
+    # "bloom-7b1"
+    # "xglm-564M"
 )
 
 # Settings
@@ -36,25 +36,25 @@ WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
 TGT_LANGS=(
     # High-resource languages
-    "fr"
-    "de"
-    "it"
-    "es"
-    "pt"
-    # Medium-resource languages
-    "pl"
-    "nl"
-    "ru"
-    "hi"
-    "ko"
-    "ja"
+    # "fr"
+    # "de"
+    # "it"
+    # "es"
+    # "pt"
+    # # Medium-resource languages
+    # "pl"
+    # "nl"
+    # "ru"
+    # "hi"
+    # "ko"
+    # "ja"
     # Low-resource languages
     "bn"
-    "fa"
-    "vi"
-    "iw" # Hebrew
-    "uk"
-    "ta"
+    # "fa"
+    # "vi"
+    # "iw" # Hebrew
+    # "uk"
+    # "ta"
 )
 
 # Validate model list lengths
