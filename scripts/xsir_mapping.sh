@@ -13,20 +13,20 @@ TRANSFORM_MODEL=$DATA_DIR/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    "bigscience/bloom-7b1"
-    "CohereForAI/aya-23-8B"
+    # "bigscience/bloom-7b1"
+    # "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
-    "facebook/xglm-564M"
+    # "facebook/xglm-564M"
 )
 
 MODEL_ABBRS=(
-    "bloom-7b1"
-    "aya-23-8B"
+    # "bloom-7b1"
+    # "aya-23-8B"
     "llama-3.2-1B"
-    "xglm-564M"
+    # "xglm-564M"
 )
 
-SEEDS=(0 42 123)
+SEEDS=({0..49})
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -43,7 +43,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         python3 $WORK_DIR/src_watermark/xsir/generate_semantic_mappings.py \
             --model "$MODEL_NAME" \
             --dictionary "$DATA_DIR/dictionary/dictionary.txt" \
-            --output_file "$MAPPING_DIR/xsir/300_mapping_${MODEL_ABBR}_seed${SEED}.json" \
+            --output_file "$MAPPING_DIR/xsir/$MODEL_ABBR/300_mapping_${MODEL_ABBR}_seed${SEED}.json" \
             --seed "$SEED"
     done
 done
