@@ -12,18 +12,14 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
+# Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
-    "CohereForAI/aya-23-8B"
-    "bigscience/bloom-7b1"
-    "facebook/xglm-564M"
+    "ALLaM-AI/ALLaM-7B-Instruct-preview"
+    "QCRI/Fanar-1-9B-Instruct"
 )
-
 MODEL_ABBRS=(
-    "llama-3.2-1B"
-    "aya-23-8B"
-    "bloom-7b1"
-    "xglm-564M"
+    "allam-7b"
+    "fanar-1-9b"
 )
 
 WATERMARK_METHODS=("xsir")
