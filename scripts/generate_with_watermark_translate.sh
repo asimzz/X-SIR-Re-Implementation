@@ -27,7 +27,7 @@ MODEL_ABBRS=(
 
 # Settings
 WATERMARK_METHODS=("xsir")
-SEEDS=({0..49})
+SEEDS=({31..49})
 TGT_LANGS=(
     # Low-resource languages
     "bn"
