@@ -74,7 +74,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
                 $WATERMARK_FLAGS
 
-            Step 3: Translation & detection for each target language
+            # Step 3: Translation & detection for each target language
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
