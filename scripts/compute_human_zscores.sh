@@ -14,12 +14,16 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "ALLaM-AI/ALLaM-7B-Instruct-preview"
-    "QCRI/Fanar-1-9B-Instruct"
+    # "ALLaM-AI/ALLaM-7B-Instruct-preview"
+    # "QCRI/Fanar-1-9B-Instruct"
+    # "Orbina/Orbita-v0.1"
+    "TURKCELL/Turkcell-LLM-7b-v1"
 )
 MODEL_ABBRS=(
-    "allam-7b"
-    "fanar-1-9b"
+    # "allam-7b"
+    # "fanar-1-9b"
+    # "orbita-v0.1"
+    "turkcell-7b"
 )
 
 WATERMARK_METHODS=("xsir")
