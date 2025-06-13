@@ -22,19 +22,21 @@ MODEL_NAMES=(
     # "ALLaM-AI/ALLaM-7B-Instruct-preview"
     # "QCRI/Fanar-1-9B-Instruct"
     # "Orbina/Orbita-v0.1"
-    "TURKCELL/Turkcell-LLM-7b-v1"
+    # "TURKCELL/Turkcell-LLM-7b-v1"
+    "Finnish-NLP/Ahma-3B-Instruct"
 )
 MODEL_ABBRS=(
     # "allam-7b"
     # "fanar-1-9b"
     # "orbita-v0.1"
-    "turkcell-7b"
+    # "turkcell-7b"
+    "ahma-3b"
 )
 
 # Settings
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
-TGT_LANGS=("tr")
+TGT_LANGS=("fi")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
