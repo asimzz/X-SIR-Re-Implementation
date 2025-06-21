@@ -3,6 +3,7 @@ import os
 import json
 import argparse
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
@@ -21,7 +22,7 @@ def compute_auc(hum_path, atk_path):
 
 # ─── Main ────────────────────────────────────────────────────────────────────
 def main():
-    parser = argparse.ArgumentParser(description="Plot AUC per Seed bar-chart")
+    parser = argparse.ArgumentParser(description="Plot AUC per Seed bar‐chart")
     parser.add_argument("--model_abbr", required=True)
     parser.add_argument("--base_dir",   required=True)
     parser.add_argument("--seeds",      nargs="+", required=True)
@@ -29,20 +30,29 @@ def main():
     parser.add_argument("--output",     required=True)
     args = parser.parse_args()
 
-    # ─── Style ─────────────────────────────────────────────────────────────
+    # ─── LaTeX‐style rcParams ────────────────────────────────────────────────
     plt.rcParams.update({
-        "font.size":        14,
-        "axes.titlesize":   16,
-        "axes.labelsize":   14,
-        "xtick.labelsize":  10,
-        "ytick.labelsize":  12,
-        "axes.linewidth":   1.0,
+        "text.usetex":     False,                      # no external TeX call
+        "font.family":     "serif",
+        "font.serif":      ["Computer Modern Roman"],
+        "mathtext.fontset": "cm",
+        "axes.titlesize":  12,
+        "axes.labelsize":  10,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "axes.linewidth":  0.8,
+        "axes.edgecolor":  "black",
+        "grid.color":      "gray",
+        "grid.linestyle":  "--",
+        "grid.alpha":      0.4,
+        "figure.dpi":      300,
     })
+    sns.set_style("white")  # clean white background
 
     seeds = sorted(int(s) for s in args.seeds)
 
     for lang in args.langs:
-        # Gather (seed,auc) pairs
+        # collect (seed, auc)
         data = []
         for seed in seeds:
             subdir   = os.path.join(args.base_dir, "xsir", f"seed_{seed}")
@@ -50,8 +60,7 @@ def main():
             atk_path = os.path.join(subdir, f"mc4.en-{lang}.mod.z_score.jsonl")
             if os.path.exists(hum_path) and os.path.exists(atk_path):
                 try:
-                    auc_val = compute_auc(hum_path, atk_path)
-                    data.append((seed, auc_val))
+                    data.append((seed, compute_auc(hum_path, atk_path)))
                 except Exception as e:
                     print(f"[Error] seed={seed}, lang={lang}: {e}")
             else:
@@ -64,28 +73,32 @@ def main():
         x, y = zip(*data)
 
         # ─── Plot ────────────────────────────────────────────────────────
-        fig, ax = plt.subplots(figsize=(12, 6))
-        # Bars with no gap
-        ax.bar(x, y,
-               width=1.0,
-               align="edge",
-               color="royalblue",
-               edgecolor="none")
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.bar(
+            x, y,
+            width=1.0,         # no gap
+            align="edge",
+            color="C0",
+            edgecolor="none"
+        )
 
-        # ─── Labels / Cosmetics ─────────────────────────────────────────
-        ax.set_title(f"AUC per Seed for “{lang}” ({args.model_abbr})", pad=14, weight="bold")
+        # ─── Cosmetics ───────────────────────────────────────────────────
+        ax.set_title(f"AUC per Seed for “{lang}” ({args.model_abbr})")
         ax.set_xlabel("Seed")
         ax.set_ylabel("AUC")
         ax.set_ylim(0, 1)
-        ax.set_xlim(min(x), max(x)+1)     # ensure last bar fully visible
+        ax.set_xlim(min(x), max(x) + 1)   # ensure last bar is fully visible
         ax.set_xticks(x)
         ax.set_xticklabels(x, rotation=90)
-        ax.grid(axis="both", linestyle="--", alpha=0.4)
+        ax.grid(axis="y")                 # only horizontal grid
+        # remove top & right spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
 
         plt.tight_layout()
         out_path = args.output.replace(".png", f"_{lang}.png")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        fig.savefig(out_path, dpi=300)
+        fig.savefig(out_path)
         plt.close(fig)
         print(f"→ saved {out_path}")
 
