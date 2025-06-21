@@ -12,22 +12,17 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
+# Model names and abbreviations
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
-    "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
-    "bigscience/bloom-7b1"
 )
-
 MODEL_ABBRS=(
     "llama-3.2-1B"
-    "aya-23-8B"
-    "xglm-564M"
-    "bloom-7b1"
 )
 
+
 WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+SEEDS=({0..49})
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -48,7 +43,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 WATERMARK_METHOD_FLAG="--watermark_method xsir \
                     --transform_model $TRANSFORM_MODEL \
                     --embedding_model $EMBEDDING_MODEL \
-                    --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+                    --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/$MODEL_ABBR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
             else
                 echo "Unknown watermark method: $WATERMARK_METHOD"
                 exit 1
@@ -57,7 +52,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             python3 $WORK_DIR/detect.py \
                 --base_model $MODEL_NAME \
                 --detect_file $DATA_DIR/dataset/mc4/mc4.en.jsonl \
-                --output_file $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}/mc4.en.hum.z_score.jsonl \
+                --output_file $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}/seed_${SEED}/mc4.en.hum.z_score.jsonl \
                 $WATERMARK_METHOD_FLAG
         done
     done
