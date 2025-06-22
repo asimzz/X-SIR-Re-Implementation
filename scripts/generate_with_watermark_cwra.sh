@@ -16,27 +16,25 @@ MAPPING_DIR="$DATA_DIR/mapping"
 TRANSFORM_MODEL="$DATA_DIR/model/transform_model_x-sbert.pth"
 EMBEDDING_MODEL="paraphrase-multilingual-mpnet-base-v2"
 
-BATCH_SIZE=8
+BATCH_SIZE=32
 
-# Model configurations
+# Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
-    "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
-    "bigscience/bloom-7b1"
+    "ALLaM-AI/ALLaM-7B-Instruct-preview"
+    # "TURKCELL/Turkcell-LLM-7b-v1"
+    # "Finnish-NLP/Ahma-3B-Instruct"
 )
-
 MODEL_ABBRS=(
-    "llama-3.2-1B"
-    "aya-23-8B"
-    "xglm-564M"
-    "bloom-7b1"
+    "allam-7b"
+    # "turkcell-7b"
+    # "ahma-3b"
 )
 
+# Settings
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
 ORG_LANG="en"
-PVT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da")
+PVT_LANGS=("ar")
 
 # Sanity check for model configuration consistency
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -55,7 +53,7 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
             mkdir -p "$OUT_DIR"
-            MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+            MAPPING_FILE="$MAPPING_DIR/${WATERMARK_METHOD}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
 
             # Configure flags
             if [ "$WATERMARK_METHOD" == "kgw" ]; then
