@@ -20,13 +20,13 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "ALLaM-AI/ALLaM-7B-Instruct-preview"
-    # "TURKCELL/Turkcell-LLM-7b-v1"
+    # "ALLaM-AI/ALLaM-7B-Instruct-preview"
+    "TURKCELL/Turkcell-LLM-7b-v1"
     # "Finnish-NLP/Ahma-3B-Instruct"
 )
 MODEL_ABBRS=(
-    "allam-7b"
-    # "turkcell-7b"
+    # "allam-7b"
+    "turkcell-7b"
     # "ahma-3b"
 )
 
@@ -34,7 +34,7 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
 ORG_LANG="en"
-PVT_LANGS=("ar")
+PVT_LANGS=("tr")
 
 # Sanity check for model configuration consistency
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
