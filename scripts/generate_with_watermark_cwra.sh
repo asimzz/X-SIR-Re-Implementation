@@ -16,7 +16,7 @@ MAPPING_DIR="$DATA_DIR/mapping"
 TRANSFORM_MODEL="$DATA_DIR/model/transform_model_x-sbert.pth"
 EMBEDDING_MODEL="paraphrase-multilingual-mpnet-base-v2"
 
-BATCH_SIZE=16
+BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
