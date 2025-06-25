@@ -7,22 +7,24 @@ GEN_DIR=$WORK_DIR/gen
 
 
 
+# Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
-    "bigscience/bloom-7b1"
-    "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
+    "ALLaM-AI/ALLaM-7B-Instruct-preview"
+    # "QCRI/Fanar-1-9B-Instruct"
+    # "Orbina/Orbita-v0.1"
+    # "TURKCELL/Turkcell-LLM-7b-v1"
+    # "Finnish-NLP/Ahma-3B-Instruct"
 )
-
 MODEL_ABBRS=(
-    "llama-3.2-1B"
-    "bloom-7b1"
-    "aya-23-8B"
-    "xglm-564M"
+    "allam-7b"
+    # "fanar-1-9b"
+    # "orbita-v0.1"
+    # "turkcell-7b"
+    # "ahma-3b"
 )
 
 WATERMARK_METHODS=("xsir")
-TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko")
+TGT_LANGS=("ar")
 SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
