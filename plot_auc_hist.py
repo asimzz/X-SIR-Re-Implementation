@@ -73,24 +73,20 @@ def main():
         x, y = zip(*data)
 
         # ─── Plot ────────────────────────────────────────────────────────
-        fig, ax = plt.subplots(figsize=(8, 4))
-        ax.bar(
-            x, y,
-            width=1.0,         # no gap
-            align="edge",
-            color="C0",
-            edgecolor="none"
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.hist(
+            y, 
+            bins=10, 
+            color="C0", 
+            edgecolor="black", 
+            alpha=0.85
         )
 
         # ─── Cosmetics ───────────────────────────────────────────────────
-        ax.set_title(f"AUC per Seed for “{lang}” ({args.model_abbr})")
-        ax.set_xlabel("Seed")
-        ax.set_ylabel("AUC")
-        ax.set_ylim(0, 1)
-        ax.set_xlim(min(x), max(x) + 1)   # ensure last bar is fully visible
-        ax.set_xticks(x)
-        ax.set_xticklabels(x, rotation=90)
-        ax.grid(axis="y")                 # only horizontal grid
+        ax.set_title(f"AUC Distribution for “{lang}” ({args.model_abbr})")
+        ax.set_xlabel("AUC")
+        ax.set_ylabel("Frequency")
+        ax.grid(axis="y")               # only horizontal grid
         # remove top & right spines
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
