@@ -20,23 +20,23 @@ BATCH_SIZE=8
 
 # Model configurations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
+    # "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
+    # "facebook/xglm-564M"
     "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
+    # "llama-3.2-1B"
     "aya-23-8B"
-    "xglm-564M"
+    # "xglm-564M"
     "bloom-7b1"
 )
 
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
 ORG_LANG="en"
-PVT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da")
+PVT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko")
 
 # Sanity check for model configuration consistency
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -55,7 +55,7 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
             mkdir -p "$OUT_DIR"
-            MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+            MAPPING_FILE="$MAPPING_DIR/${WATERMARK_METHOD}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
 
             # Configure flags
             if [ "$WATERMARK_METHOD" == "kgw" ]; then
@@ -76,35 +76,35 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --tgt_lang "$PVT_LANG" \
                     --translation_part prompt
 
-                echo "🧬 Generating watermark on translated prompts"
-                python3 "$WORK_DIR/gen.py" \
-                    --base_model "$MODEL_NAME" \
-                    --fp16 \
-                    --batch_size "$BATCH_SIZE" \
-                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                    $WATERMARK_FLAGS
+                # echo "🧬 Generating watermark on translated prompts"
+                # python3 "$WORK_DIR/gen.py" \
+                #     --base_model "$MODEL_NAME" \
+                #     --fp16 \
+                #     --batch_size "$BATCH_SIZE" \
+                #     --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                #     $WATERMARK_FLAGS
 
-                echo "🔍 Detecting watermark post-generation"
-                python3 "$WORK_DIR/detect.py" \
-                    --base_model "$MODEL_NAME" \
-                    --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl" \
-                    $WATERMARK_FLAGS
+                # echo "🔍 Detecting watermark post-generation"
+                # python3 "$WORK_DIR/detect.py" \
+                #     --base_model "$MODEL_NAME" \
+                #     --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl" \
+                #     $WATERMARK_FLAGS
 
-                echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                    --src_lang "$PVT_LANG" \
-                    --tgt_lang "$ORG_LANG" \
-                    --translation_part response
+                # echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                #     --src_lang "$PVT_LANG" \
+                #     --tgt_lang "$ORG_LANG" \
+                #     --translation_part response
 
-                python3 "$WORK_DIR/detect.py" \
-                    --base_model "$MODEL_NAME" \
-                    --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
-                    $WATERMARK_FLAGS
+                # python3 "$WORK_DIR/detect.py" \
+                #     --base_model "$MODEL_NAME" \
+                #     --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
+                #     $WATERMARK_FLAGS
 
                 if [ "$WATERMARK_METHOD" == "xsir" ]; then
                     continue  # Skip back-translation for xsir if not needed
