@@ -20,17 +20,17 @@ BATCH_SIZE=8
 
 # Model configurations
 MODEL_NAMES=(
-    # "meta-llama/Llama-3.2-1B"
-    "CohereForAI/aya-23-8B"
-    # "facebook/xglm-564M"
-    "bigscience/bloom-7b1"
+    "meta-llama/Llama-3.2-1B"
+    # "CohereForAI/aya-23-8B"
+    "facebook/xglm-564M"
+    # "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
-    # "llama-3.2-1B"
-    "aya-23-8B"
-    # "xglm-564M"
-    "bloom-7b1"
+    "llama-3.2-1B"
+    # "aya-23-8B"
+    "xglm-564M"
+    # "bloom-7b1"
 )
 
 WATERMARK_METHODS=("xsir")
@@ -76,39 +76,35 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --tgt_lang "$PVT_LANG" \
                     --translation_part prompt
 
-                # echo "🧬 Generating watermark on translated prompts"
-                # python3 "$WORK_DIR/gen.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --fp16 \
-                #     --batch_size "$BATCH_SIZE" \
-                #     --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                #     $WATERMARK_FLAGS
+                echo "🧬 Generating watermark on translated prompts"
+                python3 "$WORK_DIR/gen.py" \
+                    --base_model "$MODEL_NAME" \
+                    --fp16 \
+                    --batch_size "$BATCH_SIZE" \
+                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                    $WATERMARK_FLAGS
 
-                # echo "🔍 Detecting watermark post-generation"
-                # python3 "$WORK_DIR/detect.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl" \
-                #     $WATERMARK_FLAGS
+                echo "🔍 Detecting watermark post-generation"
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
 
-                # echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
-                # python3 "$ATTACK_DIR/google_translate.py" \
-                #     --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                #     --src_lang "$PVT_LANG" \
-                #     --tgt_lang "$ORG_LANG" \
-                #     --translation_part response
+                echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                    --src_lang "$PVT_LANG" \
+                    --tgt_lang "$ORG_LANG" \
+                    --translation_part response
 
-                # python3 "$WORK_DIR/detect.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
-                #     $WATERMARK_FLAGS
-
-                if [ "$WATERMARK_METHOD" == "xsir" ]; then
-                    continue  # Skip back-translation for xsir if not needed
-                fi
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
 
                 echo "🔁 Back translation $ORG_LANG ➝ $PVT_LANG"
                 python3 "$ATTACK_DIR/google_translate.py" \

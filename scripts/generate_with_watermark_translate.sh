@@ -19,14 +19,14 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
-    "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-3.2-1B"
+    # "CohereForAI/aya-23-8B"
     "bigscience/bloom-7b1"
     "facebook/xglm-564M"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
-    "aya-23-8B"
+    # "llama-3.2-1B"
+    # "aya-23-8B"
     "bloom-7b1"
     "xglm-564M"
 )
@@ -62,41 +62,56 @@ for i in "${!MODEL_NAMES[@]}"; do
                 exit 1
             fi
 
-            # Step 1: Generate watermarked data
-            python3 "$WORK_DIR/gen.py" \
-                --base_model "$MODEL_NAME" \
-                --fp16 \
-                --batch_size "$BATCH_SIZE" \
-                --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
-                $WATERMARK_FLAGS
+            # # Step 1: Generate watermarked data
+            # python3 "$WORK_DIR/gen.py" \
+            #     --base_model "$MODEL_NAME" \
+            #     --fp16 \
+            #     --batch_size "$BATCH_SIZE" \
+            #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+            #     --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
+            #     $WATERMARK_FLAGS
 
-            # Step 2: Detect watermark in English
-            python3 "$WORK_DIR/detect.py" \
-                --base_model "$MODEL_NAME" \
-                --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
-                --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
-                $WATERMARK_FLAGS
+            # # Step 2: Detect watermark in English
+            # python3 "$WORK_DIR/detect.py" \
+            #     --base_model "$MODEL_NAME" \
+            #     --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
+            #     --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
+            #     $WATERMARK_FLAGS
 
             # Step 3: Translation & detection for each target language
-            # for TGT_LANG in "${TGT_LANGS[@]}"; do
-            #     echo "🌍 Translating and detecting for $TGT_LANG"
+            for TGT_LANG in "${TGT_LANGS[@]}"; do
+                echo "🌍 Translating and detecting for $TGT_LANG"
 
-            #     # Translation attack
-            #     python3 "$ATTACK_DIR/google_translate.py" \
-            #         --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #         --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-            #         --translation_part response \
-            #         --src_lang en \
-            #         --tgt_lang "$TGT_LANG"
+                # # Translation attack
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
+                #     --translation_part response \
+                #     --src_lang en \
+                #     --tgt_lang "$TGT_LANG"
 
-            #     # Detect on translated output
-            #     python3 "$WORK_DIR/detect.py" \
-            #         --base_model "$MODEL_NAME" \
-            #         --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-            #         --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
-            #         $WATERMARK_FLAGS
-            # done
+                # # Detect on translated output
+                # python3 "$WORK_DIR/detect.py" \
+                #     --base_model "$MODEL_NAME" \
+                #     --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
+                #     $WATERMARK_FLAGS
+                
+                # Back-translation
+                echo "🔁 Back translation $TGT_LANG -> en"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$TGT_LANG-en-back.mod.jsonl" \
+                    --src_lang "$TGT_LANG" \
+                    --tgt_lang "en" \
+                    --translation_part response
+
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --detect_file "$OUT_DIR/mc4.$TGT_LANG-en-back.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$TGT_LANG-en-back.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
+            done
         done
     done
 done
