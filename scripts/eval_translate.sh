@@ -9,16 +9,16 @@ GEN_DIR=$WORK_DIR/gen
 
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
-    "bigscience/bloom-7b1"
     "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
+    # "bigscience/bloom-7b1"
+    # "facebook/xglm-564M"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
-    "bloom-7b1"
     "aya-23-8B"
-    "xglm-564M"
+    # "bloom-7b1"
+    # "xglm-564M"
 )
 
 WATERMARK_METHODS=("xsir")
@@ -51,6 +51,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                 python3 $WORK_DIR/eval_detection.py \
                     --hm_zscore $WATERMARK_DIR/mc4.en.hum.z_score.jsonl \
                     --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
+
+                echo "======================================="
+                echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Back Translation ($TGT_LANG)"
+                python3 $WORK_DIR/eval_detection.py \
+                    --hm_zscore $WATERMARK_DIR/mc4.en.hum.z_score.jsonl \
+                    --wm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}-en-back.mod.z_score.jsonl
+                echo "======================================="
             done
             echo "======================================="
         done

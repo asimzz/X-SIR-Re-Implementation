@@ -60,9 +60,6 @@ for i in "${!MODEL_NAMES[@]}"; do
 
                 echo "======================================="
 
-                if [ $WATERMARK_METHOD == "xsir" ]; then
-                    continue
-                fi
                 echo "$MODEL_NAME $WATERMARK_METHOD With CWRA Attack (Back Translation) ($ORG_LANG -> $PVT_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
                     --hm_zscore $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/mc4.en.hum.z_score.jsonl \
