@@ -20,17 +20,17 @@ BATCH_SIZE=8
 
 # Model configurations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
-    # "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
-    # "bigscience/bloom-7b1"
+    # "meta-llama/Llama-3.2-1B"
+    "CohereForAI/aya-23-8B"
+    # "facebook/xglm-564M"
+    "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
-    # "aya-23-8B"
-    "xglm-564M"
-    # "bloom-7b1"
+    # "llama-3.2-1B"
+    "aya-23-8B"
+    # "xglm-564M"
+    "bloom-7b1"
 )
 
 WATERMARK_METHODS=("xsir")
