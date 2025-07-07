@@ -19,42 +19,42 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
-    # "CohereForAI/aya-23-8B"
-    # "bigscience/bloom-7b1"
+    # "meta-llama/Llama-3.2-1B"
+    "CohereForAI/aya-23-8B"
+    "bigscience/bloom-7b1"
     # "facebook/xglm-564M"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
-    # "aya-23-8B"
-    # "bloom-7b1"
+    # "llama-3.2-1B"
+    "aya-23-8B"
+    "bloom-7b1"
     # "xglm-564M"
 )
 
 # Settings
-WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+WATERMARK_METHODS=("kgw")
+SEEDS=(0)
 TGT_LANGS=(
     # High-resource languages
-    # "fr"
-    # "de"
-    # "it"
-    # "es"
-    # "pt"
-    # # Medium-resource languages
-    # "pl"
-    # "nl"
-    # "ru"
-    # "hi"
-    # "ko"
-    # "ja"
+    "fr"
+    "de"
+    "it"
+    "es"
+    "pt"
+    # Medium-resource languages
+    "pl"
+    "nl"
+    "ru"
+    "hi"
+    "ko"
+    "ja"
     # Low-resource languages
     "bn"
-    # "fa"
-    # "vi"
-    # "iw" # Hebrew
-    # "uk"
-    # "ta"
+    "fa"
+    "vi"
+    "iw" # Hebrew
+    "uk"
+    "ta"
 )
 
 # Validate model list lengths
@@ -76,28 +76,30 @@ for i in "${!MODEL_NAMES[@]}"; do
             OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
             mkdir -p "$OUT_DIR"
 
-            if [ "$WATERMARK_METHOD" == "xsir" ]; then
+            if [ $WATERMARK_METHOD == "kgw" ]; then
+                WATERMARK_FLAGS="--watermark_method kgw"
+            elif [ "$WATERMARK_METHOD" == "xsir" ]; then
                 WATERMARK_FLAGS="--watermark_method xsir --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_FILE"
             else
                 echo "❌ Unknown watermark method: $WATERMARK_METHOD"
                 exit 1
             fi
 
-            # # Step 1: Generate watermarked data
-            # python3 "$WORK_DIR/gen.py" \
-            #     --base_model "$MODEL_NAME" \
-            #     --fp16 \
-            #     --batch_size "$BATCH_SIZE" \
-            #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-            #     --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #     $WATERMARK_FLAGS
+            # Step 1: Generate watermarked data
+            python3 "$WORK_DIR/gen.py" \
+                --base_model "$MODEL_NAME" \
+                --fp16 \
+                --batch_size "$BATCH_SIZE" \
+                --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                $WATERMARK_FLAGS
 
-            # # Step 2: Detect watermark in English
-            # python3 "$WORK_DIR/detect.py" \
-            #     --base_model "$MODEL_NAME" \
-            #     --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #     --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
-            #     $WATERMARK_FLAGS
+            # Step 2: Detect watermark in English
+            python3 "$WORK_DIR/detect.py" \
+                --base_model "$MODEL_NAME" \
+                --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
+                $WATERMARK_FLAGS
 
             # Step 3: Translation & detection for each target language
             for TGT_LANG in "${TGT_LANGS[@]}"; do
@@ -116,6 +118,21 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --base_model "$MODEL_NAME" \
                     --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
                     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
+                
+                # Back-translation
+                echo "🔁 Back translation $TGT_LANG -> en"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$TGT_LANG-en-back.mod.jsonl" \
+                    --src_lang "$TGT_LANG" \
+                    --tgt_lang "en" \
+                    --translation_part response
+
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --detect_file "$OUT_DIR/mc4.$TGT_LANG-en-back.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$TGT_LANG-en-back.mod.z_score.jsonl" \
                     $WATERMARK_FLAGS
             done
         done

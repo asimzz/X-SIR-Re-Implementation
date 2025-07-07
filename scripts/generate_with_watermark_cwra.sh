@@ -20,43 +20,29 @@ BATCH_SIZE=8
 
 # Model configurations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
+    # "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
+    # "facebook/xglm-564M"
     "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
+    # "llama-3.2-1B"
     "aya-23-8B"
-    "xglm-564M"
+    # "xglm-564M"
     "bloom-7b1"
 )
 
-WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+WATERMARK_METHODS=("kgw")
+SEEDS=(0)
 ORG_LANG="en"
 PVT_LANGS=(
     # High-resource languages
-    "fr"
-    "de"
-    "it"
-    "es"
-    "pt"
+    "fr" "de" "it" "es" "pt"
     # Medium-resource languages
-    "pl"
-    "nl"
-    "ru"
-    "hi"
-    "ko"
-    "ja"
+    "pl" "nl" "ru" "hi" "ko" "ja"
     # Low-resource languages
-    "bn"
-    "fa"
-    "vi"
-    "he"
-    "uk"
-    "ta"
+    "bn" "fa" "vi" "he" "uk" "ta"
 )
 
 # Sanity check for model configuration consistency
@@ -74,11 +60,11 @@ for i in "${!MODEL_NAMES[@]}"; do
         for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
             echo "▶️ Running $WATERMARK_METHOD (seed=$SEED) on $MODEL_NAME"
 
-            OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
+            OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}"
             mkdir -p "$OUT_DIR"
-            MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+            MAPPING_FILE="$MAPPING_DIR/${WATERMARK_METHOD}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
 
-            # Configure flags
+            # Configure watermarking flags
             if [ "$WATERMARK_METHOD" == "kgw" ]; then
                 WATERMARK_FLAGS="--watermark_method kgw"
             elif [ "$WATERMARK_METHOD" == "sir" ] || [ "$WATERMARK_METHOD" == "xsir" ]; then
@@ -127,9 +113,9 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
                     $WATERMARK_FLAGS
 
-                if [ "$WATERMARK_METHOD" == "xsir" ]; then
-                    continue  # Skip back-translation for xsir if not needed
-                fi
+                # if [ "$WATERMARK_METHOD" == "xsir" ]; then
+                #     continue  # Skip back-translation for xsir if not needed
+                # fi
 
                 echo "🔁 Back translation $ORG_LANG ➝ $PVT_LANG"
                 python3 "$ATTACK_DIR/google_translate.py" \
