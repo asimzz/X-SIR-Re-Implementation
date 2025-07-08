@@ -42,7 +42,7 @@ PVT_LANGS=(
     # Medium-resource languages
     "pl" "nl" "ru" "hi" "ko" "ja"
     # Low-resource languages
-    "bn" "fa" "vi" "he" "uk" "ta"
+    "bn" "fa" "vi" "iw" "uk" "ta"
 )
 
 # Sanity check for model configuration consistency
