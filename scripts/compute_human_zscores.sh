@@ -13,21 +13,21 @@ TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
+    # "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "facebook/xglm-564M"
-    "bigscience/bloom-7b1"
+    # "facebook/xglm-564M"
+    # "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
+    # "llama-3.2-1B"
     "aya-23-8B"
-    "xglm-564M"
-    "bloom-7b1"
+    # "xglm-564M"
+    # "bloom-7b1"
 )
 
-WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+WATERMARK_METHODS=("kgw")
+SEEDS=(42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -48,7 +48,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 WATERMARK_METHOD_FLAG="--watermark_method xsir \
                     --transform_model $TRANSFORM_MODEL \
                     --embedding_model $EMBEDDING_MODEL \
-                    --mapping_file $MAPPING_DIR/$WATERMARK_METHOD/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+                    --mapping_file $MAPPING_DIR/${WATERMARK_METHOD}_seed${SEED}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
             else
                 echo "Unknown watermark method: $WATERMARK_METHOD"
                 exit 1

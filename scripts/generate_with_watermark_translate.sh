@@ -19,42 +19,64 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    # "meta-llama/Llama-3.2-1B"
-    "CohereForAI/aya-23-8B"
-    "bigscience/bloom-7b1"
+    "meta-llama/Llama-3.2-1B"
+    # "CohereForAI/aya-23-8B"
     # "facebook/xglm-564M"
 )
 MODEL_ABBRS=(
-    # "llama-3.2-1B"
-    "aya-23-8B"
-    "bloom-7b1"
+    "llama-3.2-1B"
+    # "aya-23-8B"
     # "xglm-564M"
 )
 
 # Settings
 WATERMARK_METHODS=("kgw")
-SEEDS=(0)
+SEEDS=(42 123)
 TGT_LANGS=(
     # High-resource languages
-    "fr"
-    "de"
-    "it"
-    "es"
-    "pt"
-    # Medium-resource languages
-    "pl"
-    "nl"
-    "ru"
-    "hi"
-    "ko"
-    "ja"
-    # Low-resource languages
-    "bn"
-    "fa"
-    "vi"
-    "iw" # Hebrew
-    "uk"
-    "ta"
+    "fr" # French
+    # "de" # German
+    # "it" # Italian
+    # "es" # Spanish
+    # "pt" # Portuguese
+    # # Medium-resource languages
+    # "pl" # Polish
+    # "nl" # Dutch
+    # "ru" # Russian
+    # "hi" # Hindi
+    # "ko" # Korean
+    # "ja" # Japanese
+    # # Low-resource languages
+    # "bn" # Bengali
+    # "fa" # Persian
+    # "vi" # Vietnamese
+    # "iw" # Hebrew
+    # "uk" # Ukrainian
+    # "ta" # Tamil
+)
+
+ORG_LANGS=(
+    "en" # English
+    # # High-resource languages
+    # "fr" # French
+    # "de" # German
+    # "it" # Italian
+    # "es" # Spanish
+    # "pt" # Portuguese
+    # # Medium-resource languages
+    # "pl" # Polish
+    # "nl" # Dutch
+    # "ru" # Russian
+    # "hi" # Hindi
+    # "ko" # Korean
+    # "ja" # Japanese
+    # # Low-resource languages
+    # "bn" # Bengali
+    # "fa" # Persian
+    # "vi" # Vietnamese
+    # "iw" # Hebrew
+    # "uk" # Ukrainian
+    "ta" # Tamil
 )
 
 # Validate model list lengths
@@ -73,7 +95,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             echo "▶️ Running $WATERMARK_METHOD (seed=$SEED) on $MODEL_NAME"
 
             MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
-            OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}"
+            OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
             mkdir -p "$OUT_DIR"
 
             if [ $WATERMARK_METHOD == "kgw" ]; then
@@ -90,6 +112,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --base_model "$MODEL_NAME" \
                 --fp16 \
                 --batch_size "$BATCH_SIZE" \
+                --seed "$SEED" \
                 --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
                 --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
                 $WATERMARK_FLAGS
@@ -97,46 +120,52 @@ for i in "${!MODEL_NAMES[@]}"; do
             # Step 2: Detect watermark in English
             python3 "$WORK_DIR/detect.py" \
                 --base_model "$MODEL_NAME" \
+                --seed "$SEED" \
                 --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
                 --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
                 $WATERMARK_FLAGS
 
-            # # Step 3: Translation & detection for each target language
-            # for TGT_LANG in "${TGT_LANGS[@]}"; do
-            #     echo "🌍 Translating and detecting for $TGT_LANG"
+            # Step 3: Translation & detection for each target language
+            for TGT_LANG in "${TGT_LANGS[@]}"; do
+                echo "🌍 Translating and detecting for $TGT_LANG"
 
-            #     # Translation attack
-            #     python3 "$ATTACK_DIR/google_translate.py" \
-            #         --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #         --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-            #         --translation_part response \
-            #         --src_lang en \
-            #         --tgt_lang "$TGT_LANG"
+                # Translation attack
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
+                    --translation_part response \
+                    --src_lang en \
+                    --tgt_lang "$TGT_LANG"
 
-            #     # Detect on translated output
-            #     python3 "$WORK_DIR/detect.py" \
-            #         --base_model "$MODEL_NAME" \
-            #         --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-            #         --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
-            #         $WATERMARK_FLAGS
+                # Detect on translated output
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --seed "$SEED" \
+                    --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
                 
-                # Back-translation
-                # echo "🔁 Back translation $TGT_LANG -> en"
-                # python3 "$ATTACK_DIR/translate.py" \
-                #     --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$TGT_LANG-en-back-deepseek.mod.jsonl" \
-                #     --model "deepseek-chat" \
-                #     --temperature 1.3 \
-                #     --src_lang "$TGT_LANG" \
-                #     --tgt_lang "en" \
-                #     --translation_part response
+                for ORG_LANG in "${ORG_LANGS[@]}"; do
+                    if [ "$ORG_LANG" == "$TGT_LANG" ]; then
+                        continue
+                    fi
+                    # Back-translation
+                    echo "🔁 Back translation $TGT_LANG -> $ORG_LANG"
+                    python3 "$ATTACK_DIR/google_translate.py" \
+                        --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.jsonl" \
+                        --translation_part response \
+                        --src_lang "$TGT_LANG" \
+                        --tgt_lang "$ORG_LANG"
 
-                # python3 "$WORK_DIR/detect.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --detect_file "$OUT_DIR/mc4.$TGT_LANG-en-back-deepseek.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$TGT_LANG-en-back-deepseek.mod.z_score.jsonl" \
-                #     $WATERMARK_FLAGS
-            # done
+                    python3 "$WORK_DIR/detect.py" \
+                        --base_model "$MODEL_NAME" \
+                        --seed "$SEED" \
+                        --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.z_score.jsonl" \
+                        $WATERMARK_FLAGS
+                done
+            done
         done
     done
 done

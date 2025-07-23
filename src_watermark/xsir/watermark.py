@@ -167,12 +167,6 @@ class WatermarkContext(WatermarkBase):
             )
             context_embedding = self.get_embedding(context_sentence)
             output = self.transform_model(context_embedding).cpu()[0].detach().numpy()
-            print("####" * 20)
-            print("Detecting watermark:")
-            print(f"Input sentence: {context_sentence}")
-            print(f"Output shape: {output.shape}")
-            print("Output:", output)
-            print("####" * 20)
             similarity_array = self.scale_vector(output)[self.mapping]
 
             tokens = word_2d[i]
@@ -188,12 +182,6 @@ class WatermarkContext(WatermarkBase):
         context_sentence = self.get_context_sentence(input_ids)
         context_embedding = self.get_embedding(context_sentence)
         output = self.transform_model(context_embedding).cpu()[0].numpy()
-        print("####" * 20)
-        print("Bias computation:")
-        print(f"Input sentence: {context_sentence}")
-        print(f"Output shape: {output.shape}")
-        print("Output:", output)
-        print("####" * 20)
         similarity_array = self.scale_vector(output)[self.mapping]
         return -similarity_array
 

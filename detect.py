@@ -49,6 +49,7 @@ def main(args):
         watermark_detector = KGWDetector(
             vocab=list(tokenizer.get_vocab().values()),
             gamma=args.gamma, # should match original setting
+            seed=args.seed, # should match original setting
             seeding_scheme=args.seeding_scheme, # should match original setting
             device=device, # must match the original rng device type
             tokenizer=tokenizer,
@@ -102,6 +103,7 @@ if __name__ == "__main__":
     # Watermark
     parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "sir", "uw"], required=True, help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
+    parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
     # X-SIR
     parser.add_argument('--watermark_type', type=str, default="context")
