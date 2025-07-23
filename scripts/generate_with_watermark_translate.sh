@@ -19,13 +19,13 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
-    # "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-3.2-1B"
+    "CohereForAI/aya-23-8B"
     # "facebook/xglm-564M"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
-    # "aya-23-8B"
+    # "llama-3.2-1B"
+    "aya-23-8B"
     # "xglm-564M"
 )
 
