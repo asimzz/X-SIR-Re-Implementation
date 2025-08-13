@@ -19,7 +19,7 @@ def read_jsonl(file_path):
 
 def main(args):
     # assert valid_location(), "Invalid location"
-    assert os.getenv("OPENAI_API_KEY"), "Set the OPENAI_API_KEY environment variable"
+    assert os.getenv("DEEP_SEEK_API_KEY"), "Set the DEEP_SEEK_API_KEY environment variable"
 
     def input_to_requests_func(input_file: str, output_file: str) -> list:
         """
@@ -143,8 +143,8 @@ def main(args):
         return num_requests == num_done
 
     openai_caller = CallOpenAI(
-        request_url="https://api.openai.com/v1/chat/completions",
-        api_key=os.getenv("OPENAI_API_KEY"),
+        request_url="https://api.deepseek.com/chat/completions",
+        api_key=os.getenv("DEEP_SEEK_API_KEY"),
         input_file_path=args.input_file,
         output_file_path=args.output_file,
         max_attempts=5,
@@ -168,5 +168,6 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0.0, help="Temperature")
     parser.add_argument("--src_lang", type=str, required=True, help="Source language")
     parser.add_argument("--tgt_lang", type=str, required=True, help="Target language")
+    parser.add_argument("--translation_part", type=str, default="response", help="Part of the response to translate (default: response)")
     args = parser.parse_args()
     main(args)
