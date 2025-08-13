@@ -49,10 +49,10 @@ def main(args):
         return
 
     hm_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in hm_list]
-    hm_true = [0 for x in hm_list]
+    hm_true = [0 for _ in hm_list]
 
     wm_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in wm_list]
-    wm_true = [1 for x in wm_list]
+    wm_true = [1 for _ in wm_list]
 
     y_true = hm_true + wm_true
     y_scores = hm_zscore + wm_zscore
