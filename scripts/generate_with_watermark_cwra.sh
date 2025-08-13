@@ -75,13 +75,13 @@ for i in "${!MODEL_NAMES[@]}"; do
             fi
 
             for PVT_LANG in "${PVT_LANGS[@]}"; do
-                # echo "🌍 Translating prompts: $ORG_LANG ➝ $PVT_LANG"
-                # python3 "$ATTACK_DIR/google_translate.py" \
-                #     --input_file "$DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl" \
-                #     --src_lang "$ORG_LANG" \
-                #     --tgt_lang "$PVT_LANG" \
-                #     --translation_part prompt
+                echo "🌍 Translating prompts: $ORG_LANG ➝ $PVT_LANG"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$DATA_DIR/dataset/mc4/mc4.$ORG_LANG.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl" \
+                    --src_lang "$ORG_LANG" \
+                    --tgt_lang "$PVT_LANG" \
+                    --translation_part prompt
 
                 echo "🧬 Generating watermark on translated prompts"
                 python3 "$WORK_DIR/gen.py" \
@@ -99,39 +99,37 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl" \
                     $WATERMARK_FLAGS
 
-                # echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
-                # python3 "$ATTACK_DIR/google_translate.py" \
-                #     --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                #     --src_lang "$PVT_LANG" \
-                #     --tgt_lang "$ORG_LANG" \
-                #     --translation_part response
+                echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                    --src_lang "$PVT_LANG" \
+                    --tgt_lang "$ORG_LANG" \
+                    --translation_part response
 
-                # python3 "$WORK_DIR/detect.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
-                #     $WATERMARK_FLAGS
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
 
-                # if [ "$WATERMARK_METHOD" == "xsir" ]; then
-                #     continue  # Skip back-translation for xsir if not needed
-                # fi
+                if [ "$WATERMARK_METHOD" == "xsir" ]; then
+                    continue  # Skip back-translation for xsir if not needed
+                fi
 
-                # echo "🔁 Back translation $ORG_LANG ➝ $PVT_LANG"
-                # python3 "$ATTACK_DIR/translate.py" \
-                #     --input_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back-deepseek.mod.jsonl" \
-                #     --model "deepseek-chat" \
-                #     --temperature 1.3 \
-                #     --src_lang "$ORG_LANG" \
-                #     --tgt_lang "$PVT_LANG" \
-                #     --translation_part response
+                echo "🔁 Back translation $ORG_LANG ➝ $PVT_LANG"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl" \
+                    --src_lang "$ORG_LANG" \
+                    --tgt_lang "$PVT_LANG" \
+                    --translation_part response
 
-                # python3 "$WORK_DIR/detect.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back-deepseek.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back-deepseek.mod.z_score.jsonl" \
-                #     $WATERMARK_FLAGS
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
             done
         done
     done
