@@ -63,7 +63,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 exit 1
             fi
 
-            Step 1: Generate watermarked data
+            # Step 1: Generate watermarked data
             python3 "$WORK_DIR/gen.py" \
                 --base_model "$MODEL_NAME" \
                 --fp16 \
