@@ -13,17 +13,15 @@ TRANSFORM_MODEL=$DATA_DIR/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    "bigscience/bloom-7b1"
-    "CohereForAI/aya-23-8B"
-    "meta-llama/Llama-3.2-1B"
-    "facebook/xglm-564M"
+    # "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-3.2-1B"
+    "google/gemma-3-4b-pt"
 )
 
 MODEL_ABBRS=(
-    "bloom-7b1"
-    "aya-23-8B"
-    "llama-3.2-1B"
-    "xglm-564M"
+    # "aya-23-8B"
+    # "llama-3.2-1B"
+    "gemma-3-4b-pt"
 )
 
 SEEDS=(0 42 123)

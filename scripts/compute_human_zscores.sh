@@ -14,16 +14,14 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
+    "google/gemma-3-4b-pt"
     "CohereForAI/aya-23-8B"
-    "bigscience/bloom-7b1"
-    "facebook/xglm-564M"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
+    "gemma-3-4b-pt"
     "aya-23-8B"
-    "bloom-7b1"
-    "xglm-564M"
 )
 
 WATERMARK_METHODS=("xsir")
