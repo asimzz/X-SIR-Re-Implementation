@@ -6,6 +6,13 @@ from scipy import interpolate
 from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve
 
 
+
+def get_avg_zscore(validation_file):
+    validation_list = read_jsonl(validation_file)
+    zscores = [x["z_score"] if x["z_score"] is not None else 0 for x in validation_list]
+    return sum(zscores) / len(zscores) if zscores else 0
+    
+
 def tpr_at_fpr(fpr, tpr, fpr_target):
     fpr_tpr_interpolation = interpolate.interp1d(fpr, tpr, kind="linear")
     return fpr_tpr_interpolation(fpr_target)
@@ -52,10 +59,13 @@ def main(args):
     hm_true = [0 for _ in hm_list]
 
     wm_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in wm_list]
+    validation_avg_zscore = get_avg_zscore(args.val_zscore)
+    print(f"Validation average z-score: {validation_avg_zscore:.3f}")
+    normalized_wm_zscore = [z - validation_avg_zscore for z in wm_zscore]
     wm_true = [1 for _ in wm_list]
 
     y_true = hm_true + wm_true
-    y_scores = hm_zscore + wm_zscore
+    y_scores = hm_zscore + normalized_wm_zscore
 
     auc = roc_auc_score(y_true, y_scores)
 
@@ -66,10 +76,10 @@ def main(args):
 
 TPR@FPR=0.1: {tpr_at_fpr(fpr, tpr, 0.1):.3f}
 TPR@FPR=0.01: {tpr_at_fpr(fpr, tpr, 0.01):.3f}
-
-F1@FPR=0.1: {f1_at_fpr(y_true, y_scores, 0.1):.3f}
-F1@FPR=0.01: {f1_at_fpr(y_true, y_scores, 0.01):.3f}
 """
+
+# F1@FPR=0.1: {f1_at_fpr(y_true, y_scores, 0.1):.3f}
+# F1@FPR=0.01: {f1_at_fpr(y_true, y_scores, 0.01):.3f}
     )
 
     if args.roc_curve:
@@ -99,6 +109,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--wm_zscore", type=str, required=True, help="Watermark zscore file"
+    )
+    parser.add_argument(
+        "--val_zscore", type=str, default=None, help="Validation zscore file"
     )
     parser.add_argument("--roc_curve", type=str, default=None, help="ROC curve file")
 
