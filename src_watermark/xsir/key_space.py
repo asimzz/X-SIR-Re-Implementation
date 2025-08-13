@@ -6,15 +6,9 @@ import math
 class KeySpace:
     def __init__(
         self,
-        mapping_file,
+        vocab_size,
     ):
-        if os.path.exists(mapping_file):
-            with open(mapping_file, "r") as f:
-                self.mappings = json.load(f)
-        else:
-            raise ValueError(f"Mapping file {mapping_file} not found")
-
-        self.vocab_size = len(self.mappings)
+        self.vocab_size = vocab_size
 
     def compute_key_space_size(self):
         pass
@@ -26,8 +20,8 @@ class KeySpace:
 
 
 class XSIRKeySpace(KeySpace):
-    def __init__(self, mapping_file, cluster_file):
-        super().__init__(mapping_file)
+    def __init__(self, vocab_size, cluster_file):
+        super().__init__(vocab_size)
         if os.path.exists(cluster_file):
             with open(cluster_file, "r") as f:
                 self.clusters = json.load(f)
@@ -41,8 +35,8 @@ class XSIRKeySpace(KeySpace):
 
 
 class KGWKeySpace(KeySpace):
-    def __init__(self, mapping_file, gamma):
-        super().__init__(mapping_file)
+    def __init__(self, vocab_size, gamma):
+        super().__init__(vocab_size)
         self.gamma = gamma
 
     def compute_key_space_size(self):
@@ -55,3 +49,10 @@ class KGWKeySpace(KeySpace):
             - sum(math.log2(i) for i in range(1, n - k + 1))  # log2((n-k)!)
         )
         return self.get_bits_of_security(log2_total_subsets)
+
+class SIRKeySpace(KeySpace):
+    def __init__(self, vocab_size):
+        super().__init__(vocab_size)
+        
+    def compute_key_space_size(self):
+        return self.get_bits_of_security(self.vocab_size)
