@@ -29,7 +29,7 @@ MODEL_ABBRS=(
     # "llama-3.2-1B"
     "gemma-3-4b-pt"
     "aya-23-8B"
-    "qwen2.5-1.5B"
+    # "qwen2.5-1.5B"
 )
 
 # Settings
