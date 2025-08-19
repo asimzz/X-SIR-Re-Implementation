@@ -20,15 +20,15 @@ BATCH_SIZE=32
 # Model names and abbreviations
 MODEL_NAMES=(
     # "meta-llama/Llama-3.2-1B"
-    "google/gemma-3-4b-pt"
     "CohereForAI/aya-23-8B"
+    "google/gemma-3-4b-pt"
     # "Qwen/Qwen2.5-1.5B-Instruct"
 
 )
 MODEL_ABBRS=(
     # "llama-3.2-1B"
-    "gemma-3-4b-pt"
     "aya-23-8B"
+    "gemma-3-4b-pt"
     # "qwen2.5-1.5B"
 )
 
