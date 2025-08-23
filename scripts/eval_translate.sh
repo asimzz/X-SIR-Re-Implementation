@@ -8,12 +8,12 @@ GEN_DIR=$WORK_DIR/gen
 
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
-    # "CohereForAI/aya-23-8B"
+    "CohereForAI/aya-23-8B"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
-    # "aya-23-8B"
+    "aya-23-8B"
 )
 
 WATERMARK_METHODS=("kgw")
@@ -39,7 +39,7 @@ TGT_LANGS=(
     "uk"
     "ta"
     )
-SEEDS=(0 42 123) 
+SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
