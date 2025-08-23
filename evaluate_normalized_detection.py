@@ -62,10 +62,11 @@ def main(args):
     validation_avg_zscore = get_avg_zscore(args.val_zscore)
     print(f"Validation average z-score: {validation_avg_zscore:.3f}")
     normalized_wm_zscore = [z - validation_avg_zscore for z in wm_zscore]
+    normalized_hm_zscore = [z - validation_avg_zscore for z in hm_zscore]
     wm_true = [1 for _ in wm_list]
 
     y_true = hm_true + wm_true
-    y_scores = hm_zscore + normalized_wm_zscore
+    y_scores = normalized_hm_zscore + normalized_wm_zscore
 
     auc = roc_auc_score(y_true, y_scores)
 
