@@ -7,16 +7,19 @@ GEN_DIR=$WORK_DIR/gen
 
 
 MODEL_NAMES=(
+    "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
-    # "CohereForAI/aya-23-8B"
+    "google/gemma-3-4b-pt"
+
 )
 
 MODEL_ABBRS=(
+    "aya-23-8B"
     "llama-3.2-1B"
-    # "aya-23-8B"
+    "gemma-3-4b-pt"
 )
 
-WATERMARK_METHODS=("kgw")
+WATERMARK_METHODS=("xsir")
 TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko")
 
 SEEDS=(0 42 123) 
@@ -36,19 +39,19 @@ for i in "${!MODEL_NAMES[@]}"; do
             WATERMARK_DIR=$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}
 
             echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) No-attack"
-            python3 $WORK_DIR/evaluate_normalized_detection.py \
+            python3 $WORK_DIR/eval_detection.py \
                 --hm_zscore $WATERMARK_DIR/mc4.en.hum.z_score.jsonl \
-                --wm_zscore $WATERMARK_DIR/mc4.en.mod.z_score.jsonl \
-                --val_zscore $WATERMARK_DIR/mc4.en.val.hum.z_score.jsonl
+                --wm_zscore $WATERMARK_DIR/mc4.en.mod.z_score.jsonl
+                # --val_zscore $WATERMARK_DIR/mc4.en.val.hum.z_score.jsonl
 
             echo "======================================="
 
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
-                python3 $WORK_DIR/evaluate_normalized_detection.py \
+                python3 $WORK_DIR/eval_detection.py \
                     --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl \
-                    --val_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.val.hum.z_score.jsonl
+                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
+                    # --val_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.val.hum.z_score.jsonl
 
                 # echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation Human ($TGT_LANG)"
                 # python3 $WORK_DIR/eval_detection.py \
