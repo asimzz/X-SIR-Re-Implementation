@@ -90,13 +90,13 @@ def main(args):
         candidate_wm_zscore[lang] = wm_zscore
 
 
-    minimum_hum_zscore = []
+    maximum_hum_zscore = []
     maximum_wm_zscore = []
     correct_hum_lang = 0
     correct_wm_lang = 0
 
     for i in range(num_samples):
-        min_hum_score = float('inf') 
+        max_hum_score = float('-inf') 
         max_wm_score = float('-inf')
         best_hum_lang = None
         best_wm_lang = None
@@ -105,13 +105,13 @@ def main(args):
                 continue
             hum_score = candidate_hum_zscore[lang][i]
             wm_score = candidate_wm_zscore[lang][i]
-            if hum_score < min_hum_score:
-                min_hum_score = hum_score
+            if hum_score > max_hum_score:
+                max_hum_score = hum_score
                 best_hum_lang = lang
             if wm_score > max_wm_score:
                 max_wm_score = wm_score
                 best_wm_lang = lang
-        minimum_hum_zscore.append(min_hum_score)
+        maximum_hum_zscore.append(max_hum_score)
         maximum_wm_zscore.append(max_wm_score)
         if best_hum_lang == true_lang:
             correct_hum_lang += 1
@@ -121,16 +121,13 @@ def main(args):
     print(f"Correct watermark language detection count: {correct_wm_lang}/{num_samples}")
     accuracy = (correct_wm_lang / num_samples) * 100
     print(f"Accuracy: {accuracy:.1f}")
-    print(f"Correct human language detection count: {correct_hum_lang}/{num_samples}")
-    accuracy = (correct_hum_lang / num_samples) * 100
-    print(f"Accuracy: {accuracy:.1f}")
     
     
     hm_true = [0 for _ in hum_list]
     wm_true = [1 for _ in wm_list]
 
     y_true = hm_true + wm_true
-    y_scores = minimum_hum_zscore + maximum_wm_zscore
+    y_scores = maximum_hum_zscore + maximum_wm_zscore
 
     auc = roc_auc_score(y_true, y_scores)
 
