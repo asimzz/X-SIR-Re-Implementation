@@ -13,21 +13,17 @@ TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    # "meta-llama/Llama-3.2-1B"
+    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    # "facebook/xglm-564M"
-    # "bigscience/bloom-7b1"
 )
 
 MODEL_ABBRS=(
-    # "llama-3.2-1B"
-    "aya-23-8B"
-    # "xglm-564M"
-    # "bloom-7b1"
+    "llama-3.2-1B"
+    "gemma-3-4b-it"
 )
 
 WATERMARK_METHODS=("kgw")
-SEEDS=(42 123)
+SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"

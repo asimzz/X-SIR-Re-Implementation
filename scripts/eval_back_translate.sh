@@ -26,18 +26,18 @@ TGT_LANGS=(
     "pt"
     # Medium-resource languages
     "pl"
-    "nl"
-    "ru"
-    "hi"
-    "ko"
-    "ja"
-    # Low-resource languages
-    "bn"
-    "fa"
-    "vi"
-    "iw" # Hebrew
-    "uk"
-    "ta"
+    # "nl"
+    # "ru"
+    # "hi"
+    # "ko"
+    # "ja"
+    # # Low-resource languages
+    # "bn"
+    # "fa"
+    # "vi"
+    # "iw" # Hebrew
+    # "uk"
+    # "ta"
     )
 SEEDS=(0)
 
@@ -64,7 +64,18 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             for TGT_LANG in "${TGT_LANGS[@]}"; do                
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
+
+                python3 $WORK_DIR/eval_detection.py \
+                    --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
+                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
+
+                echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Back-Translation without Normalization ($TGT_LANG)"
                 python3 $WORK_DIR/back_eval_detection.py \
+                    --tgt_lang "$TGT_LANG" \
+                    --base_wm_dir "$WATERMARK_DIR"
+
+                echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Back-Translation with Normalization ($TGT_LANG)"
+                python3 $WORK_DIR/evaluate_normalized_detection.py \
                     --tgt_lang "$TGT_LANG" \
                     --base_wm_dir "$WATERMARK_DIR"
             done
