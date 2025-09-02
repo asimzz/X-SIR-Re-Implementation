@@ -21,19 +21,17 @@ BATCH_SIZE=32
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "google/gemma-3-4b-pt"
 
 )
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
-    "gemma-3-4b-pt"
 )
 
 # Settings
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
-TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko")
+TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then

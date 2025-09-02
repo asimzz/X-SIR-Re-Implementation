@@ -9,18 +9,16 @@ GEN_DIR=$WORK_DIR/gen
 MODEL_NAMES=(
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
-    "google/gemma-3-4b-pt"
 
 )
 
 MODEL_ABBRS=(
     "aya-23-8B"
     "llama-3.2-1B"
-    "gemma-3-4b-pt"
 )
 
 WATERMARK_METHODS=("xsir")
-TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko")
+TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 SEEDS=(0 42 123) 
 
@@ -51,14 +49,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 python3 $WORK_DIR/eval_detection.py \
                     --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
                     --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
-                    # --val_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.val.hum.z_score.jsonl
-
-                # echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation Human ($TGT_LANG)"
-                # python3 $WORK_DIR/eval_detection.py \
-                #     --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                #     --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
             done
-            echo "======================================="
         done
     done
 done
