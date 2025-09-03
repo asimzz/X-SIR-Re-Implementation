@@ -182,7 +182,7 @@ def main():
     for i, ref in enumerate(seeds):
         for j, patch in enumerate(seeds):
             subdir = os.path.join(args.base_dir, args.model_abbr, "xsir", f"seed_{ref}")
-            hum_fn = "mc4.en.hum.z_score.jsonl"
+            hum_fn = f"mc4.en-{args.tgt_lang}.hum.z_score.jsonl"
             atk_fn = (
                 f"mc4.en-{args.tgt_lang}.mod.z_score.jsonl"
                 if ref == patch else

@@ -8,7 +8,7 @@ GEN_DIR="$WORK_DIR/gen"
 
 MODEL_ABBR="llama-3.2-1B"
 SEEDS=({0..49})
-LANGS=("bn")
+LANGS=("bn" "iw")
 
 mkdir -p "$FIGURE_DIR"
 
