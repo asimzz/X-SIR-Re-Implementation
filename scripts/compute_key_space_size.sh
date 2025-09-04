@@ -26,7 +26,7 @@ MODEL_ABBRS=(
 
 )
 
-SPLIT_TYPES=("random" "semantic")
+SPLIT_TYPES=("cluster" "semantic")
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -41,9 +41,8 @@ for i in "${!MODEL_NAMES[@]}"; do
         echo "Computing key space size for $MODEL_NAME using $SPLIT_TYPE split"
 
         python3  $WORK_DIR/key_space.py \
-            --mapping_file $MAPPING_DIR/xsir/300_mapping_$MODEL_ABBR.json \
+            --base_model $MODEL_NAME \
             --cluster_file $MAPPING_DIR/xsir/300_mapping_${MODEL_ABBR}_clusters.json \
             --split_type $SPLIT_TYPE
-
     done
 done
