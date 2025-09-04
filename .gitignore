@@ -167,3 +167,5 @@ hold_taiji
 test*
 data/embedding/train_embeddings_10K.txt
 /exp
+
+data/figures
