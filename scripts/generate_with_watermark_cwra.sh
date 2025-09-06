@@ -20,21 +20,17 @@ BATCH_SIZE=32
 
 # Model configurations
 MODEL_NAMES=(
-    "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
-    "bigscience/bloom-7b1"
-    "facebook/xglm-564M"
+    "CohereForAI/aya-23-8B"
 )
 
 MODEL_ABBRS=(
-    "aya-23-8B"
     "llama-3.2-1B"
-    "bloom-7b1"
-    "xglm-564M"
+    "aya-23-8B"
 )
 
-WATERMARK_METHODS=("kgw")
-SEEDS=(0)
+WATERMARK_METHODS=("xsir")
+SEEDS=(0 42 123)
 ORG_LANG="en"
 PVT_LANGS=(
     # High-resource languages
@@ -60,7 +56,7 @@ for i in "${!MODEL_NAMES[@]}"; do
         for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
             echo "▶️ Running $WATERMARK_METHOD (seed=$SEED) on $MODEL_NAME"
 
-            OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}"
+            OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
             mkdir -p "$OUT_DIR"
             MAPPING_FILE="$MAPPING_DIR/${WATERMARK_METHOD}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
 
