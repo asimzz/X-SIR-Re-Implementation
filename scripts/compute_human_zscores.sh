@@ -15,14 +15,16 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
-    "gemma-3-4b-it"
+    "aya-23-8B"
+    "llamax3-8B"
 )
 
-WATERMARK_METHODS=("kgw")
+WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -44,7 +46,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 WATERMARK_METHOD_FLAG="--watermark_method xsir \
                     --transform_model $TRANSFORM_MODEL \
                     --embedding_model $EMBEDDING_MODEL \
-                    --mapping_file $MAPPING_DIR/${WATERMARK_METHOD}_seed${SEED}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+                    --mapping_file $MAPPING_DIR/${WATERMARK_METHOD}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
             else
                 echo "Unknown watermark method: $WATERMARK_METHOD"
                 exit 1

@@ -21,15 +21,17 @@ BATCH_SIZE=32
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
+    "llamax3-8B"
 )
 
 # Settings
-WATERMARK_METHODS=("kgw")
-SEEDS=(0)
+WATERMARK_METHODS=("xsir")
+SEEDS=(0 42 123)
 TGT_LANGS=(
     # High-resource languages
     "fr" # French

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Source folder
-SRC="gen/llama-3.2-1B/kgw_seed0"
+SRC="gen/llama-3.2-1B/xsir_seed0"
 # Files to copy
 
 TGT_LANGS=(
@@ -28,7 +28,7 @@ TGT_LANGS=(
 )
 
 # Loop over all seed_* folders except seed_0
-for DIR in gen/aya-23-8B/xsir_seed*; do
+for DIR in gen/llamax3-8B/xsir_seed*; do
     # Skip seed_0
     if [[ "$DIR" == "$SRC" ]]; then
         continue

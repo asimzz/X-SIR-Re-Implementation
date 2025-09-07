@@ -22,11 +22,13 @@ BATCH_SIZE=32
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
+    "llamax3-8B"
 )
 
 WATERMARK_METHODS=("xsir")
@@ -107,24 +109,6 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --base_model "$MODEL_NAME" \
                     --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
                     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
-                    $WATERMARK_FLAGS
-
-                if [ "$WATERMARK_METHOD" == "xsir" ]; then
-                    continue  # Skip back-translation for xsir if not needed
-                fi
-
-                echo "🔁 Back translation $ORG_LANG ➝ $PVT_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl" \
-                    --src_lang "$ORG_LANG" \
-                    --tgt_lang "$PVT_LANG" \
-                    --translation_part response
-
-                python3 "$WORK_DIR/detect.py" \
-                    --base_model "$MODEL_NAME" \
-                    --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra-back.mod.z_score.jsonl" \
                     $WATERMARK_FLAGS
             done
         done
