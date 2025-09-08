@@ -8,43 +8,48 @@ GEN_DIR=$WORK_DIR/gen
 ATTACK_DIR=$WORK_DIR/attack
 
 # Parameters for SIR/X-SIR
-MAPPING_DIR=$WORK_DIR/data/mapping
-TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
+MAPPING_DIR=$DATA_DIR/mapping
+TRANSFORM_MODEL=$DATA_DIR/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
-BATCH_SIZE=16
-
 MODEL_NAMES=(
-    "meta-llama/Llama-2-7b-hf"
-    # "baichuan-inc/Baichuan2-7B-Base"
-    # "baichuan-inc/Baichuan-7B"
-    # "google/gemma-2b"
-    # "mistralai/Mistral-7B-v0.1"
-
+    "meta-llama/Llama-3.2-1B"
+    "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
-    "llama2-7b"
-    # "baichuan2-7b"
-    # "baichuan-7b"
-    # "gemma-2b"
-    # "mistral-7b"
-
+    "llama-3.2-1B"
+    "aya-23-8B"
+    "llamax3-8B"
 )
+
+
+# Languages for which to create mappings without it
+OUT_LANGS=("en" "de" "fr" "ja" "zh")
+
+SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
     exit 1
 fi
 
-for i in "${!MODEL_NAMES[@]}"; do
-    MODEL_NAME=${MODEL_NAMES[$i]}
-    MODEL_ABBR=${MODEL_ABBRS[$i]}
+for LANG in "${OUT_LANGS[@]}"; do
 
-    echo "Generating semantic mappings for $MODEL_NAME"
-    
-    python3 $WORK_DIR/src_watermark/xsir/generate_semantic_mappings.py \
-        --model $MODEL_NAME \
-        --dictionary $DATA_DIR/dictionary/dictionary.txt \
-        --output_file $DATA_DIR/mapping/xsir/300_mapping_$MODEL_ABBR.json
+    echo "Generating mappings without language: $LANG"
+    for i in "${!MODEL_NAMES[@]}"; do
+        MODEL_NAME=${MODEL_NAMES[$i]}
+        MODEL_ABBR=${MODEL_ABBRS[$i]}
+
+        for SEED in "${SEEDS[@]}"; do
+            echo "Generating semantic mappings for $MODEL_NAME with seed $SEED"
+            
+            python3 $WORK_DIR/src_watermark/xsir/generate_semantic_mappings.py \
+                --model "$MODEL_NAME" \
+                --dictionary "$DATA_DIR/dictionary/dictionary-out-$LANG.txt" \
+                --output_file "$MAPPING_DIR/xsir/${LANG}/300_mapping_${MODEL_ABBR}_seed${SEED}.json" \
+                --seed "$SEED"
+        done
+    done
 done
