@@ -21,18 +21,18 @@ BATCH_SIZE=32
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "google/gemma-3-4b-pt"
+    "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
-    "gemma-3-4b-pt"
+    "llamax3-8B"
 )
 
 # Settings
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
-TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko")
+TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -68,8 +68,8 @@ for i in "${!MODEL_NAMES[@]}"; do
             python3 "$WORK_DIR/detect.py" \
                 --base_model "$MODEL_NAME" \
                 --seed "$SEED" \
-                --detect_file "$DATA_DIR/dataset/mc4/mc4.en.val.jsonl" \
-                --output_file "$OUT_DIR/mc4.en.val.hum.z_score.jsonl" \
+                --detect_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                --output_file "$OUT_DIR/mc4.en.hum.z_score.jsonl" \
                 $WATERMARK_FLAGS
 
             # Step 3: Translation & detection for each target language
@@ -79,8 +79,8 @@ for i in "${!MODEL_NAMES[@]}"; do
                 # Translation of human text
                 echo "🌐 Translating human text to $TGT_LANG"
                 python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.val.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.hum.jsonl" \
+                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
                     --translation_part response \
                     --src_lang en \
                     --tgt_lang "$TGT_LANG"
@@ -90,8 +90,8 @@ for i in "${!MODEL_NAMES[@]}"; do
                 python3 "$WORK_DIR/detect.py" \
                     --base_model "$MODEL_NAME" \
                     --seed "$SEED" \
-                    --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.hum.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.hum.z_score.jsonl" \
+                    --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
+                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl" \
                     $WATERMARK_FLAGS
             done
         done

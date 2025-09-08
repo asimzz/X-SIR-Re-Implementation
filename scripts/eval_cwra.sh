@@ -10,13 +10,15 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 
 # Model configurations
 MODEL_NAMES=(
-    "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
+    "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
-    "aya-23-8B"
     "llama-3.2-1B"
+    "aya-23-8B"
+    "llamax3-8B"
 )
 
 # Settings
@@ -43,16 +45,14 @@ for i in "${!MODEL_NAMES[@]}"; do
                 echo "$MODEL_NAME $WATERMARK_METHOD Without CWRA Attack ($ORG_LANG -> $PVT_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
                     --hm_zscore $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/mc4.en.hum.z_score.jsonl \
-                    --wm_zscore $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl \
-                    --roc_curve $FIGURE_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/no_cwra-$PVT_LANG.txt
+                    --wm_zscore $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl
 
                 echo "======================================="
 
                 echo "$MODEL_NAME $WATERMARK_METHOD With CWRA Attack ($PVT_LANG -> $ORG_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
                     --hm_zscore $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/mc4.en.hum.z_score.jsonl \
-                    --wm_zscore $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl \
-                    --roc_curve $FIGURE_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/cwra_attack-$PVT_LANG.txt
+                    --wm_zscore $GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed$SEED/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl
             done
         done
     done
