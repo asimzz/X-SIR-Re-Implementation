@@ -48,9 +48,9 @@ def main(args):
         if os.path.dirname(args.output_file) != "":
             os.makedirs(os.path.dirname(args.output_file), exist_ok=True)
 
-    # if len(input_data) == len(output_data):
-    #     print("Data already generated. Skipping...")
-    #     return
+    if len(input_data) == len(output_data):
+        print("Data already generated. Skipping...")
+        return
 
     prompt_list = [d["prompt"] for d in input_data[len(output_data):]]
 
@@ -92,7 +92,8 @@ def main(args):
             watermark_model = XSIRWindow(
                 device,
                 args.window_size,
-                tokenizer
+                tokenizer,
+                vocab_size=model.config.vocab_size,
             )
             logits_processor = XSIRLogitsProcessor(watermark_model)
         elif args.watermark_type == "context":
@@ -103,7 +104,8 @@ def main(args):
                 mapping_file=args.mapping_file,
                 delta=args.delta,
                 transform_model_path=args.transform_model,
-                embedding_model=args.embedding_model
+                embedding_model=args.embedding_model,
+                vocab_size=model.config.vocab_size,
             )
             logits_processor = XSIRLogitsProcessor(watermark_model)
         else:
@@ -113,6 +115,7 @@ def main(args):
             vocab=list(tokenizer.get_vocab().values()),
             gamma=args.gamma,
             delta=args.delta,
+            seed=args.seed,
             seeding_scheme=args.seeding_scheme
         )
     elif args.watermark_method == "uw":
@@ -178,9 +181,11 @@ if __name__ == "__main__":
     # Watermark
     parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "uw", "no"], default="no", help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
+    parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
     # X-SIR
     parser.add_argument('--watermark_type', type=str, default="context")
+    parser.add_argument('--window_size', type=int, default=5)
     parser.add_argument('--chunk_size', type=int, default=10)
     parser.add_argument('--mapping_file', type=str, default="mapping.json")
     parser.add_argument('--transform_model', type=str, default="model/transform_model_x-sbert.pth")

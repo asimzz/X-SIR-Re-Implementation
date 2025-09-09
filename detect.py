@@ -49,6 +49,7 @@ def main(args):
         watermark_detector = KGWDetector(
             vocab=list(tokenizer.get_vocab().values()),
             gamma=args.gamma, # should match original setting
+            seed=args.seed, # should match original setting
             seeding_scheme=args.seeding_scheme, # should match original setting
             device=device, # must match the original rng device type
             tokenizer=tokenizer,
@@ -68,9 +69,9 @@ def main(args):
     # Load data
     done_data = read_jsonl(args.output_file) if os.path.isfile(args.output_file) else []
     detect_data = read_jsonl(args.detect_file)
-    # if len(detect_data) == len(done_data):
-    #     print("All data has been processed. Exiting...")
-    #     return
+    if len(detect_data) == len(done_data):
+        print("All data has been processed. Exiting...")
+        return
 
     # Detect
     detect_data = detect_data[len(done_data):]
@@ -102,9 +103,11 @@ if __name__ == "__main__":
     # Watermark
     parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "sir", "uw"], required=True, help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
+    parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
     # X-SIR
     parser.add_argument('--watermark_type', type=str, default="context")
+    parser.add_argument('--window_size', type=int, default=5)
     parser.add_argument('--chunk_size', type=int, default=10)
     parser.add_argument('--mapping_file', type=str, default="mapping.json")
     parser.add_argument('--transform_model', type=str, default="model/transform_model_x-sbert_test.pth")
