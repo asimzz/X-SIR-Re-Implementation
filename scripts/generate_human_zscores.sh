@@ -40,7 +40,7 @@ TGT_LANGS=(
     "ja" # Japanese
 )
 
-ORG_LANGS=( "en" "fr" "de" "zh")
+ORG_LANGS=("en" "fr" "de" "zh")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
