@@ -82,7 +82,7 @@ def main(args):
         if lang == tgt_lang:
             continue
         hum_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.hum.z_score.jsonl"
-        wm_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.mod.z_score.jsonl"
+        wm_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.deepseek.z_score.jsonl"
         hum_list = read_jsonl(hum_zscore_file)
         wm_list = read_jsonl(wm_zscore_file)
         if len(hum_list) != len(wm_list):
