@@ -31,7 +31,7 @@ MODEL_ABBRS=(
 
 # Settings
 WATERMARK_METHODS=("kgw")
-SEEDS=(0 42 123)
+SEEDS=(0)
 TGT_LANGS=(
     # High-resource languages
     "fr" # French
@@ -107,23 +107,23 @@ for i in "${!MODEL_NAMES[@]}"; do
                 exit 1
             fi
 
-            # # Step 1: Generate watermarked data
-            # python3 "$WORK_DIR/gen.py" \
-            #     --base_model "$MODEL_NAME" \
-            #     --fp16 \
-            #     --batch_size "$BATCH_SIZE" \
-            #     --seed "$SEED" \
-            #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-            #     --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #     $WATERMARK_FLAGS
+            # Step 1: Generate watermarked data
+            python3 "$WORK_DIR/gen.py" \
+                --base_model "$MODEL_NAME" \
+                --fp16 \
+                --batch_size "$BATCH_SIZE" \
+                --seed "$SEED" \
+                --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                $WATERMARK_FLAGS
 
-            # # Step 2: Detect watermark in English
-            # python3 "$WORK_DIR/detect.py" \
-            #     --base_model "$MODEL_NAME" \
-            #     --seed "$SEED" \
-            #     --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #     --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
-            #     $WATERMARK_FLAGS
+            # Step 2: Detect watermark in English
+            python3 "$WORK_DIR/detect.py" \
+                --base_model "$MODEL_NAME" \
+                --seed "$SEED" \
+                --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
+                $WATERMARK_FLAGS
 
             # Step 3: Translation & detection for each target language
             for TGT_LANG in "${TGT_LANGS[@]}"; do
@@ -137,13 +137,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --src_lang en \
                     --tgt_lang "$TGT_LANG"
 
-                # # Detect on translated output
-                # python3 "$WORK_DIR/detect.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --seed "$SEED" \
-                #     --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
-                #     $WATERMARK_FLAGS
+                # Detect on translated output
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --seed "$SEED" \
+                    --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
                 for ORG_LANG in "${ORG_LANGS[@]}"; do
                     if [ "$ORG_LANG" == "$TGT_LANG" ]; then
                         continue
@@ -157,12 +157,12 @@ for i in "${!MODEL_NAMES[@]}"; do
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$ORG_LANG"
 
-                    # python3 "$WORK_DIR/detect.py" \
-                    #     --base_model "$MODEL_NAME" \
-                    #     --seed "$SEED" \
-                    #     --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.jsonl" \
-                    #     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.z_score.jsonl" \
-                    #     $WATERMARK_FLAGS
+                    python3 "$WORK_DIR/detect.py" \
+                        --base_model "$MODEL_NAME" \
+                        --seed "$SEED" \
+                        --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.z_score.jsonl" \
+                        $WATERMARK_FLAGS
                 done
             done
         done

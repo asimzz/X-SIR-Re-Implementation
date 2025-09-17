@@ -63,7 +63,7 @@ for DIR in gen/aya-23-8B/kgw_seed0; do
                 continue
             fi
             # Only copy if file does not exist
-            FILE="mc4.${TGT_LANG}-${ORG_LANG}-back.hum.jsonl"
+            FILE="mc4.${TGT_LANG}-${ORG_LANG}-back.val.jsonl"
             if [[ ! -f "$DIR/$FILE" ]]; then
                 cp "$SRC/$FILE" "$DIR/"
                 echo "Copied $FILE to $DIR"

@@ -26,18 +26,18 @@ TGT_LANGS=(
     "pt"
     # Medium-resource languages
     "pl"
-    # "nl"
-    # "ru"
-    # "hi"
-    # "ko"
-    # "ja"
-    # # Low-resource languages
-    # "bn"
-    # "fa"
-    # "vi"
-    # "iw" # Hebrew
-    # "uk"
-    # "ta"
+    "nl"
+    "ru"
+    "hi"
+    "ko"
+    "ja"
+    # Low-resource languages
+    "bn"
+    "fa"
+    "vi"
+    "iw" # Hebrew
+    "uk"
+    "ta"
     )
 SEEDS=(0)
 
