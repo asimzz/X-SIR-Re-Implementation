@@ -13,9 +13,9 @@ def read_jsonl(file_path):
 
 def deepseek_translate_openai(text, src_lang, tgt_lang, model="deepseek-chat", temperature=1.3):
     # Make sure API key is set
-    api_key = os.getenv("DEEP_SEEK_API_KEY")
+    api_key = os.getenv("DEEPSEEK_API_KEY")
     if not api_key:
-        raise ValueError("❌ Please set the DEEP_SEEK_API_KEY environment variable.")
+        raise ValueError("❌ Please set the DEEPSEEK_API_KEY environment variable.")
 
 
     # Format prompt
