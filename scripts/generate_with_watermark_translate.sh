@@ -150,19 +150,20 @@ for i in "${!MODEL_NAMES[@]}"; do
                     fi
                     # Back-translation
                     echo "🔁 Back translation $TGT_LANG -> $ORG_LANG"
-                    python3 "$ATTACK_DIR/deepseek_translate.py" \
+                    python3 "$ATTACK_DIR/translate.py" \
                         --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
                         --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.jsonl" \
                         --translation_part response \
+                        --model "deepseek-chat" \
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$ORG_LANG"
 
-                    # python3 "$WORK_DIR/detect.py" \
-                    #     --base_model "$MODEL_NAME" \
-                    #     --seed "$SEED" \
-                    #     --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.jsonl" \
-                    #     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.z_score.jsonl" \
-                    #     $WATERMARK_FLAGS
+                    python3 "$WORK_DIR/detect.py" \
+                        --base_model "$MODEL_NAME" \
+                        --seed "$SEED" \
+                        --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.z_score.jsonl" \
+                        $WATERMARK_FLAGS
                 done
             done
         done
