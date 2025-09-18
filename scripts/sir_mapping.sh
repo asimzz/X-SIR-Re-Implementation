@@ -12,24 +12,16 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
-BATCH_SIZE=16
-
 MODEL_NAMES=(
-    "meta-llama/Llama-2-7b-hf"
-    "baichuan-inc/Baichuan2-7B-Base"
-    "baichuan-inc/Baichuan-7B"
-    "google/gemma-2b"
-    "mistralai/Mistral-7B-v0.1"
+    "meta-llama/Llama-3.2-1B"
+    "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 
 )
-
 MODEL_ABBRS=(
-    "llama2-7b"
-    "baichuan2-7b"
-    "baichuan-7b"
-    "gemma-2b"
-    "mistral-7b"
-
+    "llama-3.2-1B"
+    "aya-23-8B"
+    "llamax3-8B"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
