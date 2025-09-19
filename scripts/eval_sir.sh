@@ -14,33 +14,29 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 BATCH_SIZE=32
 
+# Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-2-7b-hf"
-    # "google/gemma-2b"
-    # "mistralai/Mistral-7B-v0.1"
-    # "baichuan-inc/Baichuan2-7B-Base"
-    # "baichuan-inc/Baichuan-7B"
+    "CohereForAI/aya-23-8B"
+    # "meta-llama/Llama-3.2-1B"
+    # "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
-    "llama2-7b"
-    # "gemma-2b"
-    # "mistral-7b"
-    # "baichuan2-7b"
-    # "baichuan-7b"
+    "aya-23-8B"
+    # "llama-3.2-1B"
+    # "llamax3-8B"
 )
 
-WATERMARK_METHODS=(
-    # "kgw"
-    # "sir"
-    "xsir"
-)
+SEEDS=(0)
+
+# Settings
+WATERMARK_METHODS=("sir")
 
 TGT_LANGS=(
     "de"
     "fr"
-    # "zh"
-    # "ja"
+    "zh"
+    "ja"
 )
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
