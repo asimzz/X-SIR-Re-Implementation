@@ -30,7 +30,7 @@ MODEL_ABBRS=(
 SEEDS=(0)
 
 # Settings
-WATERMARK_METHODS=("sir")
+WATERMARK_METHODS=("xsir")
 
 TGT_LANGS=(
     "de"
@@ -38,6 +38,8 @@ TGT_LANGS=(
     "zh"
     "ja"
 )
+
+ITER_NUM=({0..20})
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -58,16 +60,22 @@ for i in "${!MODEL_NAMES[@]}"; do
             exit 1
         fi
 
-        echo "$MODEL_NAME $WATERMARK_METHOD No-attack"
-        python3 $WORK_DIR/eval_detection.py \
-            --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.hum.z_score.jsonl \
-            --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en.mod.z_score.jsonl
 
-        for TGT_LANG in "${TGT_LANGS[@]}"; do
-            echo "$MODEL_NAME $WATERMARK_METHOD Translation ($TGT_LANG)"
+        
+        for ITER in "${ITER_NUM[@]}"; do
+            echo "======================================="
+            echo "Iteration $ITER"
+            echo "$MODEL_NAME $WATERMARK_METHOD No-attack"
             python3 $WORK_DIR/eval_detection.py \
-                --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/mc4.en-$TGT_LANG.mod.z_score.jsonl
+                --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/$ITER/mc4.en.hum.z_score.jsonl \
+                --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/$ITER/mc4.en.mod.z_score.jsonl
+
+            for TGT_LANG in "${TGT_LANGS[@]}"; do
+                echo "$MODEL_NAME $WATERMARK_METHOD Translation ($TGT_LANG)"
+                python3 $WORK_DIR/eval_detection.py \
+                    --hm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/$ITER/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
+                    --wm_zscore $GEN_DIR/$MODEL_ABBR/$WATERMARK_METHOD/$ITER/mc4.en-$TGT_LANG.mod.z_score.jsonl
+            done
         done
 
         echo "======================================="
