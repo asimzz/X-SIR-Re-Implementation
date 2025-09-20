@@ -1,0 +1,746 @@
+{
+  "model": "CohereForAI/aya-23-8B",
+  "append_meta_symbols": false,
+  "per_language": {
+    "bn": {
+      "unique_words_seen": 26397,
+      "unique_words_hit_single_token": 1457,
+      "coverage_percent": 5.52
+    },
+    "de": {
+      "unique_words_seen": 98225,
+      "unique_words_hit_single_token": 10904,
+      "coverage_percent": 11.1
+    },
+    "en": {
+      "unique_words_seen": 154027,
+      "unique_words_hit_single_token": 15330,
+      "coverage_percent": 9.95
+    },
+    "es": {
+      "unique_words_seen": 142673,
+      "unique_words_hit_single_token": 11578,
+      "coverage_percent": 8.12
+    },
+    "fa": {
+      "unique_words_seen": 40889,
+      "unique_words_hit_single_token": 2084,
+      "coverage_percent": 5.1
+    },
+    "fr": {
+      "unique_words_seen": 139053,
+      "unique_words_hit_single_token": 12481,
+      "coverage_percent": 8.98
+    },
+    "he": {
+      "unique_words_seen": 38518,
+      "unique_words_hit_single_token": 560,
+      "coverage_percent": 1.45
+    },
+    "hi": {
+      "unique_words_seen": 33222,
+      "unique_words_hit_single_token": 1675,
+      "coverage_percent": 5.04
+    },
+    "it": {
+      "unique_words_seen": 137188,
+      "unique_words_hit_single_token": 11758,
+      "coverage_percent": 8.57
+    },
+    "ja": {
+      "unique_words_seen": 30417,
+      "unique_words_hit_single_token": 2619,
+      "coverage_percent": 8.61
+    },
+    "ko": {
+      "unique_words_seen": 15563,
+      "unique_words_hit_single_token": 974,
+      "coverage_percent": 6.26
+    },
+    "nl": {
+      "unique_words_seen": 84534,
+      "unique_words_hit_single_token": 7803,
+      "coverage_percent": 9.23
+    },
+    "pl": {
+      "unique_words_seen": 64401,
+      "unique_words_hit_single_token": 5799,
+      "coverage_percent": 9.0
+    },
+    "pt": {
+      "unique_words_seen": 141212,
+      "unique_words_hit_single_token": 11921,
+      "coverage_percent": 8.44
+    },
+    "ru": {
+      "unique_words_seen": 44967,
+      "unique_words_hit_single_token": 1368,
+      "coverage_percent": 3.04
+    },
+    "ta": {
+      "unique_words_seen": 23829,
+      "unique_words_hit_single_token": 1460,
+      "coverage_percent": 6.13
+    },
+    "uk": {
+      "unique_words_seen": 42042,
+      "unique_words_hit_single_token": 1943,
+      "coverage_percent": 4.62
+    },
+    "vi": {
+      "unique_words_seen": 73665,
+      "unique_words_hit_single_token": 7565,
+      "coverage_percent": 10.27
+    }
+  },
+  "per_dictionary": {
+    "en-de.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-de.txt",
+      "langs": [
+        "en",
+        "de"
+      ],
+      "total_pairs": 101882,
+      "en_words_seen": 74612,
+      "de_words_seen": 78205,
+      "en_hits": 23441,
+      "de_hits": 10235
+    },
+    "en-fr.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-fr.txt",
+      "langs": [
+        "en",
+        "fr"
+      ],
+      "total_pairs": 113196,
+      "en_words_seen": 108586,
+      "fr_words_seen": 96960,
+      "en_hits": 19799,
+      "fr_hits": 10295
+    },
+    "en-es.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-es.txt",
+      "langs": [
+        "en",
+        "es"
+      ],
+      "total_pairs": 112461,
+      "en_words_seen": 122189,
+      "es_words_seen": 96521,
+      "en_hits": 20045,
+      "es_hits": 8381
+    },
+    "en-it.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-it.txt",
+      "langs": [
+        "en",
+        "it"
+      ],
+      "total_pairs": 103422,
+      "en_words_seen": 128282,
+      "it_words_seen": 93059,
+      "en_hits": 16978,
+      "it_hits": 8378
+    },
+    "en-pt.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-pt.txt",
+      "langs": [
+        "en",
+        "pt"
+      ],
+      "total_pairs": 108451,
+      "en_words_seen": 133362,
+      "pt_words_seen": 97086,
+      "en_hits": 18952,
+      "pt_hits": 8329
+    },
+    "de-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/de-en.txt",
+      "langs": [
+        "de",
+        "en"
+      ],
+      "total_pairs": 101945,
+      "de_words_seen": 78235,
+      "en_words_seen": 133455,
+      "de_hits": 10213,
+      "en_hits": 23547
+    },
+    "de-fr.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/de-fr.txt",
+      "langs": [
+        "de",
+        "fr"
+      ],
+      "total_pairs": 61494,
+      "de_words_seen": 87198,
+      "fr_words_seen": 107927,
+      "de_hits": 7815,
+      "fr_hits": 7909
+    },
+    "de-es.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/de-es.txt",
+      "langs": [
+        "de",
+        "es"
+      ],
+      "total_pairs": 68872,
+      "de_words_seen": 93702,
+      "es_words_seen": 105588,
+      "de_hits": 8489,
+      "es_hits": 7723
+    },
+    "de-it.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/de-it.txt",
+      "langs": [
+        "de",
+        "it"
+      ],
+      "total_pairs": 59783,
+      "de_words_seen": 96685,
+      "it_words_seen": 103601,
+      "de_hits": 7869,
+      "it_hits": 7351
+    },
+    "de-pt.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/de-pt.txt",
+      "langs": [
+        "de",
+        "pt"
+      ],
+      "total_pairs": 54727,
+      "de_words_seen": 98213,
+      "pt_words_seen": 105283,
+      "de_hits": 7057,
+      "pt_hits": 6457
+    },
+    "fr-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/fr-en.txt",
+      "langs": [
+        "fr",
+        "en"
+      ],
+      "total_pairs": 113234,
+      "fr_words_seen": 107940,
+      "en_words_seen": 133470,
+      "fr_hits": 10287,
+      "en_hits": 19848
+    },
+    "fr-de.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/fr-de.txt",
+      "langs": [
+        "fr",
+        "de"
+      ],
+      "total_pairs": 61484,
+      "fr_words_seen": 107940,
+      "de_words_seen": 98217,
+      "fr_hits": 7892,
+      "de_hits": 7819
+    },
+    "fr-es.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/fr-es.txt",
+      "langs": [
+        "fr",
+        "es"
+      ],
+      "total_pairs": 87257,
+      "fr_words_seen": 123479,
+      "es_words_seen": 119390,
+      "fr_hits": 8817,
+      "es_hits": 8054
+    },
+    "fr-it.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/fr-it.txt",
+      "langs": [
+        "fr",
+        "it"
+      ],
+      "total_pairs": 97667,
+      "fr_words_seen": 134377,
+      "it_words_seen": 120803,
+      "fr_hits": 9738,
+      "it_hits": 9221
+    },
+    "fr-pt.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/fr-pt.txt",
+      "langs": [
+        "fr",
+        "pt"
+      ],
+      "total_pairs": 94478,
+      "fr_words_seen": 139045,
+      "pt_words_seen": 119868,
+      "fr_hits": 9797,
+      "pt_hits": 8958
+    },
+    "es-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/es-en.txt",
+      "langs": [
+        "es",
+        "en"
+      ],
+      "total_pairs": 112462,
+      "es_words_seen": 119398,
+      "en_words_seen": 133479,
+      "es_hits": 8354,
+      "en_hits": 20064
+    },
+    "es-de.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/es-de.txt",
+      "langs": [
+        "es",
+        "de"
+      ],
+      "total_pairs": 68836,
+      "es_words_seen": 119398,
+      "de_words_seen": 98223,
+      "es_hits": 7677,
+      "de_hits": 8484
+    },
+    "es-fr.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/es-fr.txt",
+      "langs": [
+        "es",
+        "fr"
+      ],
+      "total_pairs": 87245,
+      "es_words_seen": 119398,
+      "fr_words_seen": 139047,
+      "es_hits": 8042,
+      "fr_hits": 8808
+    },
+    "es-it.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/es-it.txt",
+      "langs": [
+        "es",
+        "it"
+      ],
+      "total_pairs": 96215,
+      "es_words_seen": 130923,
+      "it_words_seen": 131349,
+      "es_hits": 8697,
+      "it_hits": 8993
+    },
+    "es-pt.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/es-pt.txt",
+      "langs": [
+        "es",
+        "pt"
+      ],
+      "total_pairs": 107272,
+      "es_words_seen": 142668,
+      "pt_words_seen": 135653,
+      "es_hits": 9280,
+      "pt_hits": 9348
+    },
+    "it-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/it-en.txt",
+      "langs": [
+        "it",
+        "en"
+      ],
+      "total_pairs": 103423,
+      "it_words_seen": 131355,
+      "en_words_seen": 133486,
+      "it_hits": 8363,
+      "en_hits": 16990
+    },
+    "it-de.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/it-de.txt",
+      "langs": [
+        "it",
+        "de"
+      ],
+      "total_pairs": 59771,
+      "it_words_seen": 131355,
+      "de_words_seen": 98224,
+      "it_hits": 7341,
+      "de_hits": 7870
+    },
+    "it-fr.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/it-fr.txt",
+      "langs": [
+        "it",
+        "fr"
+      ],
+      "total_pairs": 97660,
+      "it_words_seen": 131357,
+      "fr_words_seen": 139050,
+      "it_hits": 9211,
+      "fr_hits": 9737
+    },
+    "it-es.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/it-es.txt",
+      "langs": [
+        "it",
+        "es"
+      ],
+      "total_pairs": 96211,
+      "it_words_seen": 131358,
+      "es_words_seen": 142669,
+      "it_hits": 8986,
+      "es_hits": 8699
+    },
+    "it-pt.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/it-pt.txt",
+      "langs": [
+        "it",
+        "pt"
+      ],
+      "total_pairs": 91686,
+      "it_words_seen": 137186,
+      "pt_words_seen": 141208,
+      "it_hits": 9099,
+      "pt_hits": 8938
+    },
+    "pt-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/pt-en.txt",
+      "langs": [
+        "pt",
+        "en"
+      ],
+      "total_pairs": 108442,
+      "pt_words_seen": 141210,
+      "en_words_seen": 133491,
+      "pt_hits": 8321,
+      "en_hits": 18963
+    },
+    "pt-de.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/pt-de.txt",
+      "langs": [
+        "pt",
+        "de"
+      ],
+      "total_pairs": 54702,
+      "pt_words_seen": 141210,
+      "de_words_seen": 98225,
+      "pt_hits": 6445,
+      "de_hits": 7049
+    },
+    "pt-fr.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/pt-fr.txt",
+      "langs": [
+        "pt",
+        "fr"
+      ],
+      "total_pairs": 94445,
+      "pt_words_seen": 141210,
+      "fr_words_seen": 139053,
+      "pt_hits": 8942,
+      "fr_hits": 9791
+    },
+    "pt-es.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/pt-es.txt",
+      "langs": [
+        "pt",
+        "es"
+      ],
+      "total_pairs": 107263,
+      "pt_words_seen": 141212,
+      "es_words_seen": 142673,
+      "pt_hits": 9348,
+      "es_hits": 9279
+    },
+    "pt-it.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/pt-it.txt",
+      "langs": [
+        "pt",
+        "it"
+      ],
+      "total_pairs": 91668,
+      "pt_words_seen": 141212,
+      "it_words_seen": 137188,
+      "pt_hits": 8935,
+      "it_hits": 9098
+    },
+    "en-pl.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-pl.txt",
+      "langs": [
+        "en",
+        "pl"
+      ],
+      "total_pairs": 73839,
+      "en_words_seen": 135190,
+      "pl_words_seen": 64371,
+      "en_hits": 17645,
+      "pl_hits": 6222
+    },
+    "en-nl.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-nl.txt",
+      "langs": [
+        "en",
+        "nl"
+      ],
+      "total_pairs": 93743,
+      "en_words_seen": 138652,
+      "nl_words_seen": 84507,
+      "en_hits": 16246,
+      "nl_hits": 8693
+    },
+    "en-ru.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-ru.txt",
+      "langs": [
+        "en",
+        "ru"
+      ],
+      "total_pairs": 53157,
+      "en_words_seen": 139770,
+      "ru_words_seen": 44929,
+      "en_hits": 14242,
+      "ru_hits": 1372
+    },
+    "en-hi.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-hi.txt",
+      "langs": [
+        "en",
+        "hi"
+      ],
+      "total_pairs": 38172,
+      "en_words_seen": 143561,
+      "hi_words_seen": 32927,
+      "en_hits": 11696,
+      "hi_hits": 1651
+    },
+    "en-ko.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-ko.txt",
+      "langs": [
+        "en",
+        "ko"
+      ],
+      "total_pairs": 22357,
+      "en_words_seen": 143746,
+      "ko_words_seen": 15537,
+      "en_hits": 8741,
+      "ko_hits": 989
+    },
+    "en-ja.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-ja.txt",
+      "langs": [
+        "en",
+        "ja"
+      ],
+      "total_pairs": 35353,
+      "en_words_seen": 145118,
+      "ja_words_seen": 30382,
+      "en_hits": 10058,
+      "ja_hits": 2633
+    },
+    "pl-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/pl-en.txt",
+      "langs": [
+        "pl",
+        "en"
+      ],
+      "total_pairs": 73862,
+      "pl_words_seen": 64401,
+      "en_words_seen": 145125,
+      "pl_hits": 6204,
+      "en_hits": 17678
+    },
+    "nl-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/nl-en.txt",
+      "langs": [
+        "nl",
+        "en"
+      ],
+      "total_pairs": 93759,
+      "nl_words_seen": 84534,
+      "en_words_seen": 145130,
+      "nl_hits": 8678,
+      "en_hits": 16271
+    },
+    "ru-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/ru-en.txt",
+      "langs": [
+        "ru",
+        "en"
+      ],
+      "total_pairs": 48704,
+      "ru_words_seen": 44967,
+      "en_words_seen": 145158,
+      "ru_hits": 0,
+      "en_hits": 12800
+    },
+    "hi-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/hi-en.txt",
+      "langs": [
+        "hi",
+        "en"
+      ],
+      "total_pairs": 31035,
+      "hi_words_seen": 33222,
+      "en_words_seen": 145380,
+      "hi_hits": 31,
+      "en_hits": 10390
+    },
+    "ko-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/ko-en.txt",
+      "langs": [
+        "ko",
+        "en"
+      ],
+      "total_pairs": 20549,
+      "ko_words_seen": 15563,
+      "en_words_seen": 145389,
+      "ko_hits": 0,
+      "en_hits": 7815
+    },
+    "ja-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/ja-en.txt",
+      "langs": [
+        "ja",
+        "en"
+      ],
+      "total_pairs": 25969,
+      "ja_words_seen": 30417,
+      "en_words_seen": 145399,
+      "ja_hits": 3,
+      "en_hits": 7491
+    },
+    "en-bn.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-bn.txt",
+      "langs": [
+        "en",
+        "bn"
+      ],
+      "total_pairs": 30676,
+      "en_words_seen": 146537,
+      "bn_words_seen": 26113,
+      "en_hits": 10251,
+      "bn_hits": 1448
+    },
+    "en-fa.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-fa.txt",
+      "langs": [
+        "en",
+        "fa"
+      ],
+      "total_pairs": 47977,
+      "en_words_seen": 148193,
+      "fa_words_seen": 40707,
+      "en_hits": 11873,
+      "fa_hits": 2046
+    },
+    "en-vi.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-vi.txt",
+      "langs": [
+        "en",
+        "vi"
+      ],
+      "total_pairs": 76763,
+      "en_words_seen": 151927,
+      "vi_words_seen": 73641,
+      "en_hits": 10410,
+      "vi_hits": 8058
+    },
+    "en-he.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-he.txt",
+      "langs": [
+        "en",
+        "he"
+      ],
+      "total_pairs": 47266,
+      "en_words_seen": 152757,
+      "he_words_seen": 38423,
+      "en_hits": 12392,
+      "he_hits": 552
+    },
+    "en-uk.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-uk.txt",
+      "langs": [
+        "en",
+        "uk"
+      ],
+      "total_pairs": 47858,
+      "en_words_seen": 153206,
+      "uk_words_seen": 41998,
+      "en_hits": 14349,
+      "uk_hits": 1951
+    },
+    "en-ta.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/en-ta.txt",
+      "langs": [
+        "en",
+        "ta"
+      ],
+      "total_pairs": 26557,
+      "en_words_seen": 153882,
+      "ta_words_seen": 23638,
+      "en_hits": 9550,
+      "ta_hits": 1430
+    },
+    "bn-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/bn-en.txt",
+      "langs": [
+        "bn",
+        "en"
+      ],
+      "total_pairs": 23808,
+      "bn_words_seen": 26397,
+      "en_words_seen": 153959,
+      "bn_hits": 13,
+      "en_hits": 9182
+    },
+    "fa-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/fa-en.txt",
+      "langs": [
+        "fa",
+        "en"
+      ],
+      "total_pairs": 41170,
+      "fa_words_seen": 40889,
+      "en_words_seen": 154003,
+      "fa_hits": 41,
+      "en_hits": 10108
+    },
+    "vi-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/vi-en.txt",
+      "langs": [
+        "vi",
+        "en"
+      ],
+      "total_pairs": 76112,
+      "vi_words_seen": 73665,
+      "en_words_seen": 154005,
+      "vi_hits": 7930,
+      "en_hits": 10076
+    },
+    "he-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/he-en.txt",
+      "langs": [
+        "he",
+        "en"
+      ],
+      "total_pairs": 45616,
+      "he_words_seen": 38518,
+      "en_words_seen": 154016,
+      "he_hits": 10,
+      "en_hits": 12026
+    },
+    "uk-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/uk-en.txt",
+      "langs": [
+        "uk",
+        "en"
+      ],
+      "total_pairs": 40704,
+      "uk_words_seen": 42042,
+      "en_words_seen": 154021,
+      "uk_hits": 0,
+      "en_hits": 12336
+    },
+    "ta-en.txt": {
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/data/dictionary/download/ta-en.txt",
+      "langs": [
+        "ta",
+        "en"
+      ],
+      "total_pairs": 21151,
+      "ta_words_seen": 23829,
+      "en_words_seen": 154027,
+      "ta_hits": 32,
+      "en_hits": 8346
+    }
+  }
+}
