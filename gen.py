@@ -115,6 +115,7 @@ def main(args):
             vocab=list(tokenizer.get_vocab().values()),
             gamma=args.gamma,
             delta=args.delta,
+            seed=args.seed,
             seeding_scheme=args.seeding_scheme
         )
     elif args.watermark_method == "uw":
@@ -180,6 +181,7 @@ if __name__ == "__main__":
     # Watermark
     parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "uw", "no"], default="no", help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
+    parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
     # X-SIR
     parser.add_argument('--watermark_type', type=str, default="context")

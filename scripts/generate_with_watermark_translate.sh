@@ -32,7 +32,7 @@ MODEL_ABBRS=(
 
 # Settings
 WATERMARK_METHODS=("kgw")
-SEEDS=(0 42 123)
+SEEDS=(0)
 TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 # Validate model list lengths

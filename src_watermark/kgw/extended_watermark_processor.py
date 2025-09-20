@@ -19,7 +19,7 @@ import collections
 from math import sqrt
 from itertools import chain, tee
 from functools import lru_cache
-
+import hashlib
 import scipy.stats
 import torch
 from tokenizers import Tokenizer
@@ -29,18 +29,23 @@ from .normalizers import normalization_strategy_lookup
 from .alternative_prf_schemes import prf_lookup, seeding_scheme_lookup
 
 
+
+
 class WatermarkBase:
     def __init__(
         self,
         vocab: list[int] = None,
         gamma: float = 0.25,
         delta: float = 2.0,
+        seed: int = 0,
         seeding_scheme: str = "selfhash",  # simple default, find more schemes in alternative_prf_schemes.py
         select_green_tokens: bool = True,  # should always be the default if not running in legacy mode
     ):
         # patch now that None could now maybe be passed as seeding_scheme
         if seeding_scheme is None:
             seeding_scheme = "selfhash"
+        
+        self.seed = seed
 
         # Vocabulary setup
         self.vocab = vocab
@@ -53,10 +58,24 @@ class WatermarkBase:
         self._initialize_seeding_scheme(seeding_scheme)
         # Legacy behavior:
         self.select_green_tokens = select_green_tokens
+        
+
+    def derive_hash_key(self,) -> int:
+        # 1) Concatenate as bytes
+        blob = f"{self.hash_key}:{self.seed}".encode()
+        # 2) Run through SHA-256 (or HMAC-SHA256 with a secret)
+        digest = hashlib.sha256(blob).digest()
+        # 3) Convert to integer and reduce mod 2**64
+        return int.from_bytes(digest, "big") % (2**64 - 1)
+
 
     def _initialize_seeding_scheme(self, seeding_scheme: str) -> None:
         """Initialize all internal settings of the seeding strategy from a colloquial, "public" name for the scheme."""
         self.prf_type, self.context_width, self.self_salt, self.hash_key = seeding_scheme_lookup(seeding_scheme)
+        if self.seed != 0:
+            import hashlib
+            key_material = f"{self.hash_key}-{self.seed}".encode()
+            self.hash_key = int.from_bytes(hashlib.sha256(key_material).digest(), "big") % (2**32)
 
     def _seed_rng(self, input_ids: torch.LongTensor) -> None:
         """Seed RNG from local context. Not batched, because the generators we use (like cuda.random) are not batched."""
