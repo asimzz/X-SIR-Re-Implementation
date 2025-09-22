@@ -20,13 +20,13 @@ BATCH_SIZE=32
 # Model names and abbreviations
 MODEL_NAMES=(
     "CohereForAI/aya-23-8B"
-    "meta-llama/Llama-3.2-1B"
-    "LLaMAX/LLaMAX3-8B"
+    # "meta-llama/Llama-3.2-1B"
+    # "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
     "aya-23-8B"
-    "llama-3.2-1B"
-    "llamax3-8B"
+    # "llama-3.2-1B"
+    # "llamax3-8B"
 )
 
 # Settings
@@ -158,12 +158,12 @@ for i in "${!MODEL_NAMES[@]}"; do
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$ORG_LANG"
 
-                    python3 "$WORK_DIR/detect.py" \
-                        --base_model "$MODEL_NAME" \
-                        --seed "$SEED" \
-                        --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.jsonl" \
-                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.z_score.jsonl" \
-                        $WATERMARK_FLAGS
+                    # python3 "$WORK_DIR/detect.py" \
+                    #     --base_model "$MODEL_NAME" \
+                    #     --seed "$SEED" \
+                    #     --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.jsonl" \
+                    #     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.z_score.jsonl" \
+                    #     $WATERMARK_FLAGS
                 done
             done
         done
