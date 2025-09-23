@@ -21,18 +21,18 @@ BATCH_SIZE=32
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
-    "llamax3-8B"
 )
 
 # Settings
-WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+WATERMARK_METHODS=("kgw")
+SEEDS=(0)
 TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
+
+ORG_LANGS=("en" "it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -77,15 +77,15 @@ for i in "${!MODEL_NAMES[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
                 # Translation of human text
-                echo "🌐 Translating human text to $TGT_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
-                    --translation_part response \
-                    --src_lang en \
-                    --tgt_lang "$TGT_LANG"
+                # echo "🌐 Translating human text to $TGT_LANG"
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
+                #     --translation_part response \
+                #     --src_lang en \
+                #     --tgt_lang "$TGT_LANG"
 
-                echo "🔍 Detecting watermark in translated human text"
+                # echo "🔍 Detecting watermark in translated human text"
                 # Detect on translated human text
                 python3 "$WORK_DIR/detect.py" \
                     --base_model "$MODEL_NAME" \
@@ -93,6 +93,27 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
                     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl" \
                     $WATERMARK_FLAGS
+                
+                for ORG_LANG in "${ORG_LANGS[@]}"; do
+                    if [ "$ORG_LANG" == "$TGT_LANG" ]; then
+                        continue
+                    fi
+                    echo "🔄 Back-translating human text to $ORG_LANG"
+                    # python3 "$ATTACK_DIR/google_translate.py" \
+                    #     --input_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
+                    #     --output_file "$OUT_DIR/mc4.${TGT_LANG}-${ORG_LANG}-back.hum.jsonl" \
+                    #     --translation_part response \
+                    #     --src_lang "$TGT_LANG" \
+                    #     --tgt_lang "$ORG_LANG"
+
+                    echo "🔍 Detecting watermark in back-translated human text to $ORG_LANG"
+                    python3 "$WORK_DIR/detect.py" \
+                        --base_model "$MODEL_NAME" \
+                        --seed "$SEED" \
+                        --detect_file "$OUT_DIR/mc4.${TGT_LANG}-${ORG_LANG}-back.hum.jsonl" \
+                        --output_file "$OUT_DIR/mc4.${TGT_LANG}-${ORG_LANG}-back.hum.z_score.jsonl" \
+                        $WATERMARK_FLAGS
+                done
             done
         done
     done

@@ -33,19 +33,9 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
-ORG_LANGS=(
-    "en" # English
-    "it"
-    "es"
-    "pt"
-    "pl"
-    "nl"
-    "hr"
-    "cs"
-    "da"
-    "ko"
-    "ar"
-)
+
+ORG_LANGS=("en" "it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
+   
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -81,7 +71,7 @@ for i in "${!MODEL_NAMES[@]}"; do
             python3 "$WORK_DIR/detect.py" \
                 --base_model "$MODEL_NAME" \
                 --seed "$SEED" \
-                --detect_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                --detect_file "$DATA_DIR/dataset/mc4/mc4.en.val.jsonl" \
                 --output_file "$OUT_DIR/mc4.en.val.z_score.jsonl" \
                 $WATERMARK_FLAGS
 
@@ -90,15 +80,15 @@ for i in "${!MODEL_NAMES[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
                 # Translation of human text
-                echo "🌐 Translating human text to $TGT_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.jsonl" \
-                    --translation_part response \
-                    --src_lang en \
-                    --tgt_lang "$TGT_LANG"
+                # echo "🌐 Translating human text to $TGT_LANG"
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.jsonl" \
+                #     --translation_part response \
+                #     --src_lang en \
+                #     --tgt_lang "$TGT_LANG"
 
-                echo "🔍 Detecting watermark in translated human text (${TGT_LANG})"
+                # echo "🔍 Detecting watermark in translated human text (${TGT_LANG})"
                 # Detect on translated human text
                 python3 "$WORK_DIR/detect.py" \
                     --base_model "$MODEL_NAME" \
@@ -112,13 +102,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                         continue
                     fi
 
-                    echo "Back-translation human text $TGT_LANG -> $ORG_LANG"
-                    python3 "$ATTACK_DIR/google_translate.py" \
-                        --input_file "$OUT_DIR/mc4.en-$TGT_LANG.val.jsonl" \
-                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.jsonl" \
-                        --translation_part response \
-                        --src_lang "$TGT_LANG" \
-                        --tgt_lang "$ORG_LANG"
+                    # echo "Back-translation human text $TGT_LANG -> $ORG_LANG"
+                    # python3 "$ATTACK_DIR/google_translate.py" \
+                    #     --input_file "$OUT_DIR/mc4.en-$TGT_LANG.val.jsonl" \
+                    #     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.jsonl" \
+                    #     --translation_part response \
+                    #     --src_lang "$TGT_LANG" \
+                    #     --tgt_lang "$ORG_LANG"
 
                     echo "🔍 Detecting watermark in back-translated human text (${TGT_LANG} -> ${ORG_LANG})"
                     python3 "$WORK_DIR/detect.py" \
