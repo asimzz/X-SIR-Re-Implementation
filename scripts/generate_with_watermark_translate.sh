@@ -56,7 +56,7 @@ TGT_LANGS=(
 )
 
 ORG_LANGS=(
-    "en" # English
+    # "en" # English
     # High-resource languages
     "fr" # French
     "de" # German
@@ -152,9 +152,9 @@ for i in "${!MODEL_NAMES[@]}"; do
                     echo "🔁 Back translation $TGT_LANG -> $ORG_LANG"
                     python3 "$ATTACK_DIR/translate.py" \
                         --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
-                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.gemini.jsonl" \
                         --translation_part response \
-                        --model "deepseek-chat" \
+                        --model "gemini-2.5-flash" \
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$ORG_LANG"
 

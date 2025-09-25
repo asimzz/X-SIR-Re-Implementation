@@ -23,9 +23,10 @@ def api_endpoint_from_url(request_url):
     if match is None:
         match = re.search(r"^https://[^/]+/openai/deployments/[^/]+/(.+?)(\?|$)", request_url)
     if match:
-        return match[1]
+        # ADD THIS LINE to remove the API key and other query parameters
+        return match[1].split("?")[0]
     # fallback for simple URLs like https://api.deepseek.com/chat/completions
-    return request_url.split("https://")[-1].split("/", 1)[-1]
+    return request_url.split("https://")[-1].split("/", 1)[-1].split("?")[0]
 
 def task_id_generator_function():
     """Generate integers 0, 1, 2, and so on."""
@@ -41,6 +42,17 @@ def num_tokens_consumed_from_request(
 ):
     """Count the number of tokens in the request. Only supports completion and embedding requests."""
     encoding = tiktoken.get_encoding("cl100k_base")
+    
+    if api_endpoint.endswith(":generateContent"):
+        num_tokens = 0
+        # This is a ROUGH ESTIMATE. Gemini tokenization is different from OpenAI's.
+        if "contents" in request_json:
+            for content in request_json["contents"]:
+                for part in content.get("parts", []):
+                    if "text" in part:
+                        num_tokens += len(encoding.encode(part["text"]))
+        # This function does not account for output tokens, so the rate limiting will be imprecise.
+        return num_tokens
     # if completions request, tokens = prompt + n * max_tokens
     if api_endpoint.endswith("completions"):
         max_tokens = request_json.get("max_tokens", 15)
@@ -180,6 +192,7 @@ class CallOpenAI:
         self,
         request_url,
         api_key,
+        model,
         input_file_path,
         output_file_path,
         input_to_requests_func,
@@ -194,6 +207,12 @@ class CallOpenAI:
     ):
         self.request_url = request_url
         self.api_key = api_key
+        self.model = model # Set the model directly
+        self.max_requests_per_minute = MODEL2RPM.get(self.model) # Use .get for safety
+        self.max_tokens_per_minute = MODEL2TPM.get(self.model) # Use .get for safety
+        self.available_request_capacity = self.max_requests_per_minute
+        self.available_token_capacity = self.max_tokens_per_minute
+        self.last_update_time = time.time()
         self.input_file_path = input_file_path
         self.output_file_path = output_file_path
         self.input_to_requests_func = input_to_requests_func
@@ -207,10 +226,9 @@ class CallOpenAI:
         self.logging_level = logging_level
         self.progress_bar = tqdm(desc=progress_bar_desc)
 
-        self.request_header = {"Authorization": f"Bearer {self.api_key}"}
-        if "/deployments" in self.request_url:
-            # use api-key header for Azure deployments
-            self.request_header = {"api-key": f"{self.api_key}"}
+        # The Gemini API key is in the URL, so we don't need the Authorization header.
+        # We just need to specify that we are sending JSON data.
+        self.request_header = {"Content-Type": "application/json"}
 
         # initialize logging
         logging.basicConfig(level=logging_level)
@@ -227,12 +245,12 @@ class CallOpenAI:
         self.next_request = None  # variable to hold the next request to call
 
         # initialize available capacity counts
-        self.model = None
-        self.max_requests_per_minute = None
-        self.max_tokens_per_minute = None
-        self.available_request_capacity = None
-        self.available_token_capacity = None
-        self.last_update_time = time.time()
+        # self.model = None
+        # self.max_requests_per_minute = None
+        # self.max_tokens_per_minute = None
+        # self.available_request_capacity = None
+        # self.available_token_capacity = None
+        # self.last_update_time = time.time()
 
         # initialize flags
         self.file_not_finished = True  # after file is empty, we'll skip reading it
@@ -284,13 +302,6 @@ class CallOpenAI:
                         try:
                             # get new request
                             request_json = next(requests)
-                            assert "model" in request_json, "`model` is required in request"
-                            if self.model is None:
-                                self.model = request_json["model"]
-                                self.max_requests_per_minute = MODEL2RPM[self.model]
-                                self.max_tokens_per_minute = MODEL2TPM[self.model]
-                                self.available_request_capacity = self.max_requests_per_minute
-                                self.available_token_capacity = self.max_tokens_per_minute
 
                             self.next_request = APIRequest(
                                 task_id=next(self.task_id_generator),

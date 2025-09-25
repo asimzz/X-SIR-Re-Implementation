@@ -19,7 +19,7 @@ def read_jsonl(file_path):
 
 def main(args):
     # assert valid_location(), "Invalid location"
-    assert os.getenv("DEEPSEEK_API_KEY"), "Set the DEEPSEEK_API_KEY environment variable"
+    assert os.getenv("GEMINI_API_KEY"), "Set the GEMINI_API_KEY environment variable"
 
     def input_to_requests_func(input_file: str, output_file: str) -> list:
         """
@@ -52,15 +52,21 @@ def main(args):
                 prompt = json.loads(line.strip())["prompt"]
                 response = json.loads(line.strip())["response"]
                 rq = {
-                    "model": args.model,
-                    "messages": [
+                    "contents": [
                         {
                             "role": "user",
-                            "content": f"Translate the following {Language.make(language=args.src_lang).display_name()} text to {Language.make(language=args.tgt_lang).display_name()}:\n\n{response}"
+                            "parts": [
+                                {
+                                    "text": f"Translate the following {Language.make(language=args.src_lang).display_name()} text to {Language.make(language=args.tgt_lang).display_name()}. Just give the final translated text, don't add any prefix messages:\n\n{response}"
+                                }
+                            ]
                         }
                     ],
-                    "temperature": args.temperature,
-                    "metadata": {"row_id": i, "prompt": prompt} # store the id of the request as metadata
+                    # You can map temperature to Gemini's generationConfig if needed
+                    "generationConfig": {
+                        "temperature": args.temperature,
+                    },
+                    "metadata": {"row_id": i, "prompt": prompt}
                 }
                 rqs.append(rq)
         return rqs
@@ -78,7 +84,13 @@ def main(args):
             None
         """
 
-        translation = response["response"]["choices"][0]["message"]["content"] # Extract the translation from the response
+        try:
+            # Extract the translation from the Gemini response structure
+            translation = response["response"]["candidates"][0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError):
+            # Handle cases where the response is malformed, empty, or blocked for safety
+            translation = "Error: Could not extract translation from API response."
+            print(f"Failed to parse response: {response}")
         id = response["metadata"]["row_id"] # Extract the row ID from the metadata
         prompt = response["metadata"]["prompt"]
 
@@ -142,9 +154,12 @@ def main(args):
 
         return num_requests == num_done
 
+    api_key = os.getenv("GEMINI_API_KEY")
+
     openai_caller = CallOpenAI(
-        request_url="https://api.deepseek.com/chat/completions",
-        api_key=os.getenv("DEEPSEEK_API_KEY"),
+        request_url=f"https://generativelanguage.googleapis.com/v1beta/models/{args.model}:generateContent?key={api_key}",
+        api_key=api_key,
+        model=args.model,  # Pass the model here
         input_file_path=args.input_file,
         output_file_path=args.output_file,
         max_attempts=5,
@@ -155,7 +170,7 @@ def main(args):
         post_run_func=post_run_func,
         is_all_done_func=is_all_done
     )
-
+    
     asyncio.run(
         openai_caller.run()
     )
