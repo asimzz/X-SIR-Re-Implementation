@@ -55,6 +55,12 @@ TGT_LANGS=(
     "ta" # Tamil
 )
 
+PVT_LANGS=(
+    "de" # German
+    "ko" # Korean
+    "bn" # Bengali
+)
+
 ORG_LANGS=(
     "en" # English
     # High-resource languages
@@ -139,26 +145,40 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.z_score.jsonl" \
                     $WATERMARK_FLAGS
 
-                for ORG_LANG in "${ORG_LANGS[@]}"; do
-                    if [ "$ORG_LANG" == "$TGT_LANG" ]; then
+                # Pivoting attack (using multiple pivot languages)
+                for PVT_LANG in "${PVT_LANGS[@]}"; do
+                    if [ "$PVT_LANG" == "$TGT_LANG" ]; then
                         continue
                     fi
-
-                    echo "Back-translation human text $TGT_LANG -> $ORG_LANG"
-                    python3 "$ATTACK_DIR/google_translate.py" \
+                    # Pivot translation
+                    echo "🔀 Pivot translation $TGT_LANG -> $PVT_LANG"
+                    $PYTHON "$ATTACK_DIR/google_translate.py" \
                         --input_file "$OUT_DIR/mc4.en-$TGT_LANG.val.jsonl" \
-                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.val.jsonl" \
                         --translation_part response \
                         --src_lang "$TGT_LANG" \
-                        --tgt_lang "$ORG_LANG"
-                    echo "🔍 Detecting watermark in back-translated human text (${TGT_LANG} -> ${ORG_LANG})"
-                    python3 "$WORK_DIR/detect.py" \
-                        --base_model "$MODEL_NAME" \
-                        --seed "$SEED" \
-                        --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.jsonl" \
-                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.z_score.jsonl" \
-                        $WATERMARK_FLAGS
+                        --tgt_lang "$PVT_LANG"
 
+                    for ORG_LANG in "${ORG_LANGS[@]}"; do
+                        if [ "$ORG_LANG" == "$PVT_LANG" ]; then
+                            continue
+                        fi
+                        # Back-translation
+                        echo "🔁 Back translation $PVT_LANG -> $ORG_LANG"
+                        $PYTHON "$ATTACK_DIR/google_translate.py" \
+                            --input_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.val.jsonl" \
+                            --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-$ORG_LANG-back.val.jsonl" \
+                            --translation_part response \
+                            --src_lang "$PVT_LANG" \
+                            --tgt_lang "$ORG_LANG"
+
+                        # python3 "$WORK_DIR/detect.py" \
+                        #     --base_model "$MODEL_NAME" \
+                        #     --seed "$SEED" \
+                        #     --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.jsonl" \
+                        #     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.z_score.jsonl" \
+                        #     $WATERMARK_FLAGS
+                    done
                 done
             done
         done
