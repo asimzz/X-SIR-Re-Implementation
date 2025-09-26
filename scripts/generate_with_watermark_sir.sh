@@ -34,12 +34,12 @@ SEEDS=(0)
 
 # Settings
 WATERMARK_METHODS=("sir")
-
-TGT_LANGS=(
+ORG_LANG="en"
+PVT_LANGS=(
     "de"
     "fr"
-    "zh"
-    "ja"
+    # "zh"
+    # "ja"
 )
 
 # Validate model list lengths
@@ -71,42 +71,44 @@ for i in "${!MODEL_NAMES[@]}"; do
                 exit 1
             fi
 
-            # Step 1: Generate watermarked data
-            python3 "$WORK_DIR/gen.py" \
-                --base_model "$MODEL_NAME" \
-                --fp16 \
-                --batch_size "$BATCH_SIZE" \
-                --seed "$SEED" \
-                --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
-                $WATERMARK_FLAGS
 
-            # Step 2: Detect watermark in English
-            python3 "$WORK_DIR/detect.py" \
-                --base_model "$MODEL_NAME" \
-                --seed "$SEED" \
-                --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
-                --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
-                $WATERMARK_FLAGS
+            for PVT_LANG in "${PVT_LANGS[@]}"; do
+            echo "🌐 Processing language pair: $ORG_LANG ➝ $PVT_LANG"
+            python3 "$ATTACK_DIR/google_translate.py" \
+                --input_file "$OUT_DIR/mc4.$ORG_LANG.mod.jsonl" \
+                --output_file "$OUT_DIR/mc4.$ORG_LANG-${PVT_LANG}-cwra.jsonl" \
+                --translation_part prompt \
+                --src_lang "$ORG_LANG" \
+                --tgt_lang "$PVT_LANG"
 
-            # Step 3: Translation & detection for each target language
-            for TGT_LANG in "${TGT_LANGS[@]}"; do
-                echo "🌍 Translating and detecting for $TGT_LANG"
+            echo "🧬 Generating watermark on translated prompts"
+                python3 "$WORK_DIR/gen.py" \
+                    --base_model "$MODEL_NAME" \
+                    --fp16 \
+                    --batch_size "$BATCH_SIZE" \
+                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                    $WATERMARK_FLAGS
 
-                # Translation attack
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-                    --translation_part response \
-                    --src_lang en \
-                    --tgt_lang "$TGT_LANG"
-
-                # Detect on translated output
+                echo "🔍 Detecting watermark post-generation"
                 python3 "$WORK_DIR/detect.py" \
                     --base_model "$MODEL_NAME" \
-                    --seed "$SEED" \
-                    --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
+                    --detect_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl" \
+                    $WATERMARK_FLAGS
+
+                echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                    --src_lang "$PVT_LANG" \
+                    --tgt_lang "$ORG_LANG" \
+                    --translation_part response
+
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
                     $WATERMARK_FLAGS
             done
         done
