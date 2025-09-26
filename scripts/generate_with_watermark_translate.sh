@@ -4,6 +4,23 @@
 set -e
 set -u
 
+# pick a workable python
+PYTHON="${PYTHON:-python}"
+
+if ! command -v "$PYTHON" >/dev/null 2>&1; then
+  if [ -x "./.venv/Scripts/python.exe" ]; then
+    PYTHON="./.venv/Scripts/python.exe"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON="python3"
+  elif command -v py >/dev/null 2>&1; then
+    PYTHON="py -3.10"
+  else
+    echo "❌ Python not found. Activate your venv: source .venv/Scripts/activate" >&2
+    exit 1
+  fi
+fi
+
+
 # Set working directories
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORK_DIR="$SCRIPT_DIR/.."
@@ -19,14 +36,14 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "LLaMAX/LLaMAX3-8B"
+    # "meta-llama/Llama-3.2-1B"
+    # "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
-    "llamax3-8B"
+    # "llama-3.2-1B"
+    # "llamax3-8B"
 )
 
 # Settings
@@ -56,8 +73,8 @@ TGT_LANGS=(
 )
 
 PVT_LANGS=(
-    "de" # German
-    "ko" # Korean
+    # "de" # German
+    # "ko" # Korean
     "bn" # Bengali
 )
 
@@ -158,7 +175,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                     fi
                     # Pivot translation
                     echo "🔀 Pivot translation $TGT_LANG -> $PVT_LANG"
-                    python3 "$ATTACK_DIR/google_translate.py" \
+                    $PYTHON "$ATTACK_DIR/google_translate.py" \
                         --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
                         --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.mod.jsonl" \
                         --translation_part response \
@@ -171,7 +188,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                         fi
                         # Back-translation
                         echo "🔁 Back translation $PVT_LANG -> $ORG_LANG"
-                        python3 "$ATTACK_DIR/google_translate.py" \
+                        $PYTHON "$ATTACK_DIR/google_translate.py" \
                             --input_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.mod.jsonl" \
                             --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-$ORG_LANG-back.mod.jsonl" \
                             --translation_part response \
