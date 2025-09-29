@@ -9,12 +9,14 @@ GEN_DIR=$WORK_DIR/gen
 MODEL_NAMES=(
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
+    "LLaMAX/LLaMAX3-8B"
 
 )
 
 MODEL_ABBRS=(
     "aya-23-8B"
     "llama-3.2-1B"
+    "llamax3-8B"
 )
 
 WATERMARK_METHODS=("xsir")
