@@ -12,11 +12,13 @@ MAPPING_DIR=$WORK_DIR/data/mapping
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
+    "llamax3-8B"
 )
 
 # Settings

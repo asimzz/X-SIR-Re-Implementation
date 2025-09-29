@@ -9,11 +9,13 @@ GEN_DIR=$WORK_DIR/gen
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
+    "llamax3-8B"
 )
 
 WATERMARK_METHODS=("xsir")
@@ -64,10 +66,6 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
-                python3 $WORK_DIR/eval_detection.py \
-                    --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl 
-                echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation Human ($TGT_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
                     --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
                     --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
