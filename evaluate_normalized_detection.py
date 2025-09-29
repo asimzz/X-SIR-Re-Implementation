@@ -8,7 +8,7 @@ import json
 
 
 ORG_LANGS = [
-        "en", # English
+        # "en", # English
         "it", # Italian
         "es", # Spanish
         "pt", # Portuguese
@@ -21,10 +21,12 @@ ORG_LANGS = [
         "ar"  # Arabic
     ]
 
+def extract_zscores(_list):
+    return [_["z_score"] if _["z_score"] is not None else 0 for _ in _list]
 
 def get_avg_zscore(validation_file):
     validation_list = read_jsonl(validation_file)
-    zscores = [x["z_score"] if x["z_score"] is not None else 0 for x in validation_list]
+    zscores = extract_zscores(validation_list)
     return sum(zscores) / len(zscores) if zscores else 0
 
 def tpr_at_fpr(fpr, tpr, fpr_target):
@@ -62,8 +64,7 @@ def f1_at_fpr(y_true, y_scores, fpr_target):
 def main(args):
     num_samples = 500
     true_lang = "en"
-    
-    
+
     wm_zscore = []
     candidate_hum_zscore = {}
     candidate_wm_zscore = {}
@@ -80,19 +81,29 @@ def main(args):
                 "The number of zscores in the human and watermark files are not the same."
             )
             return
-        hum_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in hum_list]
-        wm_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in wm_list]
+        hum_zscore = extract_zscores(hum_list)
+        wm_zscore = extract_zscores(wm_list)
         candidate_hum_zscore[lang] = hum_zscore
         candidate_wm_zscore[lang] = wm_zscore
 
-
+    suspect_attack_wm_file = args.base_wm_dir + f"/mc4.en-{tgt_lang}.mod.z_score.jsonl"
+    suspect_attack_hum_file = args.base_wm_dir + f"/mc4.en-{tgt_lang}.hum.z_score.jsonl"
+    suspect_attack_wm_list = read_jsonl(suspect_attack_wm_file)
+    suspect_attack_hum_list = read_jsonl(suspect_attack_hum_file)
+    if len(suspect_attack_wm_list) != num_samples or len(suspect_attack_hum_list) != num_samples:
+        print("The number of zscores in the suspect attack file is not correct.")
+        return
+   
+    suspect_attack_wm_zscore = extract_zscores(suspect_attack_wm_list)
+    suspect_attack_hum_zscore = extract_zscores(suspect_attack_hum_list)
+    
     maximum_hum_zscore = []
     maximum_wm_zscore = []
     correct_hum_lang = 0
     correct_wm_lang = 0
 
     for i in range(num_samples):
-        max_hum_score = float('-inf') 
+        max_hum_score = float('-inf')
         max_wm_score = float('-inf')
         best_hum_lang = None
         best_wm_lang = None
@@ -109,6 +120,8 @@ def main(args):
             if wm_score > max_wm_score:
                 max_wm_score = wm_score
                 best_wm_lang = lang
+        max_wm_score = max(max_wm_score, suspect_attack_wm_zscore[i])
+        max_hum_score = max(max_hum_score, suspect_attack_hum_zscore[i])
         maximum_hum_zscore.append(max_hum_score)
         maximum_wm_zscore.append(max_wm_score)
         if best_hum_lang == true_lang:
@@ -119,8 +132,7 @@ def main(args):
     print(f"Correct watermark language detection count: {correct_wm_lang}/{num_samples}")
     accuracy = (correct_wm_lang / num_samples) * 100
     print(f"Accuracy: {accuracy:.1f}")
-    
-    
+
     hm_true = [0 for _ in hum_list]
     wm_true = [1 for _ in wm_list]
 
