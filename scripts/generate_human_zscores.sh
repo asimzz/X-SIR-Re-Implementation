@@ -21,17 +21,15 @@ BATCH_SIZE=32
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
-    "llamax3-8B"
 )
 
 # Settings
 WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+SEEDS=(123)
 TGT_LANGS=(
     "en" # English
     "fr" # French
@@ -59,8 +57,8 @@ for i in "${!MODEL_NAMES[@]}"; do
             for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
                 echo "▶️ Running $WATERMARK_METHOD (seed=$SEED) on $MODEL_NAME"
 
-                MAPPING_FILE="$MAPPING_DIR/${TGT_LANG}/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
-                OUT_DIR="$GEN_DIR/$MODEL_ABBR/${TGT_LANG}/${WATERMARK_METHOD}_seed${SEED}"
+                MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
+                OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
                 mkdir -p "$OUT_DIR"
 
                 if [ $WATERMARK_METHOD == "kgw" ]; then
