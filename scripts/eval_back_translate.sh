@@ -7,12 +7,10 @@ GEN_DIR=$WORK_DIR/gen
 
 
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
 )
 
@@ -69,10 +67,10 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
                     --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
 
-                echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Back-Translation without Normalization ($TGT_LANG)"
-                python3 $WORK_DIR/back_eval_detection.py \
-                    --tgt_lang "$TGT_LANG" \
-                    --base_wm_dir "$WATERMARK_DIR"
+                # echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Back-Translation without Normalization ($TGT_LANG)"
+                # python3 $WORK_DIR/back_eval_detection.py \
+                #     --tgt_lang "$TGT_LANG" \
+                #     --base_wm_dir "$WATERMARK_DIR"
 
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Back-Translation with Normalization ($TGT_LANG)"
                 python3 $WORK_DIR/evaluate_normalized_detection.py \
