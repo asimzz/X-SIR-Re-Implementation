@@ -129,8 +129,7 @@ def main(args):
     print(f"Correct watermark language detection count: {correct_wm_lang}/{num_samples}")
     accuracy = (correct_wm_lang / num_samples) * 100
     print(f"Accuracy: {accuracy:.1f}")
-    
-    
+
     hm_true = [0 for _ in hum_list]
     wm_true = [1 for _ in wm_list]
 

@@ -20,7 +20,7 @@ MODEL2RPM = {
     "gpt-4-vision-preview":          3000,
     "gpt-4o-mini":                  10000,
     "deepseek-chat":                10000,
-    "gemini-2.5-flash":             10000,
+    "gemini-2.5-flash":             1500,
 }
 
 MODEL2TPM = {
@@ -42,5 +42,5 @@ MODEL2TPM = {
     "gpt-4-1106-preview":         1500000,
     "gpt-4-vision-preview":        300000,
     "deepseek-chat":               2000000,
-    "gemini-2.5-flash":            2000000,
+    "gemini-2.5-flash":            1000000,
 }

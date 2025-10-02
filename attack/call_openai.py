@@ -143,8 +143,9 @@ class APIRequest:
         """Calls the OpenAI API and saves results."""
         error = None
         try:
+            timeout = aiohttp.ClientTimeout(total=120)  # 2 minute timeout
             async with session.post(
-                url=request_url, headers=request_header, json=self.request_json
+                url=request_url, headers=request_header, json=self.request_json, timeout=timeout
             ) as response:
                 response = await response.json()
             if "error" in response:
@@ -290,6 +291,11 @@ class CallOpenAI:
         requests = iter(requests)
 
         async with aiohttp.ClientSession() as session:  # Initialize ClientSession here
+            start_time = time.time()
+            max_wait_time = 3600  # 1 hour maximum wait time
+            last_progress_time = time.time()
+            last_completed_count = 0
+
             while True:
                 # get next request (if one is not already waiting for capacity)
                 if self.next_request is None:
@@ -363,6 +369,25 @@ class CallOpenAI:
                             )
                         )
                         self.next_request = None  # reset next_request to empty
+
+                # Check for progress and timeout conditions
+                current_time = time.time()
+                current_completed = self.status_tracker.num_tasks_succeeded + self.status_tracker.num_tasks_failed
+
+                # Update progress tracking
+                if current_completed > last_completed_count:
+                    last_progress_time = current_time
+                    last_completed_count = current_completed
+
+                # Safety checks to prevent infinite hanging
+                time_since_start = current_time - start_time
+                time_since_progress = current_time - last_progress_time
+
+                # Break if no progress for 10 minutes or total time exceeds 1 hour
+                if time_since_progress > 600 or time_since_start > max_wait_time:
+                    logging.warning(f"Breaking due to timeout: {time_since_progress:.1f}s since progress, {time_since_start:.1f}s total")
+                    logging.warning(f"Status: {self.status_tracker.num_tasks_succeeded} succeeded, {self.status_tracker.num_tasks_failed} failed, {self.status_tracker.num_tasks_in_progress} in progress")
+                    break
 
                 # if all tasks are finished, break
                 if self.status_tracker.num_tasks_in_progress == 0:

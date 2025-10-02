@@ -39,24 +39,24 @@ TGT_LANGS=(
     "it" # Italian
     "es" # Spanish
     "pt" # Portuguese
-    # Medium-resource languages
-    "pl" # Polish
-    "nl" # Dutch
-    "ru" # Russian
-    "hi" # Hindi
-    "ko" # Korean
-    "ja" # Japanese
+    # # # Medium-resource languages
+    # "pl" # Polish
+    # "nl" # Dutch
+    # "ru" # Russian
+    # "hi" # Hindi
+    # "ko" # Korean
+    # "ja" # Japanese
     # Low-resource languages
-    "bn" # Bengali
-    "fa" # Persian
-    "vi" # Vietnamese
-    "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "bn" # Bengali
+    # "fa" # Persian
+    # "vi" # Vietnamese
+    # "iw" # Hebrew
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 ORG_LANGS=(
-    # "en" # English
+    "en" # English
     # High-resource languages
     "fr" # French
     "de" # German
