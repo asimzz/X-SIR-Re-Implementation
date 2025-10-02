@@ -31,10 +31,12 @@ ORG_LANGS = [
         "ta", # Tamil
     ]
 
+def extract_zscores(_list):
+    return [_["z_score"] if _["z_score"] is not None else 0 for _ in _list]
 
 def get_avg_zscore(validation_file):
     validation_list = read_jsonl(validation_file)
-    zscores = [x["z_score"] if x["z_score"] is not None else 0 for x in validation_list]
+    zscores = extract_zscores(validation_list)
     return sum(zscores) / len(zscores) if zscores else 0
 
 def tpr_at_fpr(fpr, tpr, fpr_target):
@@ -78,11 +80,12 @@ def main(args):
     candidate_hum_zscore = {}
     candidate_wm_zscore = {}
     tgt_lang = args.tgt_lang
+    pvt_lang = args.pvt_lang
     for lang in ORG_LANGS:
-        if lang == tgt_lang:
+        if lang == pvt_lang:
             continue
-        hum_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.hum.z_score.jsonl"
-        wm_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.mod.z_score.jsonl"
+        hum_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{pvt_lang}-{lang}-back.hum.z_score.jsonl"
+        wm_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{pvt_lang}-{lang}-back.mod.z_score.jsonl"
         hum_list = read_jsonl(hum_zscore_file)
         wm_list = read_jsonl(wm_zscore_file)
         if len(hum_list) != len(wm_list):
@@ -90,12 +93,22 @@ def main(args):
                 "The number of zscores in the human and watermark files are not the same."
             )
             return
-        hum_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in hum_list]
-        wm_zscore = [x["z_score"] if x["z_score"] is not None else 0 for x in wm_list]
+        hum_zscore = extract_zscores(hum_list)
+        wm_zscore = extract_zscores(wm_list)
         candidate_hum_zscore[lang] = hum_zscore
         candidate_wm_zscore[lang] = wm_zscore
 
-
+    suspect_attack_wm_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{pvt_lang}-pivot.mod.z_score.jsonl"
+    suspect_attack_hum_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{pvt_lang}-pivot.hum.z_score.jsonl"
+    suspect_attack_wm_list = read_jsonl(suspect_attack_wm_file)
+    suspect_attack_hum_list = read_jsonl(suspect_attack_hum_file)
+    if len(suspect_attack_wm_list) != num_samples or len(suspect_attack_hum_list) != num_samples:
+        print("The number of zscores in the suspect attack file is not correct.")
+        return
+   
+    suspect_attack_wm_zscore = extract_zscores(suspect_attack_wm_list)
+    suspect_attack_hum_zscore = extract_zscores(suspect_attack_hum_list)
+    
     maximum_hum_zscore = []
     maximum_wm_zscore = []
     correct_hum_lang = 0
@@ -107,9 +120,9 @@ def main(args):
         best_hum_lang = None
         best_wm_lang = None
         for lang in ORG_LANGS:
-            if lang == tgt_lang:
+            if lang == pvt_lang:
                 continue
-            avg_val_zscore = get_avg_zscore(args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.val.z_score.jsonl")
+            avg_val_zscore = get_avg_zscore(args.base_wm_dir + f"/mc4.{tgt_lang}-{pvt_lang}-{lang}-back.val.z_score.jsonl")
             hum_score = candidate_hum_zscore[lang][i] - avg_val_zscore
             wm_score = candidate_wm_zscore[lang][i] - avg_val_zscore
 
@@ -119,6 +132,9 @@ def main(args):
             if wm_score > max_wm_score:
                 max_wm_score = wm_score
                 best_wm_lang = lang
+
+        max_wm_score = max(max_wm_score, suspect_attack_wm_zscore[i])
+        max_hum_score = max(max_hum_score, suspect_attack_hum_zscore[i])
         maximum_hum_zscore.append(max_hum_score)
         maximum_wm_zscore.append(max_wm_score)
         if best_hum_lang == true_lang:
@@ -179,6 +195,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--roc_curve", type=str, default=None, help="ROC curve file")
     parser.add_argument("--tgt_lang", type=str, default=None, help="Target language")
+    parser.add_argument("--pvt_lang", type=str, default=None, help="Pivot language")
 
     args = parser.parse_args()
     main(args)

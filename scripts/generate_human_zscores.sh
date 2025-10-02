@@ -52,8 +52,8 @@ TGT_LANGS=(
 )
 
 PVT_LANGS=(
-    # "de" # German
-    # "ko" # Korean
+    "de" # German
+    "ko" # Korean
     "bn" # Bengali
 )
 
@@ -154,6 +154,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                         --translation_part response \
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$PVT_LANG"
+                    # Detect on pivoted human text
+                    python3 "$WORK_DIR/detect.py" \
+                        --base_model "$MODEL_NAME" \
+                        --seed "$SEED" \
+                        --detect_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.hum.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.hum.z_score.jsonl" \
+                        $WATERMARK_FLAGS
 
                     for ORG_LANG in "${ORG_LANGS[@]}"; do
                         if [ "$ORG_LANG" == "$PVT_LANG" ]; then
@@ -168,12 +175,12 @@ for i in "${!MODEL_NAMES[@]}"; do
                             --src_lang "$PVT_LANG" \
                             --tgt_lang "$ORG_LANG"
 
-                        # python3 "$WORK_DIR/detect.py" \
-                        #     --base_model "$MODEL_NAME" \
-                        #     --seed "$SEED" \
-                        #     --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.hum.jsonl" \
-                        #     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.hum.z_score.jsonl" \
-                        #     $WATERMARK_FLAGS
+                        python3 "$WORK_DIR/detect.py" \
+                            --base_model "$MODEL_NAME" \
+                            --seed "$SEED" \
+                            --detect_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-$ORG_LANG-back.hum.jsonl" \
+                            --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-$ORG_LANG-back.hum.z_score.jsonl" \
+                            $WATERMARK_FLAGS
                     done
                 done
             done

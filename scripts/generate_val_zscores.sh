@@ -19,14 +19,10 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
-    "llamax3-8B"
 )
 
 # Settings
@@ -115,35 +111,35 @@ for i in "${!MODEL_NAMES[@]}"; do
 
 
             # Step 1: Generate human text
-            echo "📝 Generating human text for en"
-            python3 "$WORK_DIR/detect.py" \
-                --base_model "$MODEL_NAME" \
-                --seed "$SEED" \
-                --detect_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                --output_file "$OUT_DIR/mc4.en.val.z_score.jsonl" \
-                $WATERMARK_FLAGS
+            # echo "📝 Generating human text for en"
+            # python3 "$WORK_DIR/detect.py" \
+            #     --base_model "$MODEL_NAME" \
+            #     --seed "$SEED" \
+            #     --detect_file "$DATA_DIR/dataset/mc4/mc4.en.val.jsonl" \
+            #     --output_file "$OUT_DIR/mc4.en.val.z_score.jsonl" \
+            #     $WATERMARK_FLAGS
 
             # Step 3: Translation & detection for each target language
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
                 # Translation of human text
-                echo "🌐 Translating human text to $TGT_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.jsonl" \
-                    --translation_part response \
-                    --src_lang en \
-                    --tgt_lang "$TGT_LANG"
+                # echo "🌐 Translating human text to $TGT_LANG"
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.jsonl" \
+                #     --translation_part response \
+                #     --src_lang en \
+                #     --tgt_lang "$TGT_LANG"
 
-                echo "🔍 Detecting watermark in translated human text (${TGT_LANG})"
-                # Detect on translated human text
-                python3 "$WORK_DIR/detect.py" \
-                    --base_model "$MODEL_NAME" \
-                    --seed "$SEED" \
-                    --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.z_score.jsonl" \
-                    $WATERMARK_FLAGS
+                # echo "🔍 Detecting watermark in translated human text (${TGT_LANG})"
+                # # Detect on translated human text
+                # python3 "$WORK_DIR/detect.py" \
+                #     --base_model "$MODEL_NAME" \
+                #     --seed "$SEED" \
+                #     --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.z_score.jsonl" \
+                #     $WATERMARK_FLAGS
 
                 # Pivoting attack (using multiple pivot languages)
                 for PVT_LANG in "${PVT_LANGS[@]}"; do
@@ -152,12 +148,19 @@ for i in "${!MODEL_NAMES[@]}"; do
                     fi
                     # Pivot translation
                     echo "🔀 Pivot translation $TGT_LANG -> $PVT_LANG"
-                    $PYTHON "$ATTACK_DIR/google_translate.py" \
+                    python3 "$ATTACK_DIR/google_translate.py" \
                         --input_file "$OUT_DIR/mc4.en-$TGT_LANG.val.jsonl" \
                         --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.val.jsonl" \
                         --translation_part response \
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$PVT_LANG"
+                    # Detect on pivoted human text
+                    python3 "$WORK_DIR/detect.py" \
+                        --base_model "$MODEL_NAME" \
+                        --seed "$SEED" \
+                        --detect_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.val.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.val.z_score.jsonl" \
+                        $WATERMARK_FLAGS
 
                     for ORG_LANG in "${ORG_LANGS[@]}"; do
                         if [ "$ORG_LANG" == "$PVT_LANG" ]; then
@@ -165,19 +168,19 @@ for i in "${!MODEL_NAMES[@]}"; do
                         fi
                         # Back-translation
                         echo "🔁 Back translation $PVT_LANG -> $ORG_LANG"
-                        $PYTHON "$ATTACK_DIR/google_translate.py" \
+                        python3 "$ATTACK_DIR/google_translate.py" \
                             --input_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-pivot.val.jsonl" \
                             --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-$ORG_LANG-back.val.jsonl" \
                             --translation_part response \
                             --src_lang "$PVT_LANG" \
                             --tgt_lang "$ORG_LANG"
 
-                        # python3 "$WORK_DIR/detect.py" \
-                        #     --base_model "$MODEL_NAME" \
-                        #     --seed "$SEED" \
-                        #     --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.jsonl" \
-                        #     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.z_score.jsonl" \
-                        #     $WATERMARK_FLAGS
+                        python3 "$WORK_DIR/detect.py" \
+                            --base_model "$MODEL_NAME" \
+                            --seed "$SEED" \
+                            --detect_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-$ORG_LANG-back.val.jsonl" \
+                            --output_file "$OUT_DIR/mc4.$TGT_LANG-$PVT_LANG-$ORG_LANG-back.val.z_score.jsonl" \
+                            $WATERMARK_FLAGS
                     done
                 done
             done
