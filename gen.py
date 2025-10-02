@@ -18,6 +18,9 @@ from src_watermark.xsir.watermark import (
 from src_watermark.kgw.extended_watermark_processor import (
     WatermarkLogitsProcessor as KGWLogitsProcessor
 )
+from src_watermark.xkgw.watermark_processor import (
+    WatermarkLogitsProcessor as XKGWLogitsProcessor
+)
 from src_watermark.uw import (
     Delta_Reweight,
     Gamma_Reweight,
@@ -118,6 +121,15 @@ def main(args):
             seed=args.seed,
             seeding_scheme=args.seeding_scheme
         )
+    elif args.watermark_method == "xkgw":
+        logits_processor = XKGWLogitsProcessor(
+            vocab=list(tokenizer.get_vocab().values()),
+            gamma=args.gamma,
+            delta=args.delta,
+            hash_key=args.hash_key,
+            context_width=args.context_width,
+            cluster_mapping_file=args.cluster_mapping_file,
+        )
     elif args.watermark_method == "uw":
         logits_processor = UWLogitsProcessor(
             b"42",
@@ -179,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, required=True, help="Output file to save generated text")
 
     # Watermark
-    parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "uw", "no"], default="no", help="Watermarking method")
+    parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "xkgw", "uw", "no"], default="no", help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
     parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
@@ -195,6 +207,11 @@ if __name__ == "__main__":
     parser.add_argument('--gamma', type=float, default=0.25)
     parser.add_argument('--seeding_scheme', type=str, default="minhash")
 
+    # X-KGW
+    parser.add_argument('--cluster_mapping_file', type=str, default=None, help="Path to cluster mapping JSON file (num_clusters auto-inferred)")
+    parser.add_argument('--context_width', type=int, default=1, help="Context width for X-KGW")
+    parser.add_argument('--hash_key', type=int, default=15485863, help="Hash key for X-KGW")
+
     # Generation
     parser.add_argument('--batch_size', type=int, default=4)
 
@@ -202,6 +219,8 @@ if __name__ == "__main__":
 
     # Manually set default value for delta based on watermark_method
     if args.watermark_method == "kgw" and args.delta is None:
+        args.delta = 2
+    elif args.watermark_method == "xkgw" and args.delta is None:
         args.delta = 2
     elif args.watermark_method in ["xsir", "sir"] and args.delta is None:
         args.delta = 1

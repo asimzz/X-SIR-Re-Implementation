@@ -11,6 +11,9 @@ from src_watermark.xsir.watermark import (
 from src_watermark.kgw.extended_watermark_processor import (
     WatermarkDetector as KGWDetector
 )
+from src_watermark.xkgw.watermark_processor import (
+    WatermarkDetector as XKGWDetector
+)
 from src_watermark.uw.detect import Detector as UWDetector
 
 from utils import read_jsonl, append_jsonl
@@ -57,6 +60,18 @@ def main(args):
             normalizers=[],
             ignore_repeated_ngrams=True,
         )
+    elif args.watermark_method == "xkgw":
+        watermark_detector = XKGWDetector(
+            vocab=list(tokenizer.get_vocab().values()),
+            gamma=args.gamma, # should match original setting
+            hash_key=args.hash_key, # should match original setting
+            context_width=args.context_width, # should match original setting
+            cluster_mapping_file=args.cluster_mapping_file,
+            device=device, # must match the original rng device type
+            tokenizer=tokenizer,
+            z_threshold=4.0,
+            ignore_repeated_ngrams=True,
+        )
     elif args.watermark_method == "uw":
         model = AutoModelForCausalLM.from_pretrained(args.base_model, device_map="auto", trust_remote_code=True)
         watermark_detector = UWDetector(
@@ -101,7 +116,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, required=True, help="Output file to write the z-scores.")
 
     # Watermark
-    parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "sir", "uw"], required=True, help="Watermarking method")
+    parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "xkgw", "sir", "uw"], required=True, help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
     parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
@@ -117,10 +132,17 @@ if __name__ == "__main__":
     parser.add_argument('--gamma', type=float, default=0.25)
     parser.add_argument('--seeding_scheme', type=str, default="minhash")
 
+    # X-KGW
+    parser.add_argument('--cluster_mapping_file', type=str, default=None, help="Path to cluster mapping JSON file (num_clusters auto-inferred)")
+    parser.add_argument('--context_width', type=int, default=1, help="Context width for X-KGW")
+    parser.add_argument('--hash_key', type=int, default=15485863, help="Hash key for X-KGW")
+
     args = parser.parse_args()
 
     # Manually set default value for delta based on watermark_method
     if args.watermark_method == "kgw" and args.delta is None:
+        args.delta = 2
+    elif args.watermark_method == "xkgw" and args.delta is None:
         args.delta = 2
     elif args.watermark_method in ["xsir", "sir"] and args.delta is None:
         args.delta = 1
