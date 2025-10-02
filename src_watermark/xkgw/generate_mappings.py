@@ -17,6 +17,7 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     vocab = tokenizer.get_vocab()
+    vocab_size = len(vocab)
 
     # Load edges from dictionary
     edges = []
@@ -55,13 +56,13 @@ def main():
 
     # Flatten clusters to check vocabulary coverage
     all_valid_tokens = [token for cluster in valid_clusters for token in cluster]
-    assert len(all_valid_tokens) == len(vocab), \
-        f"Vocabulary mismatch: {len(all_valid_tokens)} tokens mapped vs {len(vocab)} in vocab"
+    assert len(all_valid_tokens) == vocab_size, \
+        f"Vocabulary mismatch: {len(all_valid_tokens)} tokens mapped vs {vocab_size} in vocab"
 
     # X-KGW: Assign sequential unique cluster IDs (no random assignment to fixed range)
     # Each cluster gets a unique ID from 0 to num_clusters-1
     num_clusters = len(valid_clusters)
-    mapping = [None] * len(vocab)
+    mapping = [None] * vocab_size
 
     for cluster_id, cluster in enumerate(valid_clusters):
         for token in cluster:
@@ -84,10 +85,10 @@ def main():
 
     # Print stats
     print(f"[X-KGW Mapping Generation]")
-    print(f"[Seed {args.seed}] Vocabulary size: {len(vocab)}")
+    print(f"[Seed {args.seed}] Vocabulary size: {vocab_size}")
     print(f"[Seed {args.seed}] Number of unique clusters: {num_clusters}")
     print(f"[Seed {args.seed}] Clusters with ≥2 tokens: {sum(len(c) >= 2 for c in valid_clusters)}")
-    print(f"[Seed {args.seed}] Vocab coverage (%): {sum(len(c) for c in valid_clusters if len(c) >= 2) / len(vocab) * 100:.2f}")
+    print(f"[Seed {args.seed}] Vocab coverage (%): {sum(len(c) for c in valid_clusters if len(c) >= 2) / vocab_size * 100:.2f}")
     print(f"[Seed {args.seed}] Top 5 largest clusters: {[len(c) for c in sorted(valid_clusters, key=len, reverse=True)[:5]]}")
     print(f"[Seed {args.seed}] Cluster ID range: 0 to {num_clusters - 1}")
     print(f"[Seed {args.seed}] Saved mapping to: {args.output_file}")

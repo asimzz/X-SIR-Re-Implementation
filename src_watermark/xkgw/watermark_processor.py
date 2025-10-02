@@ -23,10 +23,15 @@ class WatermarkBase:
         cluster_mapping_file: str = None,
         num_clusters: int = None,  # Auto-inferred from mapping file if not provided
         select_green_tokens: bool = True,
+        vocab_size: int = None,  # Optional: use if vocab is None
     ):
         # Vocabulary setup
-        self.vocab = vocab
-        self.vocab_size = len(vocab)
+        if vocab_size is not None:
+            self.vocab_size = vocab_size
+        elif vocab is not None:
+            self.vocab_size = len(vocab)
+        else:
+            raise ValueError("Must provide either vocab or vocab_size")
 
         # Watermark parameters
         self.gamma = gamma
@@ -56,7 +61,10 @@ class WatermarkBase:
 
         # Verify mapping covers all vocab tokens
         if len(self.cluster_mapping) != self.vocab_size:
-            print(f"Warning: Mapping size {len(self.cluster_mapping)} != vocab size {self.vocab_size}")
+            raise ValueError(
+                f"Mapping size mismatch: {len(self.cluster_mapping)} in file != {self.vocab_size} vocab size. "
+                f"Ensure the mapping file was generated for the same tokenizer/model."
+            )
 
     def _seed_rng(self, input_ids: torch.LongTensor) -> None:
         """Seed RNG from local context."""
@@ -127,7 +135,7 @@ class WatermarkLogitsProcessor(WatermarkBase, LogitsProcessor):
 
         # Get greenlist for each sequence in batch
         list_of_greenlist_ids = []
-        for b_idx, input_seq in enumerate(input_ids):
+        for input_seq in input_ids:
             greenlist_ids = self._get_greenlist_ids(input_seq)
             list_of_greenlist_ids.append(greenlist_ids)
 
