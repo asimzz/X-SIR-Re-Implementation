@@ -163,10 +163,10 @@ def main():
         "font.family": "serif",
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
-        "axes.labelsize": args.axis_fontsize,
-        "xtick.labelsize": args.axis_fontsize - 1,
-        "ytick.labelsize": args.axis_fontsize - 1,
-        "legend.fontsize": args.axis_fontsize - 1,
+        "axes.labelsize": args.axis_fontsize + 2,
+        "xtick.labelsize": args.axis_fontsize,
+        "ytick.labelsize": args.axis_fontsize,
+        "legend.fontsize": args.axis_fontsize,
         "figure.dpi": 300,
     })
 
@@ -295,8 +295,8 @@ def main():
     # Repel labels & draw leader lines
     repel_text(ax, texts, anchors, max_iter=300, step=0.012)
 
-    ax.set_xlabel("Tokenizer single-token vocabulary per language")
-    ax.set_ylabel("Average AUC across seeds")
+    ax.set_xlabel("Number of Words in the Tokenizer Vocabulary")
+    ax.set_ylabel("AUC")
     ax.legend(frameon=True)
     sns.despine(ax=ax)
 
