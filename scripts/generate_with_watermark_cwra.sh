@@ -34,7 +34,7 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
 ORG_LANG="en"
-PVT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
+PVT_LANGS=("fr" "de" "zh" "ja")
 
 # Sanity check for model configuration consistency
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -90,19 +90,19 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --output_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.z_score.jsonl" \
                     $WATERMARK_FLAGS
 
-                echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                    --src_lang "$PVT_LANG" \
-                    --tgt_lang "$ORG_LANG" \
-                    --translation_part response
+                # echo "🔄 CWRA: back-translating response $PVT_LANG ➝ $ORG_LANG"
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$OUT_DIR/mc4.$ORG_LANG-$PVT_LANG-cwra.mod.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                #     --src_lang "$PVT_LANG" \
+                #     --tgt_lang "$ORG_LANG" \
+                #     --translation_part response
 
-                python3 "$WORK_DIR/detect.py" \
-                    --base_model "$MODEL_NAME" \
-                    --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
-                    $WATERMARK_FLAGS
+                # python3 "$WORK_DIR/detect.py" \
+                #     --base_model "$MODEL_NAME" \
+                #     --detect_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.$PVT_LANG-$ORG_LANG-cwra.mod.z_score.jsonl" \
+                #     $WATERMARK_FLAGS
             done
         done
     done
