@@ -19,21 +19,20 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.2-1B"
     "LLaMAX/LLaMAX3-8B"
-
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
+    "llama-3.2-1B"
     "llamax3-8B"
 )
 
 # Settings
-WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
-TGT_LANGS=("fr" "de" "zh" "ja")
+WATERMARK_METHODS=("xkgw")
+SEEDS=(0)
+TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -50,57 +49,61 @@ for i in "${!MODEL_NAMES[@]}"; do
         for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
             echo "▶️ Running $WATERMARK_METHOD (seed=$SEED) on $MODEL_NAME"
 
-            MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
             OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
             mkdir -p "$OUT_DIR"
 
             if [ $WATERMARK_METHOD == "kgw" ]; then
                 WATERMARK_FLAGS="--watermark_method kgw"
             elif [ "$WATERMARK_METHOD" == "xsir" ]; then
+                MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
                 WATERMARK_FLAGS="--watermark_method xsir --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_FILE"
+            elif [ "$WATERMARK_METHOD" == "xkgw" ]; then
+                MAPPING_FILE="$DATA_DIR/mapping/xkgw/xkgw_mapping_${MODEL_ABBR}_seed${SEED}.json"
+                WATERMARK_FLAGS="--watermark_method xkgw --cluster_mapping_file $MAPPING_FILE"
             else
                 echo "❌ Unknown watermark method: $WATERMARK_METHOD"
                 exit 1
             fi
 
             # Step 1: Generate watermarked data
-            # python3 "$WORK_DIR/gen.py" \
-            #     --base_model "$MODEL_NAME" \
-            #     --fp16 \
-            #     --batch_size "$BATCH_SIZE" \
-            #     --seed "$SEED" \
-            #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-            #     --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #     $WATERMARK_FLAGS
+            python3 "$WORK_DIR/gen.py" \
+                --base_model "$MODEL_NAME" \
+                --fp16 \
+                --batch_size "$BATCH_SIZE" \
+                --seed "$SEED" \
+                --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                $WATERMARK_FLAGS
 
-            # # Step 2: Detect watermark in English
-            # python3 "$WORK_DIR/detect.py" \
-            #     --base_model "$MODEL_NAME" \
-            #     --seed "$SEED" \
-            #     --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
-            #     --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
-            #     $WATERMARK_FLAGS
+            # Step 2: Detect watermark in English
+            python3 "$WORK_DIR/detect.py" \
+                --base_model "$MODEL_NAME" \
+                --seed "$SEED" \
+                --detect_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                --output_file "$OUT_DIR/mc4.en.mod.z_score.jsonl" \
+                $WATERMARK_FLAGS
 
             # Step 3: Translation & detection for each target language
-            for TGT_LANG in "${TGT_LANGS[@]}"; do
-                echo "🌍 Translating and detecting for $TGT_LANG"
+            # for TGT_LANG in "${TGT_LANGS[@]}"; do
+            #     echo "🌍 Translating and detecting for $TGT_LANG"
 
-                # # Translation attack
-                # python3 "$ATTACK_DIR/google_translate.py" \
-                #     --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-                #     --translation_part response \
-                #     --src_lang en \
-                #     --tgt_lang "$TGT_LANG"
+            #     # Translation attack
+            #     python3 "$ATTACK_DIR/google_translate.py" \
+            #         --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
+            #         --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
+            #         --translation_part response \
+            #         --src_lang en \
+            #         --tgt_lang "$TGT_LANG"
+                
 
-                # Detect on translated output
-                python3 "$WORK_DIR/detect.py" \
-                    --base_model "$MODEL_NAME" \
-                    --seed "$SEED" \
-                    --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
-                    $WATERMARK_FLAGS
-            done
+            #     # Detect on translated output
+            #     python3 "$WORK_DIR/detect.py" \
+            #         --base_model "$MODEL_NAME" \
+            #         --seed "$SEED" \
+            #         --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.jsonl" \
+            #         --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl" \
+            #         $WATERMARK_FLAGS
+            # done
         done
     done
 done

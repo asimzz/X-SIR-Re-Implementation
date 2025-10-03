@@ -30,8 +30,8 @@ MODEL_ABBRS=(
 )
 
 # Settings
-WATERMARK_METHODS=("xsir")
-SEEDS=(0 42 123)
+WATERMARK_METHODS=("xkgw")
+SEEDS=(0)
 TGT_LANGS=("fr" "de" "zh" "ja")
 
 # Validate model list lengths
@@ -49,14 +49,17 @@ for i in "${!MODEL_NAMES[@]}"; do
         for WATERMARK_METHOD in "${WATERMARK_METHODS[@]}"; do
             echo "▶️ Running $WATERMARK_METHOD (seed=$SEED) on $MODEL_NAME"
 
-            MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
             OUT_DIR="$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}"
             mkdir -p "$OUT_DIR"
 
             if [ $WATERMARK_METHOD == "kgw" ]; then
                 WATERMARK_FLAGS="--watermark_method kgw"
             elif [ "$WATERMARK_METHOD" == "xsir" ]; then
+                MAPPING_FILE="$MAPPING_DIR/300_mapping_${MODEL_ABBR}_seed${SEED}.json"
                 WATERMARK_FLAGS="--watermark_method xsir --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_FILE"
+            elif [ "$WATERMARK_METHOD" == "xkgw" ]; then
+                MAPPING_FILE="$DATA_DIR/mapping/xkgw/xkgw_mapping_${MODEL_ABBR}_seed${SEED}.json"
+                WATERMARK_FLAGS="--watermark_method xkgw --cluster_mapping_file $MAPPING_FILE"
             else
                 echo "❌ Unknown watermark method: $WATERMARK_METHOD"
                 exit 1
@@ -76,16 +79,16 @@ for i in "${!MODEL_NAMES[@]}"; do
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
-                # # Translation of human text
-                # echo "🌐 Translating human text to $TGT_LANG"
-                # python3 "$ATTACK_DIR/google_translate.py" \
-                #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
-                #     --translation_part response \
-                #     --src_lang en \
-                #     --tgt_lang "$TGT_LANG"
+                # Translation of human text
+                echo "🌐 Translating human text to $TGT_LANG"
+                python3 "$ATTACK_DIR/google_translate.py" \
+                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
+                    --translation_part response \
+                    --src_lang en \
+                    --tgt_lang "$TGT_LANG"
 
-                echo "🔍 Detecting watermark in translated human text"
+                # echo "🔍 Detecting watermark in translated human text"
                 # Detect on translated human text
                 python3 "$WORK_DIR/detect.py" \
                     --base_model "$MODEL_NAME" \

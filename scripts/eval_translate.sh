@@ -10,7 +10,6 @@ MODEL_NAMES=(
     "CohereForAI/aya-23-8B"
     "meta-llama/Llama-3.2-1B"
     "LLaMAX/LLaMAX3-8B"
-
 )
 
 MODEL_ABBRS=(
@@ -19,10 +18,10 @@ MODEL_ABBRS=(
     "llamax3-8B"
 )
 
-WATERMARK_METHODS=("xsir")
+WATERMARK_METHODS=("xkgw")
 TGT_LANGS=("fr" "de" "zh" "ja")
 
-SEEDS=(0 42 123) 
+SEEDS=(0) 
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -42,7 +41,6 @@ for i in "${!MODEL_NAMES[@]}"; do
             python3 $WORK_DIR/eval_detection.py \
                 --hm_zscore $WATERMARK_DIR/mc4.en.hum.z_score.jsonl \
                 --wm_zscore $WATERMARK_DIR/mc4.en.mod.z_score.jsonl
-                # --val_zscore $WATERMARK_DIR/mc4.en.val.hum.z_score.jsonl
 
             echo "======================================="
 
@@ -52,6 +50,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                     --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
                     --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
             done
+            echo "======================================="
         done
     done
 done
