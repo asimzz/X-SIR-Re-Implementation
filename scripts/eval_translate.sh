@@ -18,9 +18,9 @@ MODEL_ABBRS=(
     "llamax3-8B"
 )
 
-WATERMARK_METHODS=("xsir")
+WATERMARK_METHODS=("xkgw")
 TGT_LANGS=(
-    # # High-resource languages
+    # High-resource languages
     "fr"
     "de"
     "it"
@@ -41,7 +41,7 @@ TGT_LANGS=(
     "uk"
     "ta"
     )
-SEEDS=(0 42 123)
+SEEDS=(0)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"

@@ -28,7 +28,7 @@ TGT_LANGS=(
 )
 
 # Loop over all seed_* folders except seed_0
-for DIR in gen/llamax3-8B/xsir_seed*; do
+for DIR in gen/llamax3-8B/xkgw_seed0; do
     # Skip seed_0
     if [[ "$DIR" == "$SRC" ]]; then
         continue

@@ -30,8 +30,8 @@ MODEL_ABBRS=(
 )
 
 # Settings
-WATERMARK_METHODS=("xsir" "xkgw")
-SEEDS=(0 42 123)
+WATERMARK_METHODS=("xkgw")
+SEEDS=(0)
 TGT_LANGS=(
     # High-resource languages
     "fr" # French
