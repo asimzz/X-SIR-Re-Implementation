@@ -32,7 +32,7 @@ MODEL_ABBRS=(
 # Settings
 WATERMARK_METHODS=("xsir")
 SEEDS=(0 42 123)
-TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
+TGT_LANGS=("fr" "de" "zh" "ja")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -76,14 +76,14 @@ for i in "${!MODEL_NAMES[@]}"; do
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
-                # Translation of human text
-                echo "🌐 Translating human text to $TGT_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
-                    --translation_part response \
-                    --src_lang en \
-                    --tgt_lang "$TGT_LANG"
+                # # Translation of human text
+                # echo "🌐 Translating human text to $TGT_LANG"
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
+                #     --translation_part response \
+                #     --src_lang en \
+                #     --tgt_lang "$TGT_LANG"
 
                 echo "🔍 Detecting watermark in translated human text"
                 # Detect on translated human text

@@ -20,7 +20,7 @@ MODEL_ABBRS=(
 )
 
 WATERMARK_METHODS=("xsir")
-TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
+TGT_LANGS=("fr" "de" "zh" "ja")
 
 SEEDS=(0 42 123) 
 
