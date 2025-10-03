@@ -43,7 +43,6 @@ class WatermarkBase:
         # Cluster setup
         self.num_clusters = num_clusters  # Will be overridden if mapping file is loaded
         self.cluster_mapping = None
-        self.cluster_to_tokens = {}  # Reverse mapping for fast lookup
         self.rng = None
 
         # Load cluster mapping
@@ -66,13 +65,6 @@ class WatermarkBase:
                 f"Mapping size mismatch: {len(self.cluster_mapping)} in file != {self.vocab_size} vocab size. "
                 f"Ensure the mapping file was generated for the same tokenizer/model."
             )
-
-        # Pre-compute reverse mapping: cluster_id -> [token_ids] for fast lookup
-        self.cluster_to_tokens = {}
-        for token_id, cluster_id in enumerate(self.cluster_mapping):
-            if cluster_id not in self.cluster_to_tokens:
-                self.cluster_to_tokens[cluster_id] = []
-            self.cluster_to_tokens[cluster_id].append(token_id)
 
     def _seed_rng(self, input_ids: torch.LongTensor) -> None:
         """Seed RNG from local context."""
@@ -105,11 +97,14 @@ class WatermarkBase:
             raise ValueError("Cluster mapping not loaded. Provide cluster_mapping_file.")
 
         green_cluster_ids = self._get_green_cluster_ids(input_ids)
+        green_cluster_set = set(green_cluster_ids.cpu().tolist())
 
-        # Use pre-computed reverse mapping for fast lookup
+        # Find all tokens belonging to green clusters
         greenlist_ids = []
-        for cluster_id in green_cluster_ids.cpu().tolist():
-            greenlist_ids.extend(self.cluster_to_tokens[cluster_id])
+        for token_id in range(self.vocab_size):
+            cluster_id = self.cluster_mapping[token_id]
+            if cluster_id in green_cluster_set:
+                greenlist_ids.append(token_id)
 
         return torch.tensor(greenlist_ids, device=input_ids.device)
 
@@ -187,14 +182,18 @@ class WatermarkDetector(WatermarkBase):
         p_value = scipy.stats.norm.sf(z)
         return p_value
 
-    @lru_cache(maxsize=2**20)
-    def _get_ngram_score_cached(self, prefix: tuple[int], target: int):
-        """Check if target token's cluster is in green clusters for given prefix."""
+    def _is_green_token(self, prefix: tuple[int], target: int) -> bool:
+        """Check if token is green by checking its cluster membership."""
         if self.cluster_mapping is None:
             raise ValueError("Cluster mapping not loaded.")
 
-        greenlist_ids = self._get_greenlist_ids(torch.as_tensor(prefix, device=self.device))
-        return True if target in greenlist_ids else False
+        # Get green cluster IDs (fast - just permutation of ~100 clusters)
+        green_cluster_ids = self._get_green_cluster_ids(torch.as_tensor(prefix, device=self.device))
+        green_cluster_set = set(green_cluster_ids.cpu().tolist())
+
+        # Check if token's cluster is green (O(1) lookup)
+        target_cluster = self.cluster_mapping[target]
+        return target_cluster in green_cluster_set
 
     def _score_sequence(
         self,
@@ -213,19 +212,22 @@ class WatermarkDetector(WatermarkBase):
                 f"the first {self.context_width} tokens required for seeding."
             )
 
+        # Convert to list once (like KGW does) to avoid repeated .cpu().tolist() calls
+        input_ids_list = input_ids.cpu().tolist()
+
         # Score each token based on its cluster
         green_token_mask = []
         ngram_to_watermark = {}
         frequencies = collections.Counter()
 
-        for idx in range(self.context_width, len(input_ids)):
-            prefix = tuple(input_ids[idx - self.context_width:idx].cpu().tolist())
-            target = input_ids[idx].item()
+        for idx in range(self.context_width, len(input_ids_list)):
+            prefix = tuple(input_ids_list[idx - self.context_width:idx])
+            target = input_ids_list[idx]
 
             ngram = prefix + (target,)
 
             if ngram not in ngram_to_watermark:
-                is_green = self._get_ngram_score_cached(prefix, target)
+                is_green = self._is_green_token(prefix, target)
                 ngram_to_watermark[ngram] = is_green
 
             green_token_mask.append(ngram_to_watermark[ngram])
