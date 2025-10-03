@@ -43,6 +43,7 @@ class WatermarkBase:
         # Cluster setup
         self.num_clusters = num_clusters  # Will be overridden if mapping file is loaded
         self.cluster_mapping = None
+        self.cluster_to_tokens = {}  # Reverse mapping for fast lookup
         self.rng = None
 
         # Load cluster mapping
@@ -65,6 +66,13 @@ class WatermarkBase:
                 f"Mapping size mismatch: {len(self.cluster_mapping)} in file != {self.vocab_size} vocab size. "
                 f"Ensure the mapping file was generated for the same tokenizer/model."
             )
+
+        # Pre-compute reverse mapping: cluster_id -> [token_ids] for fast lookup
+        self.cluster_to_tokens = {}
+        for token_id, cluster_id in enumerate(self.cluster_mapping):
+            if cluster_id not in self.cluster_to_tokens:
+                self.cluster_to_tokens[cluster_id] = []
+            self.cluster_to_tokens[cluster_id].append(token_id)
 
     def _seed_rng(self, input_ids: torch.LongTensor) -> None:
         """Seed RNG from local context."""
@@ -97,14 +105,11 @@ class WatermarkBase:
             raise ValueError("Cluster mapping not loaded. Provide cluster_mapping_file.")
 
         green_cluster_ids = self._get_green_cluster_ids(input_ids)
-        green_cluster_set = set(green_cluster_ids.cpu().tolist())
 
-        # Find all tokens belonging to green clusters
+        # Use pre-computed reverse mapping for fast lookup
         greenlist_ids = []
-        for token_id in range(self.vocab_size):
-            cluster_id = self.cluster_mapping[token_id]
-            if cluster_id in green_cluster_set:
-                greenlist_ids.append(token_id)
+        for cluster_id in green_cluster_ids.cpu().tolist():
+            greenlist_ids.extend(self.cluster_to_tokens[cluster_id])
 
         return torch.tensor(greenlist_ids, device=input_ids.device)
 
