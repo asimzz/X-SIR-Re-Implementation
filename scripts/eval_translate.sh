@@ -19,7 +19,7 @@ MODEL_ABBRS=(
 )
 
 WATERMARK_METHODS=("xkgw")
-TGT_LANGS=("fr" "de" "zh" "ja")
+TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 SEEDS=(0) 
 

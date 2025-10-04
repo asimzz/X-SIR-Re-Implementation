@@ -19,20 +19,20 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.2-1B"
     "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
+    "llama-3.2-1B"
     "llamax3-8B"
 )
 
 # Settings
 WATERMARK_METHODS=("xkgw")
 SEEDS=(0)
-TGT_LANGS=("fr" "de" "zh" "ja")
+TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 
 # Validate model list lengths
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -80,13 +80,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
                 # Translation of human text
-                echo "🌐 Translating human text to $TGT_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
-                    --translation_part response \
-                    --src_lang en \
-                    --tgt_lang "$TGT_LANG"
+                # echo "🌐 Translating human text to $TGT_LANG"
+                # python3 "$ATTACK_DIR/google_translate.py" \
+                #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
+                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
+                #     --translation_part response \
+                #     --src_lang en \
+                #     --tgt_lang "$TGT_LANG"
 
                 # echo "🔍 Detecting watermark in translated human text"
                 # Detect on translated human text
