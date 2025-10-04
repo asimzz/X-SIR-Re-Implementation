@@ -108,6 +108,8 @@ def main():
     sns.set_theme(style="whitegrid", context="paper")
     plt.rcParams.update({
         "font.family": "serif",
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "axes.labelsize": args.axis_fontsize,
         "xtick.labelsize": args.axis_fontsize - 1,
         "ytick.labelsize": args.axis_fontsize - 1,
@@ -177,11 +179,22 @@ def main():
         pad = 0.06 * (xmax - xmin) if xmax > xmin else 10
         ax.set_xlim(xmin - pad, xmax + pad)
 
-    ax.set_xlabel("Cluster count (number of clusters)")
-    ax.set_ylabel("AUC")
+    # Axis labels with larger, bold font
+    ax.set_xlabel("Cluster count (number of clusters)",
+                  fontsize=args.axis_fontsize + 3, labelpad=10)
+    ax.set_ylabel("AUC",
+                  fontsize=args.axis_fontsize + 3, labelpad=10)
+
+    # Tick parameters for better visibility
+    ax.tick_params(axis="both", which="major",
+                   labelsize=args.axis_fontsize + 2,
+                   width=1.4, length=6, direction="out")
+    ax.tick_params(axis="both", which="minor",
+                   labelsize=args.axis_fontsize + 1,
+                   width=1.0, length=4, direction="out")
 
     # Legend for languages
-    lang_legend = ax.legend(frameon=True, loc="best")
+    lang_legend = ax.legend(frameon=True, fontsize=args.axis_fontsize + 1, loc="lower right")
 
     # Custom legend for SIR vs X-SIR
     custom_lines = [
@@ -189,7 +202,7 @@ def main():
         Line2D([0], [0], color="black", linestyle='-', lw=1.6, label="X-SIR"),
     ]
     ax.add_artist(lang_legend)  # keep lang legend
-    ax.legend(handles=custom_lines, frameon=True, loc="best")
+    ax.legend(handles=custom_lines, frameon=True, fontsize=args.axis_fontsize + 1, loc="best")
 
     sns.despine(ax=ax)
     fig.tight_layout()
