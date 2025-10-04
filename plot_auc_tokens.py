@@ -295,9 +295,20 @@ def main():
     # Repel labels & draw leader lines
     repel_text(ax, texts, anchors, max_iter=300, step=0.012)
 
-    ax.set_xlabel("Number of Words in the Tokenizer Vocabulary")
-    ax.set_ylabel("AUC")
-    ax.legend(frameon=True)
+    # Axis labels with larger, bold font
+    ax.set_xlabel("Number of Words in the Tokenizer Vocabulary",
+                  fontsize=args.axis_fontsize + 3, labelpad=10)
+    ax.set_ylabel("AUC",
+                  fontsize=args.axis_fontsize + 3, labelpad=10)
+
+    # Tick parameters for better visibility
+    ax.tick_params(axis="both", which="major",
+                   labelsize=args.axis_fontsize + 2,
+                   width=1.4, length=6, direction="out")
+    ax.tick_params(axis="both", which="minor",
+                   labelsize=args.axis_fontsize + 1,
+                   width=1.0, length=4, direction="out")
+    ax.legend(frameon=True, fontsize=args.axis_fontsize + 1, loc="best")
     sns.despine(ax=ax)
 
     # widen x-axis slightly (after plotting/repel)
