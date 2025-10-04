@@ -308,7 +308,7 @@ def main():
     ax.tick_params(axis="both", which="minor",
                    labelsize=args.axis_fontsize + 1,
                    width=1.0, length=4, direction="out")
-    ax.legend(frameon=True, fontsize=args.axis_fontsize + 1, loc="best")
+    ax.legend(frameon=True, fontsize=args.axis_fontsize + 1, loc="lower right")
     sns.despine(ax=ax)
 
     # widen x-axis slightly (after plotting/repel)
