@@ -1,0 +1,92 @@
+{
+    "bn": {
+        "total_tokens_in_vocab": 946,
+        "tokens_in_clusters_size_2+": 558,
+        "coverage_percent": 58.99
+    },
+    "de": {
+        "total_tokens_in_vocab": 6534,
+        "tokens_in_clusters_size_2+": 5192,
+        "coverage_percent": 79.46
+    },
+    "en": {
+        "total_tokens_in_vocab": 9205,
+        "tokens_in_clusters_size_2+": 6755,
+        "coverage_percent": 73.38
+    },
+    "es": {
+        "total_tokens_in_vocab": 6981,
+        "tokens_in_clusters_size_2+": 5423,
+        "coverage_percent": 77.68
+    },
+    "fa": {
+        "total_tokens_in_vocab": 1371,
+        "tokens_in_clusters_size_2+": 805,
+        "coverage_percent": 58.72
+    },
+    "fr": {
+        "total_tokens_in_vocab": 7349,
+        "tokens_in_clusters_size_2+": 5653,
+        "coverage_percent": 76.92
+    },
+    "he": {
+        "total_tokens_in_vocab": 389,
+        "tokens_in_clusters_size_2+": 211,
+        "coverage_percent": 54.24
+    },
+    "hi": {
+        "total_tokens_in_vocab": 1136,
+        "tokens_in_clusters_size_2+": 708,
+        "coverage_percent": 62.32
+    },
+    "it": {
+        "total_tokens_in_vocab": 7015,
+        "tokens_in_clusters_size_2+": 5494,
+        "coverage_percent": 78.32
+    },
+    "ja": {
+        "total_tokens_in_vocab": 1781,
+        "tokens_in_clusters_size_2+": 1048,
+        "coverage_percent": 58.84
+    },
+    "ko": {
+        "total_tokens_in_vocab": 786,
+        "tokens_in_clusters_size_2+": 572,
+        "coverage_percent": 72.77
+    },
+    "nl": {
+        "total_tokens_in_vocab": 4357,
+        "tokens_in_clusters_size_2+": 3304,
+        "coverage_percent": 75.83
+    },
+    "pl": {
+        "total_tokens_in_vocab": 3364,
+        "tokens_in_clusters_size_2+": 2461,
+        "coverage_percent": 73.16
+    },
+    "pt": {
+        "total_tokens_in_vocab": 7114,
+        "tokens_in_clusters_size_2+": 5516,
+        "coverage_percent": 77.54
+    },
+    "ru": {
+        "total_tokens_in_vocab": 962,
+        "tokens_in_clusters_size_2+": 666,
+        "coverage_percent": 69.23
+    },
+    "ta": {
+        "total_tokens_in_vocab": 1005,
+        "tokens_in_clusters_size_2+": 613,
+        "coverage_percent": 61.0
+    },
+    "uk": {
+        "total_tokens_in_vocab": 1255,
+        "tokens_in_clusters_size_2+": 905,
+        "coverage_percent": 72.11
+    },
+    "vi": {
+        "total_tokens_in_vocab": 4333,
+        "tokens_in_clusters_size_2+": 3047,
+        "coverage_percent": 70.32
+    }
+}
