@@ -298,7 +298,7 @@ def main():
     # Axis labels with larger, bold font
     ax.set_xlabel("Number of Words in the Tokenizer Vocabulary",
                   fontsize=args.axis_fontsize + 3, labelpad=10)
-    ax.set_ylabel("AUC",
+    ax.set_ylabel("Watermark Strength (AUC)",
                   fontsize=args.axis_fontsize + 3, labelpad=10)
 
     # Tick parameters for better visibility
