@@ -22,19 +22,31 @@ def get_length(text, tokenizer):
 def is_nan(nan):
     return nan != nan
 
-def get_length_bin(length):
+def get_text_bins(text, tokenizer):
     """
-    Classify text length into bins:
-    - short: < 50 tokens
-    - medium: 50-150 tokens
-    - long: > 150 tokens
+    Divide text into different length bins by chunking:
+    - short: first 50 tokens
+    - medium: first 150 tokens
+    - long: full text (if > 150 tokens)
     """
-    if length < 50:
-        return "short"
-    elif length <= 150:
-        return "medium"
-    else:
-        return "long"
+    tokens = tokenizer.encode(text, add_special_tokens=False)
+    bins = {}
+
+    # Short: first 50 tokens
+    if len(tokens) >= 50:
+        short_tokens = tokens[:50]
+        bins['short'] = tokenizer.decode(short_tokens)
+
+    # Medium: first 150 tokens
+    if len(tokens) >= 150:
+        medium_tokens = tokens[:150]
+        bins['medium'] = tokenizer.decode(medium_tokens)
+
+    # Long: all tokens (if > 150)
+    if len(tokens) > 150:
+        bins['long'] = text
+
+    return bins
 
 def get_binned_output_files(output_file):
     """Generate output filenames for each bin"""
@@ -111,57 +123,59 @@ def main(args):
     # Detect with binning
     with torch.no_grad():
         for dd in tqdm.tqdm(detect_data, desc="Detecting with binned analysis"):
-            try:
-                # Get response length and determine bin
-                response_length = get_length(dd["response"], tokenizer)
-                length_bin = get_length_bin(response_length)
-                bin_counts[length_bin] += 1
+            # Get text bins by chunking the response
+            text_bins = get_text_bins(dd["response"], tokenizer)
+
+            # Process each available bin for this text
+            for bin_name, bin_text in text_bins.items():
+                bin_counts[bin_name] += 1
 
                 # Skip if already processed in this bin
-                if len(done_data_bins[length_bin]) >= bin_counts[length_bin]:
+                if len(done_data_bins[bin_name]) >= bin_counts[bin_name]:
                     continue
 
-                # Detect watermark (same logic as detect.py)
-                detect_res = watermark_detector.detect(dd["response"])
-                z_score = detect_res["z_score"]
-                biases = detect_res["biases"] if "biases" in detect_res else None
+                try:
+                    # Detect watermark on the binned text chunk
+                    detect_res = watermark_detector.detect(bin_text)
+                    z_score = detect_res["z_score"]
+                    biases = detect_res["biases"] if "biases" in detect_res else None
 
-                if is_nan(z_score):
-                    z_score = None
+                    if is_nan(z_score):
+                        z_score = None
 
-                # Prepare output data
-                output_data = {
-                    "z_score": z_score,
-                    "prompt": dd["prompt"],
-                    "response": dd["response"],
-                    "biases": biases,
-                    "response_length": response_length,
-                    "length_bin": length_bin
-                }
-
-                # Append to appropriate bin file
-                append_jsonl(bin_output_files[length_bin], output_data)
-                processed_count += 1
-
-            except ValueError as e:
-                if "Must have at least" in str(e):
-                    # Input is too short - still record it with null z_score
-                    response_length = get_length(dd["response"], tokenizer)
-                    length_bin = get_length_bin(response_length)
-                    bin_counts[length_bin] += 1
-
+                    # Prepare output data
                     output_data = {
-                        "z_score": None,
+                        "z_score": z_score,
                         "prompt": dd["prompt"],
-                        "response": dd["response"],
-                        "biases": None,
-                        "response_length": response_length,
-                        "length_bin": length_bin
+                        "response": bin_text,  # Store the binned text chunk
+                        "original_response": dd["response"],  # Keep original for reference
+                        "biases": biases,
+                        "bin_length": get_length(bin_text, tokenizer),
+                        "original_length": get_length(dd["response"], tokenizer),
+                        "length_bin": bin_name
                     }
-                    append_jsonl(bin_output_files[length_bin], output_data)
+
+                    # Append to appropriate bin file
+                    append_jsonl(bin_output_files[bin_name], output_data)
                     processed_count += 1
-                else:
-                    raise e
+
+                except ValueError as e:
+                    if "Must have at least" in str(e):
+                        # Binned text is too short for watermark detection
+                        output_data = {
+                            "z_score": None,
+                            "prompt": dd["prompt"],
+                            "response": bin_text,
+                            "original_response": dd["response"],
+                            "biases": None,
+                            "bin_length": get_length(bin_text, tokenizer),
+                            "original_length": get_length(dd["response"], tokenizer),
+                            "length_bin": bin_name
+                        }
+                        append_jsonl(bin_output_files[bin_name], output_data)
+                        processed_count += 1
+                    else:
+                        raise e
 
     # Print summary statistics
     print(f"\n📈 Binned Analysis Summary:")
