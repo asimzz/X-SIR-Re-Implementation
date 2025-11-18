@@ -30,7 +30,7 @@ MODEL_ABBRS=(
 )
 
 # Settings
-WATERMARK_METHODS=("xkgw")
+WATERMARK_METHODS=("xsir" "xkgw")
 SEEDS=(0)
 TGT_LANGS=("it" "es" "pt" "pl" "nl" "hr" "cs" "da" "ko" "ar")
 

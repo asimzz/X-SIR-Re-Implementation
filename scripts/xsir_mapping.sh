@@ -15,13 +15,13 @@ EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "google/gemma-3-4b-pt"
+    "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
     "llama-3.2-1B"
     "aya-23-8B"
-    "gemma-3-4b-pt"
+    "llamax3-8B"
 )
 
 SEEDS=(0 42 123)
