@@ -19,13 +19,13 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.2-1B"
     "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
+    "llama-3.2-1B"
     "llamax3-8B"
 )
 
@@ -34,49 +34,49 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 TGT_LANGS=(
     # High-resource languages
-    "fr" # French
+    # "fr" # French
     "de" # German
-    "it" # Italian
+    # "it" # Italian
     "es" # Spanish
-    "pt" # Portuguese
+    # "pt" # Portuguese
     # Medium-resource languages
-    "pl" # Polish
-    "nl" # Dutch
+    # "pl" # Polish
+    # "nl" # Dutch
     "ru" # Russian
     "hi" # Hindi
-    "ko" # Korean
+    # "ko" # Korean
     "ja" # Japanese
     # Low-resource languages
     "bn" # Bengali
     "fa" # Persian
-    "vi" # Vietnamese
+    # "vi" # Vietnamese
     "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 ORG_LANGS=(
     "en" # English
     # High-resource languages
-    "fr" # French
+    # "fr" # French
     "de" # German
-    "it" # Italian
+    # "it" # Italian
     "es" # Spanish
-    "pt" # Portuguese
+    # "pt" # Portuguese
     # Medium-resource languages
-    "pl" # Polish
-    "nl" # Dutch
+    # "pl" # Polish
+    # "nl" # Dutch
     "ru" # Russian
     "hi" # Hindi
-    "ko" # Korean
+    # "ko" # Korean
     "ja" # Japanese
     # Low-resource languages
     "bn" # Bengali
     "fa" # Persian
-    "vi" # Vietnamese
+    # "vi" # Vietnamese
     "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 # Validate model list lengths
@@ -110,7 +110,7 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             # Step 1: Generate human text
             echo "📝 Generating human text for en"
-            python3 "$WORK_DIR/detect.py" \
+            python3 "$WORK_DIR/detect_binned.py" \
                 --base_model "$MODEL_NAME" \
                 --seed "$SEED" \
                 --detect_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
@@ -132,7 +132,7 @@ for i in "${!MODEL_NAMES[@]}"; do
 
                 echo "🔍 Detecting watermark in translated human text (${TGT_LANG})"
                 # Detect on translated human text
-                python3 "$WORK_DIR/detect.py" \
+                python3 "$WORK_DIR/detect_binned.py" \
                     --base_model "$MODEL_NAME" \
                     --seed "$SEED" \
                     --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.val.jsonl" \
@@ -152,7 +152,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$ORG_LANG"
                     echo "🔍 Detecting watermark in back-translated human text (${TGT_LANG} -> ${ORG_LANG})"
-                    python3 "$WORK_DIR/detect.py" \
+                    python3 "$WORK_DIR/detect_binned.py" \
                         --base_model "$MODEL_NAME" \
                         --seed "$SEED" \
                         --detect_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.val.jsonl" \
