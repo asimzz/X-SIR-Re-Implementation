@@ -1,0 +1,42 @@
+{
+  "standard_evaluation": {
+    "auc": 0.9626319999999999,
+    "tpr_at_fpr_0.1": 0.894,
+    "tpr_at_fpr_0.01": 0.722,
+    "f1_at_fpr_0.1": 0.9030303030303031,
+    "f1_at_fpr_0.01": 0.8337182448036952,
+    "lang_detection_accuracy_wm": 0.84,
+    "lang_detection_accuracy_hum": 0.042
+  },
+  "multiple_comparisons_analysis": {
+    "n_tests": 18,
+    "single_test": {
+      "threshold": 2.4659848095803594,
+      "fpr": 0.01,
+      "tpr": 0.09,
+      "fp_count": 5,
+      "tp_count": 45
+    },
+    "steam_uncorrected": {
+      "threshold": 2.4659848095803594,
+      "fpr": 0.156,
+      "tpr": 0.922,
+      "fp_count": 78,
+      "tp_count": 461,
+      "inflation_factor": 15.6
+    },
+    "steam_bonferroni": {
+      "threshold": 3.499482363378076,
+      "fpr": 0.014,
+      "tpr": 0.752,
+      "fp_count": 7,
+      "tp_count": 376
+    },
+    "theoretical": {
+      "fpr": 0.1654862385499125,
+      "expected_inflation": 16.548623854991252
+    }
+  },
+  "target_language": "de",
+  "base_directory": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/llama-3.2-1B/kgw_seed0"
+}

@@ -11,6 +11,14 @@ def tpr_at_fpr(fpr, tpr, fpr_target):
     return fpr_tpr_interpolation(fpr_target)
 
 
+def fpr_at_tpr(fpr, tpr, tpr_target):
+    """Interpolate FPR at specific TPR."""
+    tpr_fpr_interpolation = interpolate.interp1d(tpr, fpr, kind="linear",
+                                                  bounds_error=False,
+                                                  fill_value=(fpr[0], fpr[-1]))
+    return float(tpr_fpr_interpolation(tpr_target))
+
+
 def f1_at_fpr(y_true, y_scores, fpr_target):
     fpr, tpr, thresholds = roc_curve(y_true, y_scores)
 
@@ -35,7 +43,7 @@ def f1_at_fpr(y_true, y_scores, fpr_target):
         / (precision_at_threshold + recall_at_threshold)
     )
 
-    return f1
+    return float(f1)
 
 
 def main(args):
@@ -58,19 +66,23 @@ def main(args):
     y_scores = hm_zscore + wm_zscore
 
     auc = roc_auc_score(y_true, y_scores)
-
     fpr, tpr, thresholds = roc_curve(y_true, y_scores)
 
-    print(
-        f"""AUC: {auc:.3f}
+    # Original metrics
+    tpr_at_fpr_10 = tpr_at_fpr(fpr, tpr, 0.1)
+    tpr_at_fpr_01 = tpr_at_fpr(fpr, tpr, 0.01)
+    f1_at_fpr_10 = f1_at_fpr(y_true, y_scores, 0.1)
+    f1_at_fpr_01 = f1_at_fpr(y_true, y_scores, 0.01)
 
-TPR@FPR=0.1: {tpr_at_fpr(fpr, tpr, 0.1):.3f}
-TPR@FPR=0.01: {tpr_at_fpr(fpr, tpr, 0.01):.3f}
+    # New FPR@TPR metrics
+    fpr_at_tpr_99_interp = fpr_at_tpr(fpr, tpr, 0.99)
+    fpr_at_tpr_95_interp = fpr_at_tpr(fpr, tpr, 0.95)
+    fpr_at_tpr_90_interp = fpr_at_tpr(fpr, tpr, 0.90)
 
-F1@FPR=0.1: {f1_at_fpr(y_true, y_scores, 0.1):.3f}
-F1@FPR=0.01: {f1_at_fpr(y_true, y_scores, 0.01):.3f}
-"""
-    )
+    print(f"AUC: {auc:.3f}")
+    print(f"FPR@TPR=99%:  {fpr_at_tpr_99_interp:.4f}")
+    print(f"FPR@TPR=95%:  {fpr_at_tpr_95_interp:.4f}")
+    print(f"FPR@TPR=90%: {fpr_at_tpr_90_interp:.4f}")
 
     if args.roc_curve:
         with open(args.roc_curve, "w") as f:

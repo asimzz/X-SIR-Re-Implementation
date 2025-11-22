@@ -1,0 +1,83 @@
+{
+  "target_language": "da",
+  "input_file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.en-da.mod.jsonl",
+  "input_tokens": 144048,
+  "input_samples": 500,
+  "output_tokens": 1183105,
+  "output_samples": 5000,
+  "total_tokens": 1327153,
+  "cost_multiplier": 8.213269188048429,
+  "back_translation_files": 10,
+  "breakdown": [
+    {
+      "source_lang": "da",
+      "target_lang": "en",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-en-back.mod.jsonl",
+      "tokens": 99482,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "it",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-it-back.mod.jsonl",
+      "tokens": 115875,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "es",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-es-back.mod.jsonl",
+      "tokens": 110889,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "pt",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-pt-back.mod.jsonl",
+      "tokens": 108990,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "pl",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-pl-back.mod.jsonl",
+      "tokens": 122167,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "nl",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-nl-back.mod.jsonl",
+      "tokens": 116020,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "hr",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-hr-back.mod.jsonl",
+      "tokens": 150774,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "cs",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-cs-back.mod.jsonl",
+      "tokens": 121018,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "ko",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-ko-back.mod.jsonl",
+      "tokens": 112147,
+      "samples": 500
+    },
+    {
+      "source_lang": "da",
+      "target_lang": "ar",
+      "file": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0/mc4.da-ar-back.mod.jsonl",
+      "tokens": 125743,
+      "samples": 500
+    }
+  ]
+}

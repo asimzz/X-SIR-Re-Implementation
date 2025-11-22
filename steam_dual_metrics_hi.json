@@ -1,0 +1,21 @@
+{
+  "target_language": "hi",
+  "base_directory": "/Users/asim-abdalla/projects/ammi-research-project/watermarking/X-SIR-Re-Implementation/scripts/../gen/aya-23-8B/kgw_seed0",
+  "standard_evaluation": {
+    "auc": 0.959114,
+    "original_metrics": {
+      "tpr_at_fpr_0.1": 0.9,
+      "tpr_at_fpr_0.01": 0.654,
+      "f1_at_fpr_0.1": 0.9018036072144289,
+      "f1_at_fpr_0.01": 0.7860576923076923
+    },
+    "new_metrics": {
+      "fpr_at_tpr_0.01_interp": 0.688,
+      "fpr_at_tpr_0.05_interp": 0.264
+    },
+    "lang_detection": {
+      "accuracy_wm": 0.834,
+      "accuracy_hum": 0.114
+    }
+  }
+}
