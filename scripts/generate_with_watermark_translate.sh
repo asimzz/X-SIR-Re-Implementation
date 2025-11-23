@@ -130,13 +130,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
                 # Translation attack
-                # python3 "$ATTACK_DIR/translate.py" \
-                #     --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.en-$TGT_LANG.deepseek.jsonl" \
-                #     --translation_part response \
-                #     --model "deepseek-chat" \
-                #     --src_lang en \
-                #     --tgt_lang "$TGT_LANG"
+                python3 "$ATTACK_DIR/translate.py" \
+                    --input_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                    --output_file "$OUT_DIR/mc4.en-$TGT_LANG.gpt4o.jsonl" \
+                    --translation_part response \
+                    --model "gpt-4o-mini" \
+                    --src_lang en \
+                    --tgt_lang "$TGT_LANG"
 
                 # Detect on translated output
                 # python3 "$WORK_DIR/detect.py" \
@@ -152,7 +152,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                     # Back-translation
                     echo "🔁 Back translation $TGT_LANG -> $ORG_LANG"
                     python3 "$ATTACK_DIR/translate.py" \
-                    --input_file "$OUT_DIR/mc4.en-$TGT_LANG.deepseek.jsonl" \
+                    --input_file "$OUT_DIR/mc4.en-$TGT_LANG.gpt4o.jsonl" \
                     --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.gpt4o.jsonl" \
                     --translation_part response \
                     --model "gpt-4o-mini" \
