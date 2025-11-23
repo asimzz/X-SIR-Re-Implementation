@@ -45,21 +45,21 @@ TGT_LANGS=(
     # "ru" # Russian
     "hi" # Hindi
     # "ko" # Korean
-    "ja" # Japanese
+    # "ja" # Japanese
     # Low-resource languages
     # "bn" # Bengali
-    "fa" # Persian
+    # "fa" # Persian
     # "vi" # Vietnamese
     "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 ORG_LANGS=(
-    # "en" # English
+    "en" # English
     # # High-resource languages
     # # "fr" # French
-    # "de" # German
+    "de" # German
     # # "it" # Italian
     # # "es" # Spanish
     # # "pt" # Portuguese
@@ -67,16 +67,16 @@ ORG_LANGS=(
     # # "pl" # Polish
     # # "nl" # Dutch
     # # "ru" # Russian
-    # "hi" # Hindi
+    "hi" # Hindi
     # # "ko" # Korean
     # "ja" # Japanese
     # Low-resource languages
     # "bn" # Bengali
-    "fa" # Persian
+    # "fa" # Persian
     # "vi" # Vietnamese
     "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 # Validate model list lengths
@@ -151,12 +151,13 @@ for i in "${!MODEL_NAMES[@]}"; do
                     fi
                     # Back-translation
                     echo "🔁 Back translation $TGT_LANG -> $ORG_LANG"
-                    python3 "$ATTACK_DIR/google_translate.py" \
-                        --input_file "$OUT_DIR/mc4.en-$TGT_LANG.deepseek.jsonl" \
-                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.mod.jsonl" \
-                        --translation_part response \
-                        --src_lang "$TGT_LANG" \
-                        --tgt_lang "$ORG_LANG"
+                    python3 "$ATTACK_DIR/translate.py" \
+                    --input_file "$OUT_DIR/mc4.en-$TGT_LANG.deepseek.jsonl" \
+                    --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.gpt4o.jsonl" \
+                    --translation_part response \
+                    --model "gpt-4o-mini" \
+                    --src_lang "$TGT_LANG" \
+                    --tgt_lang "$ORG_LANG"
 
                     # python3 "$WORK_DIR/detect.py" \
                     #     --base_model "$MODEL_NAME" \
