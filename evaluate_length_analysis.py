@@ -30,14 +30,34 @@ def get_text_length_from_tokenizer(text, tokenizer_name="CohereForAI/aya-23-8B")
     return len(tokenizer.encode(text, add_special_tokens=False))
 
 
-def classify_text_length(token_length):
-    """Classify texts into length categories based on actual full text length"""
-    if token_length <= 100:
+def classify_text_length_by_percentiles(token_length, percentiles):
+    """Classify texts into length categories based on percentile thresholds"""
+    p33, p67 = percentiles
+    if token_length <= p33:
         return "short"
-    elif token_length <= 300:
+    elif token_length <= p67:
         return "medium"
     else:
         return "long"
+
+
+def calculate_length_percentiles(text_items, tokenizer):
+    """Calculate 33rd and 67th percentiles of text lengths to split into thirds"""
+    token_lengths = []
+    for item in text_items:
+        response = item["response"]
+        token_length = len(tokenizer.encode(response, add_special_tokens=False))
+        token_lengths.append(token_length)
+
+    token_lengths.sort()
+    n = len(token_lengths)
+    if n == 0:
+        return (0, 0)
+
+    p33_idx = int(n * 0.33)
+    p67_idx = int(n * 0.67)
+
+    return (token_lengths[p33_idx], token_lengths[p67_idx])
 
 
 def extract_zscores(_list):
@@ -91,7 +111,7 @@ def f1_at_fpr(y_true, y_scores, fpr_target):
 
 
 def analyze_length_distribution(base_dir, tgt_lang):
-    """Analyze the distribution of text lengths in the dataset"""
+    """Analyze the distribution of text lengths in the dataset using percentile-based binning"""
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained("CohereForAI/aya-23-8B", trust_remote_code=True)
 
@@ -104,7 +124,11 @@ def analyze_length_distribution(base_dir, tgt_lang):
         suspect_attack_wm_list = read_jsonl(suspect_attack_wm_file)
     except FileNotFoundError:
         print(f"Suspect attack files not found for {tgt_lang}.")
-        return {}
+        return {}, {}, (0, 0)
+
+    # Calculate percentiles from the human text data to ensure equal splits
+    percentiles = calculate_length_percentiles(suspect_attack_hum_list, tokenizer)
+    p33, p67 = percentiles
 
     length_counts = {"short": 0, "medium": 0, "long": 0}
     length_examples = defaultdict(list)
@@ -112,19 +136,20 @@ def analyze_length_distribution(base_dir, tgt_lang):
     for item in suspect_attack_hum_list:
         response = item["response"]
         token_length = len(tokenizer.encode(response, add_special_tokens=False))
-        length_category = classify_text_length(token_length)
+        length_category = classify_text_length_by_percentiles(token_length, percentiles)
         length_counts[length_category] += 1
 
         if len(length_examples[length_category]) < 3:  # Store a few examples
             length_examples[length_category].append(token_length)
 
-    return length_counts, length_examples
+    print(f"Length percentiles for {tgt_lang}: P33={p33}, P67={p67}")
+    return length_counts, length_examples, percentiles
 
 
-def evaluate_by_length_and_language(base_dir, tgt_lang):
+def evaluate_by_length_and_language(base_dir, tgt_lang, percentiles):
     """
     Evaluate watermark detection performance by both text length AND language
-    This addresses the reviewer's request for per-language, per-length analysis
+    Uses percentile-based binning to ensure equal thirds per language
     """
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained("CohereForAI/aya-23-8B", trust_remote_code=True)
@@ -147,13 +172,13 @@ def evaluate_by_length_and_language(base_dir, tgt_lang):
     suspect_hum_by_prompt = {item['prompt']: item for item in suspect_attack_hum_list}
     suspect_wm_by_prompt = {item['prompt']: item for item in suspect_attack_wm_list}
 
-    # Classify all prompts by text length
+    # Classify all prompts by text length using percentile-based classification
     prompts_by_length = {"short": [], "medium": [], "long": []}
     for prompt, item in suspect_hum_by_prompt.items():
         if prompt in suspect_wm_by_prompt:
             response = item["response"]
             token_length = len(tokenizer.encode(response, add_special_tokens=False))
-            length_category = classify_text_length(token_length)
+            length_category = classify_text_length_by_percentiles(token_length, percentiles)
             prompts_by_length[length_category].append(prompt)
 
     # Load candidate language data
@@ -399,9 +424,9 @@ def main(args):
     print(f"Target Language: {args.tgt_lang}")
     print(f"Base Directory: {args.base_wm_dir}")
 
-    # First, analyze the length distribution
+    # First, analyze the length distribution and get percentiles
     print(f"\n=== TEXT LENGTH DISTRIBUTION ===")
-    length_counts, length_examples = analyze_length_distribution(args.base_wm_dir, args.tgt_lang)
+    length_counts, length_examples, percentiles = analyze_length_distribution(args.base_wm_dir, args.tgt_lang)
 
     total_texts = sum(length_counts.values())
     for category in ["short", "medium", "long"]:
@@ -411,9 +436,9 @@ def main(args):
         example_str = f" (examples: {examples})" if examples else ""
         print(f"{category.capitalize()}: {count} texts ({percentage:.1f}%){example_str}")
 
-    # Evaluate watermark strength by length
+    # Evaluate watermark strength by length using percentile-based classification
     print(f"\n=== WATERMARK STRENGTH BY TEXT LENGTH ===")
-    results = evaluate_by_length_and_language(args.base_wm_dir, args.tgt_lang)
+    results = evaluate_by_length_and_language(args.base_wm_dir, args.tgt_lang, percentiles)
 
     # Save and display results table
     if results:

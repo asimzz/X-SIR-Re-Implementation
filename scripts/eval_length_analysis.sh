@@ -8,12 +8,10 @@ WORK_DIR=$SCRIPT_DIR/..
 GEN_DIR=$WORK_DIR/gen
 
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
 )
 
@@ -48,10 +46,13 @@ echo "======================================="
 echo "This analysis evaluates how text length affects"
 echo "watermark detection performance across languages."
 echo ""
-echo "Length Categories:"
-echo "- Short: ≤100 tokens"
-echo "- Medium: 101-300 tokens"
-echo "- Long: >300 tokens"
+echo "Length Categories (Dynamic per language):"
+echo "- Short: Bottom 1/3 of texts by token length"
+echo "- Medium: Middle 1/3 of texts by token length"
+echo "- Long: Top 1/3 of texts by token length"
+echo ""
+echo "Uses percentile-based binning to ensure equal"
+echo "sample sizes and reliable AUC scores."
 echo ""
 
 for i in "${!MODEL_NAMES[@]}"; do
@@ -140,11 +141,11 @@ echo "📊 Aggregated table files (per model):"
 find $RESULTS_DIR -name "aggregated_length_results_*.csv" | sort
 echo ""
 echo "📋 Key findings to report:"
-echo "1. Text length distribution across languages"
-echo "2. Watermark detection accuracy by text length"
-echo "3. AUC scores comparing short vs medium vs long texts"
+echo "1. Text length distribution (now equal 1/3 splits per language)"
+echo "2. Watermark detection accuracy by text length (percentile-based)"
+echo "3. AUC scores comparing short vs medium vs long texts (reliable with equal samples)"
 echo "4. Language detection performance variations by text length"
-echo "5. Potential length bias between different target languages"
+echo "5. Language-specific length thresholds and their impact on detection"
 echo ""
 echo "🔍 Check the aggregated tables for:"
 echo "  - Per-model tables with languages as rows, length categories as columns"
