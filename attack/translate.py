@@ -19,7 +19,7 @@ def read_jsonl(file_path):
 
 def main(args):
     # assert valid_location(), "Invalid location"
-    assert os.getenv("DEEPSEEK_API_KEY"), "Set the DEEPSEEK_API_KEY environment variable"
+    assert os.getenv("OPENAI_API_KEY"), "Set the OPENAI_API_KEY environment variable"
 
     def input_to_requests_func(input_file: str, output_file: str) -> list:
         """
@@ -143,8 +143,8 @@ def main(args):
         return num_requests == num_done
 
     openai_caller = CallOpenAI(
-        request_url="https://api.deepseek.com/chat/completions",
-        api_key=os.getenv("DEEPSEEK_API_KEY"),
+        request_url="https://api.openai.com/v1/chat/completions",
+        api_key=os.getenv("OPENAI_API_KEY"),
         input_file_path=args.input_file,
         output_file_path=args.output_file,
         max_attempts=5,

@@ -34,49 +34,49 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 TGT_LANGS=(
     # High-resource languages
-    "fr" # French
+    # "fr" # French
     "de" # German
-    "it" # Italian
-    "es" # Spanish
-    "pt" # Portuguese
+    # "it" # Italian
+    # "es" # Spanish
+    # "pt" # Portuguese
     # Medium-resource languages
-    "pl" # Polish
-    "nl" # Dutch
-    "ru" # Russian
+    # "pl" # Polish
+    # "nl" # Dutch
+    # "ru" # Russian
     "hi" # Hindi
-    "ko" # Korean
-    "ja" # Japanese
+    # "ko" # Korean
+    # "ja" # Japanese
     # Low-resource languages
-    "bn" # Bengali
-    "fa" # Persian
-    "vi" # Vietnamese
+    # "bn" # Bengali
+    # "fa" # Persian
+    # "vi" # Vietnamese
     "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 ORG_LANGS=(
     "en" # English
-    # High-resource languages
-    "fr" # French
+    # # High-resource languages
+    # # "fr" # French
     "de" # German
-    "it" # Italian
-    "es" # Spanish
-    "pt" # Portuguese
-    # Medium-resource languages
-    "pl" # Polish
-    "nl" # Dutch
-    "ru" # Russian
+    # # "it" # Italian
+    # # "es" # Spanish
+    # # "pt" # Portuguese
+    # # Medium-resource languages
+    # # "pl" # Polish
+    # # "nl" # Dutch
+    # # "ru" # Russian
     "hi" # Hindi
-    "ko" # Korean
-    "ja" # Japanese
+    # # "ko" # Korean
+    # "ja" # Japanese
     # Low-resource languages
-    "bn" # Bengali
-    "fa" # Persian
-    "vi" # Vietnamese
+    # "bn" # Bengali
+    # "fa" # Persian
+    # "vi" # Vietnamese
     "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 # Validate model list lengths
@@ -152,9 +152,9 @@ for i in "${!MODEL_NAMES[@]}"; do
                     echo "🔁 Back translation $TGT_LANG -> $ORG_LANG"
                     python3 "$ATTACK_DIR/translate.py" \
                         --input_file "$OUT_DIR/mc4.en-$TGT_LANG.mod.jsonl" \
-                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.deepseek.jsonl" \
+                        --output_file "$OUT_DIR/mc4.$TGT_LANG-$ORG_LANG-back.gpt4o.jsonl" \
                         --translation_part response \
-                        --model "deepseek-chat" \
+                        --model "gpt-4o-mini" \
                         --src_lang "$TGT_LANG" \
                         --tgt_lang "$ORG_LANG"
 
