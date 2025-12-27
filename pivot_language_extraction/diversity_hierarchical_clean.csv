@@ -1,0 +1,18 @@
+target_language,best_languages,score
+bn,"['hin', 'fas', 'zho', 'mya']",0.18713426582001064
+ja,"['fin', 'hun', 'spa', 'fra']",0.0
+nl,"['eng', 'deu', 'ara', 'heb']",0.3123659702970261
+ta,"['kan', 'mal', 'ara', 'heb']",0.46100650152903244
+pl,"['rus', 'ces', 'zho', 'mya']",0.35730190186595523
+ru,"['pol', 'ces', 'vie', 'khm']",0.32079188233417
+uk,"['rus', 'pol', 'zho', 'mya']",0.4604312351506201
+de,"['eng', 'nld', 'ara', 'heb']",0.319115499298941
+it,"['fin', 'hun', 'spa', 'fra']",0.32935000000000003
+pt,"['fin', 'hun', 'spa', 'fra']",0.5396007253910016
+fr,"['fin', 'hun', 'spa', 'ita']",0.3682333390978211
+iw,"['tam', 'kan', 'ara', 'mlt']",0.31933394994010744
+ko,"['fin', 'hun', 'spa', 'fra']",0.0
+hi,"['fas', 'urd', 'tel']",0.6592574149373553
+fa,"['hin', 'urd', 'zho', 'mya']",0.13979
+vi,"['khm', 'tel']",0.18739000000000003
+es,"['fin', 'hun', 'fra', 'ita']",0.3682333390978211

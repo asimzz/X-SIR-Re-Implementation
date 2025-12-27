@@ -1,0 +1,18 @@
+target_language,best_languages,score
+es,"['myv', 'izh', 'uig', 'krl', 'uzb', 'smn', 'smj', 'aze', 'sme', 'kir', 'tur', 'sms', 'kaz', 'hun', 'sma', 'mdf', 'liv', 'est', 'fin', 'udm', 'vep', 'kpv']",1.0
+vi,"['nap', 'scn', 'ext', 'sms', 'cat', 'arg', 'sme', 'spa', 'ron', 'lij', 'hun', 'liv', 'smn', 'pms', 'udm', 'fra', 'ita', 'cos', 'est', 'glg', 'kpv', 'srd', 'mwl', 'lmo', 'ast', 'vec', 'smj', 'izh', 'fin', 'mdf', 'lad', 'por', 'myv', 'vep', 'sma', 'krl']",1.0
+fa,"['smj', 'uig', 'sms', 'vep', 'izh', 'krl', 'fin', 'tur', 'smn', 'aze', 'udm', 'hun', 'est', 'kpv', 'sme', 'uzb', 'kaz', 'liv', 'myv', 'mdf', 'kir', 'sma']",1.0
+ko,"['krl', 'por', 'spa', 'scn', 'vep', 'sma', 'myv', 'cat', 'kpv', 'hun', 'est', 'ext', 'vec', 'liv', 'glg', 'ron', 'lmo', 'fin', 'ast', 'srd', 'udm', 'mdf', 'mwl', 'lad', 'arg', 'smn', 'cos', 'sme', 'izh', 'nap', 'pms', 'lij', 'sms', 'ita', 'fra', 'smj']",1.0
+hi,"['myv', 'vep', 'aze', 'uzb', 'fin', 'smn', 'kaz', 'tur', 'sme', 'krl', 'udm', 'izh', 'est', 'sms', 'sma', 'hun', 'kir', 'mdf', 'uig', 'smj', 'liv', 'kpv']",1.0
+fr,"['udm', 'myv', 'uzb', 'kir', 'tur', 'uig', 'mdf', 'sma', 'smj', 'krl', 'kaz', 'est', 'sme', 'izh', 'vep', 'hun', 'sms', 'smn', 'fin', 'kpv', 'aze', 'liv']",1.0
+iw,"['cos', 'fra', 'est', 'kpv', 'pms', 'scn', 'mdf', 'ron', 'ast', 'lmo', 'ext', 'myv', 'udm', 'izh', 'smn', 'krl', 'srd', 'sme', 'hun', 'ita', 'nap', 'spa', 'glg', 'liv', 'por', 'cat', 'vec', 'lij', 'arg', 'mwl', 'lad', 'fin', 'smj', 'sms', 'vep', 'sma']",1.0
+it,"['kpv', 'smn', 'kir', 'sms', 'kaz', 'vep', 'fin', 'liv', 'sma', 'uig', 'tur', 'smj', 'krl', 'izh', 'sme', 'uzb', 'mdf', 'udm', 'aze', 'hun', 'myv', 'est']",1.0
+pt,"['kaz', 'hun', 'fin', 'tur', 'krl', 'vep', 'kpv', 'liv', 'smn', 'izh', 'myv', 'smj', 'uig', 'aze', 'sma', 'sms', 'mdf', 'sme', 'udm', 'est', 'kir', 'uzb']",1.0
+ta,"['lad', 'lij', 'udm', 'fra', 'smj', 'sme', 'smn', 'spa', 'cat', 'mdf', 'cos', 'krl', 'ast', 'myv', 'scn', 'kpv', 'arg', 'pms', 'sma', 'por', 'izh', 'est', 'ext', 'ita', 'lmo', 'ron', 'nap', 'mwl', 'hun', 'glg', 'liv', 'sms', 'srd', 'vep', 'vec', 'fin']",1.0
+de,"['sms', 'hun', 'sma', 'uzb', 'liv', 'aze', 'myv', 'smj', 'est', 'kpv', 'izh', 'uig', 'smn', 'krl', 'fin', 'kaz', 'vep', 'udm', 'tur', 'sme', 'kir', 'mdf']",1.0
+uk,"['myv', 'smj', 'vep', 'sma', 'uig', 'kpv', 'krl', 'kaz', 'liv', 'kir', 'udm', 'sms', 'fin', 'est', 'mdf', 'izh', 'uzb', 'hun', 'smn', 'tur', 'aze', 'sme']",1.0
+pl,"['liv', 'smj', 'uig', 'est', 'udm', 'kpv', 'krl', 'vep', 'mdf', 'kir', 'sma', 'tur', 'kaz', 'aze', 'izh', 'smn', 'uzb', 'hun', 'sme', 'sms', 'fin', 'myv']",1.0
+ru,"['myv', 'aze', 'smj', 'tur', 'sma', 'vep', 'est', 'izh', 'mdf', 'hun', 'krl', 'sme', 'fin', 'smn', 'uig', 'udm', 'liv', 'kir', 'sms', 'uzb', 'kpv', 'kaz']",1.0
+ja,"['por', 'fin', 'mwl', 'pms', 'scn', 'lad', 'lij', 'liv', 'ext', 'ast', 'myv', 'cat', 'krl', 'vec', 'srd', 'ron', 'sme', 'smj', 'cos', 'kpv', 'arg', 'lmo', 'nap', 'est', 'ita', 'spa', 'mdf', 'vep', 'sma', 'sms', 'izh', 'fra', 'udm', 'hun', 'glg', 'smn']",1.0
+nl,"['sms', 'tur', 'smj', 'kaz', 'fin', 'hun', 'kir', 'smn', 'uzb', 'izh', 'vep', 'est', 'aze', 'uig', 'liv', 'udm', 'kpv', 'sma', 'mdf', 'krl', 'myv', 'sme']",1.0
+bn,"['liv', 'myv', 'kir', 'tur', 'kpv', 'smj', 'sme', 'uzb', 'kaz', 'izh', 'hun', 'uig', 'sms', 'sma', 'krl', 'fin', 'aze', 'smn', 'udm', 'mdf', 'est', 'vep']",1.0

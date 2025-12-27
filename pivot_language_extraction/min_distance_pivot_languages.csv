@@ -1,0 +1,18 @@
+target_language,hierarchical,simple
+bn,"['asm', 'ori']","['ori', 'asm', 'sin', 'tgk', 'urd', 'fas', 'pan', 'mar', 'guj', 'hin', 'nep']"
+de,"['ltz', 'afr']","['dan', 'fao', 'ltz', 'nor', 'swe', 'nld', 'eng', 'isl', 'afr']"
+es,"['lad', 'ext']","['ell', 'lij', 'srd', 'arg', 'glg', 'ext', 'fra', 'por', 'lad', 'mwl', 'ron', 'vec', 'cat', 'nap', 'ast', 'pms', 'scn', 'ita', 'cos', 'lmo']"
+fa,"['tgk', 'nep']","['asm', 'pan', 'urd', 'guj', 'tgk', 'nep', 'hin', 'ben', 'ori', 'mar', 'sin']"
+fr,"['vec', 'lij']","['mwl', 'ron', 'arg', 'vec', 'cos', 'scn', 'lad', 'por', 'spa', 'ita', 'srd', 'nap', 'pms', 'lij', 'ext', 'lmo', 'glg', 'ast', 'cat']"
+hi,"['urd', 'guj']","['fas', 'urd', 'sin', 'mar', 'ben', 'tgk', 'guj', 'nep', 'ori', 'pan', 'asm']"
+it,"['scn', 'nap']","['por', 'ron', 'lmo', 'fra', 'srd', 'ext', 'cos', 'mwl', 'scn', 'arg', 'nap', 'lad', 'lij', 'glg', 'vec', 'ast', 'cat', 'spa', 'pms']"
+iw,"['ara', 'mlt']","['amh', 'mlt', 'ara']"
+ja,"['fin', 'hun', 'spa', 'fra']","['por', 'fin', 'mwl', 'pms', 'scn', 'lad', 'lij', 'liv', 'ext', 'ast', 'myv', 'cat', 'krl', 'vec', 'srd', 'ron', 'sme', 'smj', 'cos', 'kpv', 'arg', 'lmo', 'nap', 'est', 'ita', 'spa', 'mdf', 'vep', 'sma', 'sms', 'izh', 'fra', 'udm', 'hun', 'glg', 'smn']"
+ko,"['fin', 'hun', 'spa', 'fra']","['krl', 'por', 'spa', 'scn', 'vep', 'sma', 'myv', 'cat', 'kpv', 'hun', 'est', 'ext', 'vec', 'liv', 'glg', 'ron', 'lmo', 'fin', 'ast', 'srd', 'udm', 'mdf', 'mwl', 'lad', 'arg', 'smn', 'cos', 'sme', 'izh', 'nap', 'pms', 'lij', 'sms', 'ita', 'fra', 'smj']"
+nl,"['afr', 'deu']","['fao', 'afr', 'swe', 'nor', 'deu', 'dan', 'isl', 'eng', 'ltz']"
+pl,"['slk', 'ces']","['lit', 'slv', 'hrv', 'bel', 'lav', 'hye', 'bul', 'ces', 'rus', 'srp', 'slk', 'ukr']"
+pt,"['glg', 'ast']","['mwl', 'spa', 'cos', 'ext', 'lij', 'ron', 'lad', 'cat', 'ita', 'glg', 'arg', 'vec', 'ast', 'scn', 'pms', 'fra', 'nap', 'srd', 'lmo']"
+ru,"['bel', 'ukr']","['slv', 'lit', 'bel', 'slk', 'lav', 'pol', 'bul', 'ces', 'ukr', 'hye', 'hrv', 'srp']"
+ta,"['mal', 'kan']","['mal', 'kan']"
+uk,"['rus', 'bel']","['pol', 'lav', 'lit', 'srp', 'hrv', 'slv', 'ces', 'bul', 'rus', 'slk', 'hye', 'bel']"
+vi,['khm'],['khm']

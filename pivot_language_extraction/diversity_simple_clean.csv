@@ -1,0 +1,18 @@
+target_language,best_languages,score
+es,"['myv', 'izh', 'lij', 'srd', 'arg', 'krl', 'glg', 'ext', 'smn', 'smj', 'fra', 'por', 'sme', 'lad', 'mwl', 'ron', 'cat', 'sms', 'vec', 'hun', 'sma', 'nap', 'ast', 'mdf', 'pms', 'scn', 'liv', 'est', 'ita', 'fin', 'cos', 'udm', 'vep', 'kpv', 'lmo']",0.606461592040866
+vi,"['khm', 'tel']",0.18739000000000003
+fa,"['asm', 'pan', 'kaz', 'urd', 'guj', 'tgk', 'uig', 'nep', 'hin', 'ben', 'ori', 'mar', 'tur', 'sin', 'uzb', 'aze', 'kir']",0.3339984036219187
+ko,"['krl', 'por', 'spa', 'scn', 'vep', 'sma', 'myv', 'cat', 'kpv', 'hun', 'est', 'ext', 'vec', 'liv', 'glg', 'ron', 'lmo', 'fin', 'ast', 'srd', 'udm', 'mdf', 'mwl', 'lad', 'arg', 'smn', 'cos', 'sme', 'izh', 'nap', 'pms', 'lij', 'sms', 'ita', 'fra', 'smj']",0.0
+hi,"['fas', 'urd', 'uig', 'sin', 'mar', 'ben', 'tgk', 'guj', 'nep', 'tur', 'kir', 'uzb', 'aze', 'ori', 'pan', 'kaz', 'asm']",0.5489561279643489
+fr,"['mwl', 'udm', 'ron', 'myv', 'arg', 'vec', 'cos', 'scn', 'lad', 'mdf', 'sma', 'smj', 'krl', 'por', 'ita', 'spa', 'est', 'srd', 'sme', 'izh', 'vep', 'hun', 'sms', 'smn', 'nap', 'fin', 'pms', 'kpv', 'lij', 'ext', 'lmo', 'glg', 'ast', 'cat', 'liv']",0.4374786713584396
+iw,"['amh', 'mlt', 'kan', 'mal', 'tam', 'ara']",0.30796747495005516
+it,"['kpv', 'smn', 'por', 'sms', 'ron', 'lmo', 'vep', 'fin', 'fra', 'srd', 'ext', 'liv', 'sma', 'cos', 'mwl', 'smj', 'scn', 'arg', 'krl', 'nap', 'lad', 'izh', 'lij', 'sme', 'mdf', 'udm', 'glg', 'hun', 'myv', 'est', 'vec', 'ast', 'cat', 'spa', 'pms']",0.5783390104679677
+pt,"['mwl', 'hun', 'fin', 'spa', 'cos', 'krl', 'ext', 'vep', 'lij', 'kpv', 'liv', 'smn', 'izh', 'myv', 'smj', 'ron', 'sma', 'sms', 'mdf', 'lad', 'cat', 'ita', 'glg', 'arg', 'sme', 'vec', 'ast', 'udm', 'est', 'scn', 'pms', 'fra', 'nap', 'srd', 'lmo']",0.6162337916117079
+ta,"['ell', 'mal', 'kan']",0.460134862194545
+de,"['dan', 'fao', 'kir', 'ltz', 'kaz', 'nor', 'uig', 'tur', 'swe', 'uzb', 'aze', 'nld', 'eng', 'isl', 'afr']",0.564762029397845
+uk,"['srp', 'slv', 'ces', 'bul', 'uig', 'lav', 'lit', 'kaz', 'rus', 'kir', 'slk', 'uzb', 'tur', 'aze', 'bel', 'pol', 'hrv', 'hye']",0.41794005914161664
+pl,"['rus', 'uig', 'srp', 'slk', 'ukr', 'slv', 'hrv', 'bul', 'lav', 'kir', 'tur', 'kaz', 'aze', 'lit', 'uzb', 'bel', 'hye', 'ces']",0.35953280484617467
+ru,"['tam', 'slv', 'mal', 'lit', 'bel', 'kan', 'slk', 'lav', 'pol', 'bul', 'ces', 'ukr', 'hye', 'hrv', 'srp']",0.553931771067574
+ja,"['por', 'fin', 'mwl', 'pms', 'scn', 'lad', 'lij', 'liv', 'ext', 'ast', 'myv', 'cat', 'krl', 'vec', 'srd', 'ron', 'sme', 'smj', 'cos', 'kpv', 'arg', 'lmo', 'nap', 'est', 'ita', 'spa', 'mdf', 'vep', 'sma', 'sms', 'izh', 'fra', 'udm', 'hun', 'glg', 'smn']",0.0
+nl,"['fao', 'afr', 'uzb', 'kaz', 'swe', 'nor', 'deu', 'dan', 'isl', 'aze', 'uig', 'eng', 'kir', 'tur', 'ltz']",0.33278185638446756
+bn,"['ori', 'asm', 'sin', 'tgk', 'amh', 'urd', 'fas', 'mlt', 'pan', 'heb', 'mar', 'guj', 'ara', 'hin', 'nep']",0.3474119693844275

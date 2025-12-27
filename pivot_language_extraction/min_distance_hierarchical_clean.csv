@@ -1,0 +1,18 @@
+target_language,best_languages,score
+bn,"['asm', 'ori']",0.5766
+ja,"['fin', 'hun', 'spa', 'fra']",0.0
+nl,"['afr', 'deu']",0.511
+ta,"['mal', 'kan']",0.5151
+pl,"['slk', 'ces']",0.55575
+ru,"['bel', 'ukr']",0.8524
+uk,"['rus', 'bel']",0.7048
+de,"['ltz', 'afr']",0.7804
+it,"['scn', 'nap']",1.0
+pt,"['glg', 'ast']",1.0
+fr,"['vec', 'lij']",0.6723
+iw,"['ara', 'mlt']",0.42995000000000005
+ko,"['fin', 'hun', 'spa', 'fra']",0.0
+hi,"['urd', 'guj']",0.75325
+fa,"['tgk', 'nep']",0.43795000000000006
+vi,['khm'],0.26770000000000005
+es,"['lad', 'ext']",0.9998
