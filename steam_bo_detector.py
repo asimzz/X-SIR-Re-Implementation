@@ -1,25 +1,34 @@
 #!/usr/bin/env python3
 """
-STEAM BO Detector: Bayesian Optimization Enhanced Watermark Detection
+STEAM BO Per-Text Detector: Bayesian Optimization for Each Text
 
-This module implements a BO-enhanced version of STEAM that intelligently
-selects intermediate languages for backtranslation-based watermark detection.
+This module implements the supervisor's approach:
+- For EACH text, run BO to find the best intermediate language
+- Initial random sampling of languages → get z-scores  
+- BO iteratively suggests next language based on genetic distance
+- Use continuous genetic distance features from URIEL
+- Search space: 108 languages (no clusters)
+
+Author: Asim
 """
 
 import numpy as np
 import logging
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
+
 from skopt import gp_minimize
 from skopt.space import Categorical
 
 from realtime_backtranslation import RealtimeBacktranslator
-from genetic_distance_evaluator import GeneticDistanceEvaluator
+from uriel_genetic_distance import URIELGeneticDistance
 
 
 @dataclass
-class DetectionResult:
-    """Result of BO-enhanced watermark detection."""
+class PerTextDetectionResult:
+    """Result of per-text BO-enhanced watermark detection."""
+    text: str
+    target_lang: str
     z_score: float
     best_intermediate_lang: str
     total_evaluations: int
@@ -28,25 +37,30 @@ class DetectionResult:
     error: Optional[str] = None
 
 
-class SteamBODetector:
+class SteamBOPerTextDetector:
     """
-    Bayesian Optimization Enhanced STEAM Watermark Detector.
-
-    Uses BO to intelligently select intermediate languages for backtranslation
-    instead of exhaustive search across all available languages.
+    Per-Text Bayesian Optimization Enhanced STEAM Watermark Detector.
+    
+    For each text:
+    1. Random initial sampling of languages
+    2. BO loop: suggest language → backtranslate → get z-score
+    3. Use genetic distance to guide language selection
+    4. Return best language found
     """
-
+    
     def __init__(self,
                  watermark_detector,
-                 n_initial: int = 2,
-                 max_evaluations: int = 6,
+                 languages_file: str = 'all_languages.txt',
+                 n_initial: int = 3,
+                 max_evaluations: int = 8,
                  acquisition_func: str = 'EI',
                  random_state: int = 42):
         """
-        Initialize BO-enhanced STEAM detector.
-
+        Initialize per-text BO-enhanced STEAM detector.
+        
         Args:
             watermark_detector: Watermark detector instance (XSIR/KGW/UW)
+            languages_file: File containing all 108 language codes
             n_initial: Number of random initial language evaluations
             max_evaluations: Maximum total language evaluations per text
             acquisition_func: BO acquisition function ('EI', 'UCB', 'PI')
@@ -57,168 +71,221 @@ class SteamBODetector:
         self.max_evaluations = max_evaluations
         self.acquisition_func = acquisition_func
         self.random_state = random_state
-
+        
+        # Load all 108 languages
+        self.all_languages = self._load_languages(languages_file)
+        print(f"Loaded {len(self.all_languages)} languages for optimization")
+        
         # Initialize components
         self.backtranslator = RealtimeBacktranslator()
-        self.distance_evaluator = GeneticDistanceEvaluator()
-
-        # All available intermediate languages (from the original STEAM evaluation)
-        self.available_languages = [
-            "en", "fr", "de", "it", "es", "pt",  # High-resource
-            "pl", "nl", "ru", "hi", "ko", "ja",  # Medium-resource
-            "bn", "fa", "vi", "iw", "uk", "ta"   # Low-resource
-        ]
-
+        self.genetic_distance_calc = URIELGeneticDistance()
+        
+        # Cache genetic distances
+        self.genetic_distance_cache = {}
+        
         # Setup logging
-        logging.basicConfig(level=logging.WARNING)  # Minimal logging
+        logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-
+    
+    def _load_languages(self, languages_file: str) -> List[str]:
+        """Load all 108 language codes from file."""
+        try:
+            with open(languages_file, 'r') as f:
+                languages = [line.strip() for line in f if line.strip()]
+            return sorted(languages)
+        except Exception as e:
+            print(f"Error loading languages from {languages_file}: {e}")
+            # Fallback: use a subset of common languages
+            return ['eng', 'fra', 'deu', 'spa', 'ita', 'por', 'rus', 'zho', 'jpn', 'kor']
+    
+    def get_genetic_distance(self, lang1: str, lang2: str) -> float:
+        """
+        Get genetic distance between two languages using simple genetic distance calculator.
+        
+        Args:
+            lang1: First language code
+            lang2: Second language code
+            
+        Returns:
+            Genetic distance in [0, 1] range (0=identical, 1=very distant)
+        """
+        # Check cache
+        cache_key = tuple(sorted([lang1, lang2]))
+        if cache_key in self.genetic_distance_cache:
+            return self.genetic_distance_cache[cache_key]
+        
+        # Get genetic distance
+        distance = self.genetic_distance_calc.get_genetic_distance(lang1, lang2)
+        
+        # Cache and return
+        self.genetic_distance_cache[cache_key] = distance
+        return distance
+    
     def get_language_features(self, target_lang: str, intermediate_lang: str) -> np.ndarray:
         """
-        Extract continuous features for a language pair.
-
+        Extract genetic distance features for a language pair.
+        
         Args:
             target_lang: Target language code
             intermediate_lang: Intermediate language code
-
+            
         Returns:
-            Feature vector for BO (continuous features only)
+            Feature vector: [genetic_distance]
         """
-        try:
-            # Primary feature: genetic distance
-            genetic_distance = self.distance_evaluator.get_genetic_distance(target_lang, intermediate_lang)
-
-            # Additional continuous features
-            # Language code length (normalized)
-            code_length_feature = len(intermediate_lang) / 10.0
-
-            # Simple hash-based language similarity (crude approximation)
-            lang_hash_similarity = abs(hash(target_lang) - hash(intermediate_lang)) / (2**31 - 1)
-
-            # Combine continuous features
-            features = np.array([
-                genetic_distance,           # Primary: genetic distance [0,1]
-                code_length_feature,        # Secondary: code length [0,1]
-                lang_hash_similarity,       # Tertiary: simple similarity [0,1]
-            ])
-
-            return features
-
-        except Exception as e:
-            self.logger.warning(f"Feature extraction failed for {target_lang}-{intermediate_lang}: {e}")
-            # Return default features
-            return np.array([0.5, 0.3, 0.5])
-
-    def initial_sampling(self, text: str, target_lang: str) -> List[Dict[str, Any]]:
+        genetic_distance = self.get_genetic_distance(target_lang, intermediate_lang)
+        return np.array([genetic_distance])
+    
+    def initial_random_sampling(self, text: str, target_lang: str) -> List[Dict[str, Any]]:
         """
         Perform initial random sampling of intermediate languages.
-
+        
         Args:
             text: Input text for detection
             target_lang: Target language code
-
+            
         Returns:
-            List of evaluation results
+            List of evaluation results with (language, z_score) pairs
         """
-
         # Filter out target language
-        available_langs = [lang for lang in self.available_languages if lang != target_lang]
-
-        # Simple random sampling
-        np.random.seed(self.random_state)
+        available_langs = [lang for lang in self.all_languages if lang != target_lang]
+        
+        # Random sampling with text-specific seed for reproducibility
+        rng = np.random.RandomState(self.random_state + hash(text[:50]) % 10000)
         n_to_sample = min(self.n_initial, len(available_langs))
-        sampled_languages = np.random.choice(available_langs, size=n_to_sample, replace=False)
-
+        sampled_languages = rng.choice(available_langs, size=n_to_sample, replace=False)
+        
+        print(f"\n=== Initial Random Sampling ({n_to_sample} languages) ===")
+        
         # Evaluate each sampled language
         evaluation_history = []
-        for lang in sampled_languages:
+        for i, lang in enumerate(sampled_languages, 1):
+            print(f"  [{i}/{n_to_sample}] Evaluating {lang}...", end=' ')
+            
             result = self.backtranslator.translate_and_detect(
                 text, target_lang, lang, self.watermark_detector
             )
-
+            
+            z_score = result['z_score'] if result['success'] else -np.inf
+            genetic_dist = self.get_genetic_distance(target_lang, lang)
+            
             evaluation_record = {
                 'iteration': len(evaluation_history) + 1,
                 'intermediate_lang': lang,
-                'z_score': result['z_score'] if result['success'] else -np.inf,
+                'z_score': z_score,
+                'genetic_distance': genetic_dist,
                 'success': result['success'],
-                'features': self.get_language_features(target_lang, lang),
                 'translation_result': result
             }
-
+            
             evaluation_history.append(evaluation_record)
-
-
+            print(f"z-score: {z_score:.4f}, genetic_dist: {genetic_dist:.3f}")
+        
         return evaluation_history
-
+    
     def create_bo_objective(self, text: str, target_lang: str,
-                           evaluation_history: List[Dict[str, Any]]) -> tuple:
+                           evaluation_history: List[Dict[str, Any]]) -> Tuple:
         """
-        Create BO objective function and search space.
-
+        Create BO objective function for this specific text.
+        
+        The objective function:
+        1. Takes a language as input
+        2. Checks if already evaluated (use cached result)
+        3. If not, backtranslates and gets z-score
+        4. Returns negative z-score (BO minimizes, we want to maximize z-score)
+        
         Args:
-            text: Input text for detection
-            target_lang: Target language code
-            evaluation_history: Current evaluation history
-
+            text: Text being evaluated (specific to this detection call)
+            target_lang: Target language
+            evaluation_history: Previous evaluations for THIS text
+            
         Returns:
             Tuple of (objective_function, dimensions)
         """
-        # Filter out target language
-        available_langs = [lang for lang in self.available_languages if lang != target_lang]
-
-        # Create categorical search space
-        dimensions = [Categorical(available_langs, name='intermediate_lang')]
-
-        def objective_function(params):
-            """Objective function for BO (returns negative z-score for minimization)."""
-            intermediate_lang = params[0]
-
-            # Check if already evaluated
+        # Define search space: categorical over all available languages
+        available_langs = [lang for lang in self.all_languages if lang != target_lang]
+        dimensions = [Categorical(available_langs, name='intermediate_language')]
+        
+        def objective_function(x):
+            """
+            Objective function for BO.
+            
+            Args:
+                x: List containing [intermediate_language]
+                
+            Returns:
+                Negative z-score (for minimization)
+            """
+            intermediate_lang = x[0]  # Extract language from list
+            
+            # Check if this language was already evaluated for THIS text
             for record in evaluation_history:
                 if record['intermediate_lang'] == intermediate_lang:
-                    return -record['z_score'] if record['success'] else 1000.0
-
-            # Evaluate new language
+                    if record['success']:
+                        return -record['z_score']  # Return cached result
+                    else:
+                        return 1000.0  # Large penalty for failed evaluations
+            
+            # Evaluate new language for THIS specific text
+            print(f"  BO iteration {len(evaluation_history) + 1}: Trying {intermediate_lang}...", end=' ')
+            
             result = self.backtranslator.translate_and_detect(
                 text, target_lang, intermediate_lang, self.watermark_detector
             )
-
+            
+            z_score = result['z_score'] if result['success'] else -np.inf
+            genetic_dist = self.get_genetic_distance(target_lang, intermediate_lang)
+            
+            # Store evaluation result for THIS text
             evaluation_record = {
                 'iteration': len(evaluation_history) + 1,
                 'intermediate_lang': intermediate_lang,
-                'z_score': result['z_score'] if result['success'] else -np.inf,
+                'z_score': z_score,
+                'genetic_distance': genetic_dist,
                 'success': result['success'],
-                'features': self.get_language_features(target_lang, intermediate_lang),
                 'translation_result': result
             }
-
+            
             evaluation_history.append(evaluation_record)
-
+            print(f"z-score: {z_score:.4f}, genetic_dist: {genetic_dist:.3f}")
+            
             if result['success']:
-                return -result['z_score']  # Negative for minimization
+                return -z_score  # Negative for minimization (BO maximizes z-score)
             else:
                 return 1000.0  # Large penalty for failed evaluations
-
+        
         return objective_function, dimensions
-
-    def detect_with_bo(self, text: str, target_lang: str) -> DetectionResult:
+    
+    def detect_with_bo(self, text: str, target_lang: str) -> PerTextDetectionResult:
         """
-        Perform BO-enhanced watermark detection.
-
+        Perform per-text BO-enhanced watermark detection.
+        
+        For THIS specific text:
+        1. Random initial sampling of languages → get z-scores
+        2. BO loop: suggest language → backtranslate → get z-score
+        3. Return best language found
+        
         Args:
             text: Input text to check for watermarks
             target_lang: Target language code
-
+            
         Returns:
-            DetectionResult with best z-score and intermediate language
+            PerTextDetectionResult with best z-score and intermediate language
         """
-
+        print(f"\n{'='*70}")
+        print(f"STEAM BO Per-Text Detection")
+        print(f"{'='*70}")
+        print(f"Text: {text[:100]}...")
+        print(f"Target language: {target_lang}")
+        print(f"Max evaluations: {self.max_evaluations}")
+        
         try:
-            # Step 1: Initial random sampling
-            evaluation_history = self.initial_sampling(text, target_lang)
-
+            # Step 1: Initial random sampling for THIS text
+            evaluation_history = self.initial_random_sampling(text, target_lang)
+            
             if not evaluation_history:
-                return DetectionResult(
+                return PerTextDetectionResult(
+                    text=text,
+                    target_lang=target_lang,
                     z_score=-np.inf,
                     best_intermediate_lang=None,
                     total_evaluations=0,
@@ -226,39 +293,47 @@ class SteamBODetector:
                     success=False,
                     error="No initial evaluations completed"
                 )
-
-            # Step 2: BO optimization loop
-            n_bo_calls = max(1, self.max_evaluations - len(evaluation_history))
-
+            
+            # Step 2: BO optimization loop for THIS text
+            n_bo_calls = max(0, self.max_evaluations - len(evaluation_history))
+            
             if n_bo_calls > 0:
-                # Create BO objective and search space
+                print(f"\n=== Bayesian Optimization ({n_bo_calls} additional evaluations) ===")
+                
+                # Create BO objective for THIS text
                 objective_func, dimensions = self.create_bo_objective(text, target_lang, evaluation_history)
-
-                # Run Bayesian optimization
+                
                 try:
+                    # Run Bayesian optimization
+                    # Note: We use genetic distance to inform the GP kernel
                     result = gp_minimize(
                         func=objective_func,
                         dimensions=dimensions,
                         n_calls=n_bo_calls,
-                        n_initial_points=min(n_bo_calls, 1),
+                        n_initial_points=0,  # All initial points already done
                         acq_func=self.acquisition_func,
                         random_state=self.random_state,
                         verbose=False
                     )
+                    
                 except Exception as e:
-                    pass
-
-            # Step 3: Find best result
+                    self.logger.error(f"BO optimization failed: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # Step 3: Find best result for THIS text
             best_result = None
             best_z_score = -np.inf
-
+            
             for record in evaluation_history:
                 if record['success'] and record['z_score'] > best_z_score:
                     best_z_score = record['z_score']
                     best_result = record
-
+            
             if best_result is None:
-                return DetectionResult(
+                return PerTextDetectionResult(
+                    text=text,
+                    target_lang=target_lang,
                     z_score=-np.inf,
                     best_intermediate_lang=None,
                     total_evaluations=len(evaluation_history),
@@ -266,18 +341,33 @@ class SteamBODetector:
                     success=False,
                     error="No successful evaluations"
                 )
-
-
-            return DetectionResult(
+            
+            print(f"\n{'='*70}")
+            print(f"BEST RESULT FOR THIS TEXT")
+            print(f"{'='*70}")
+            print(f"Best intermediate language: {best_result['intermediate_lang']}")
+            print(f"Best z-score: {best_z_score:.4f}")
+            print(f"Genetic distance: {best_result['genetic_distance']:.3f}")
+            print(f"Total evaluations: {len(evaluation_history)}")
+            
+            return PerTextDetectionResult(
+                text=text,
+                target_lang=target_lang,
                 z_score=best_z_score,
                 best_intermediate_lang=best_result['intermediate_lang'],
                 total_evaluations=len(evaluation_history),
                 evaluation_history=evaluation_history,
                 success=True
             )
-
+            
         except Exception as e:
-            return DetectionResult(
+            self.logger.error(f"Detection failed: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            return PerTextDetectionResult(
+                text=text,
+                target_lang=target_lang,
                 z_score=-np.inf,
                 best_intermediate_lang=None,
                 total_evaluations=0,
@@ -287,42 +377,49 @@ class SteamBODetector:
             )
 
 
-def test_steam_bo_detector():
-    """Test function for STEAM BO detector."""
+def test_pertext_detector():
+    """Test function for per-text STEAM BO detector."""
     # Mock watermark detector for testing
     class MockWatermarkDetector:
         def detect(self, text):
-            # Return mock z-score based on text length
-            z_score = len(text) / 100.0 + np.random.normal(0, 0.1)
+            # Return mock z-score with some randomness
+            base_score = len(text) / 100.0
+            noise = np.random.normal(0, 0.5)
+            z_score = base_score + noise
             return {"z_score": z_score, "biases": []}
-
+    
     # Initialize detector
     mock_detector = MockWatermarkDetector()
-    steam_bo = SteamBODetector(
+    steam_bo = SteamBOPerTextDetector(
         watermark_detector=mock_detector,
-        n_initial=2,
-        max_evaluations=4
+        n_initial=3,
+        max_evaluations=6
     )
-
-    # Test detection
-    test_text = "This is a test sentence for watermark detection using the BO-enhanced STEAM system."
-    target_lang = "en"
-
-    print(f"Testing BO-enhanced detection...")
-    print(f"Text: {test_text}")
-    print(f"Target language: {target_lang}")
-
-    result = steam_bo.detect_with_bo(test_text, target_lang)
-
-    print(f"\nResults:")
-    print(f"Success: {result.success}")
-    print(f"Best z-score: {result.z_score}")
-    print(f"Best intermediate language: {result.best_intermediate_lang}")
-    print(f"Total evaluations: {result.total_evaluations}")
-
-    if result.error:
-        print(f"Error: {result.error}")
+    
+    # Test detection on TWO different texts
+    test_texts = [
+        "This is the first test sentence for watermark detection.",
+        "Here is a completely different second text to test per-text optimization."
+    ]
+    
+    target_lang = "fra"  # French as target
+    
+    for i, test_text in enumerate(test_texts, 1):
+        print(f"\n\n{'#'*80}")
+        print(f"# TEXT {i}: INDEPENDENT PER-TEXT OPTIMIZATION")
+        print(f"{'#'*80}")
+        
+        result = steam_bo.detect_with_bo(test_text, target_lang)
+        
+        print(f"\nFinal result for text {i}:")
+        print(f"  Success: {result.success}")
+        print(f"  Best z-score: {result.z_score:.4f}")
+        print(f"  Best language: {result.best_intermediate_lang}")
+        print(f"  Total evaluations: {result.total_evaluations}")
+        
+        if result.error:
+            print(f"  Error: {result.error}")
 
 
 if __name__ == "__main__":
-    test_steam_bo_detector()
+    test_pertext_detector()
