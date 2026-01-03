@@ -46,11 +46,10 @@ def load_watermark_detector(args):
 
         # Create KGW detector
         detector = KGWLogitsProcessor(
+            vocab=list(tokenizer.get_vocab().values()),
             gamma=0.5,
             delta=2.0,
-            vocab=list(tokenizer.get_vocab().values()),
-            device=device,
-            tokenizer=tokenizer,
+            seed=args.seed,
             seeding_scheme="simple_1",
         )
 
