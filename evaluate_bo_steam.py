@@ -23,7 +23,7 @@ from src_watermark.xsir.watermark import (
     WatermarkContext as XSIRContext,
 )
 from src_watermark.kgw.extended_watermark_processor import (
-    WatermarkLogitsProcessor as KGWLogitsProcessor
+    WatermarkDetector as KGWDetector
 )
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -45,12 +45,17 @@ def load_watermark_detector(args):
         tokenizer.pad_token = tokenizer.eos_token
 
         # Create KGW detector
-        detector = KGWLogitsProcessor(
+        detector = KGWDetector(
             vocab=list(tokenizer.get_vocab().values()),
             gamma=0.5,
             delta=2.0,
             seed=args.seed,
             seeding_scheme="simple_1",
+            device=device,
+            tokenizer=tokenizer,
+            z_threshold=4.0,
+            normalizers=[],
+            ignore_repeated_ngrams=True,
         )
 
         return detector
