@@ -7,6 +7,10 @@ from sklearn.metrics import roc_auc_score, roc_curve, precision_recall_curve
 import json
 
 
+def load_json(file_path):
+    with open(file_path, "r") as f:
+        return json.load(f)
+
 ORG_LANGS = [
         "en", # English
         # High-resource languages
@@ -80,7 +84,8 @@ def main(args):
     candidate_hum_zscore = {}
     candidate_wm_zscore = {}
     tgt_lang = args.tgt_lang
-    for lang in ORG_LANGS:
+    selected_langs = load_json(args.base_wm_dir + "/bo_history_" + tgt_lang + ".json")["languages"]
+    for lang in selected_langs:
         if lang == tgt_lang:
             continue
         hum_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.hum.z_score.jsonl"

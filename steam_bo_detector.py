@@ -1,425 +1,761 @@
 #!/usr/bin/env python3
 """
-STEAM BO Per-Text Detector: Bayesian Optimization for Each Text
+STEAM BO Detector - Per-Text Bayesian Optimization for Pivot Language Selection
 
-This module implements the supervisor's approach:
-- For EACH text, run BO to find the best intermediate language
-- Initial random sampling of languages → get z-scores  
-- BO iteratively suggests next language based on genetic distance
-- Use continuous genetic distance features from URIEL
-- Search space: 108 languages (no clusters)
+This implements the correct STEAM BO approach:
+1. For each individual text, run separate BO optimization
+2. Find optimal pivot language that maximizes normalized z-score
+3. Translation flow: tgt_lang → pivot_lang (single step)
+4. Normalization: raw_z_score - avg_validation_z_score_for_pivot_lang
 
 Author: Asim
 """
 
+import os
+import json
 import numpy as np
 import logging
+import argparse
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
+import time
 
 from skopt import gp_minimize
-from skopt.space import Categorical
+from skopt.space import Real
+from skopt.acquisition import gaussian_ei
 
+# Import your existing components
+from genetic_diversity_selector import GeneticDiversitySelector
 from realtime_backtranslation import RealtimeBacktranslator
 from uriel_genetic_distance import URIELGeneticDistance
+from language_code_converter import iso3_to_iso1, iso1_to_iso3, is_valid_iso3
+from utils import read_jsonl
+
+# Import watermark detectors
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from src_watermark.xsir.watermark import (
+    WatermarkWindow as XSIRWindow,
+    WatermarkContext as XSIRContext,
+)
+from src_watermark.kgw.extended_watermark_processor import (
+    WatermarkDetector as KGWDetector
+)
+from src_watermark.uw.detect import Detector as UWDetector
+
+
+def get_watermark_detector(watermark_method: str, base_model: str, **kwargs):
+    """Factory function to create watermark detector."""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+
+    if watermark_method == "kgw":
+        return KGWDetector(
+            vocab=list(tokenizer.get_vocab().values()),
+            gamma=kwargs.get('gamma', 0.5),
+            seeding_scheme=kwargs.get('seeding_scheme', 'simple_1'),
+            device=device,
+            tokenizer=tokenizer,
+            z_threshold=kwargs.get('z_threshold', 4.0),
+            normalizers=kwargs.get('normalizers', []),
+            ignore_repeated_bigrams=kwargs.get('ignore_repeated_bigrams', False),
+        )
+    elif watermark_method in ["xsir", "sir"]:
+        watermark_type = kwargs.get('watermark_type', 'context')
+        if watermark_type == "window":
+            return XSIRWindow(
+                device,
+                kwargs.get('window_size', 5),
+                tokenizer
+            )
+        elif watermark_type == "context":
+            return XSIRContext(
+                device,
+                kwargs.get('chunk_size', 20),
+                tokenizer,
+                mapping_file=kwargs.get('mapping_file'),
+                delta=kwargs.get('delta', 2.0),
+                transform_model_path=kwargs.get('transform_model'),
+                embedding_model=kwargs.get('embedding_model', 'paraphrase-multilingual-mpnet-base-v2')
+            )
+        else:
+            raise ValueError(f"Unknown watermark type: {watermark_type}")
+    elif watermark_method == "uw":
+        return UWDetector(
+            model_name=base_model,
+            device=device,
+            **kwargs
+        )
+    else:
+        raise ValueError(f"Unknown watermark method: {watermark_method}")
 
 
 @dataclass
-class PerTextDetectionResult:
-    """Result of per-text BO-enhanced watermark detection."""
-    text: str
-    target_lang: str
-    z_score: float
-    best_intermediate_lang: str
+class TextSTEAMResult:
+    """Result for a single text's STEAM BO optimization."""
+    text_id: int
+    best_pivot_lang: str
+    best_normalized_z_score: float
+    best_raw_z_score: float
+    best_genetic_distance: float
+    evaluations: List[Dict[str, Any]]
     total_evaluations: int
-    evaluation_history: List[Dict[str, Any]]
-    success: bool
-    error: Optional[str] = None
+    convergence_iteration: int
 
 
-class SteamBOPerTextDetector:
+@dataclass
+class STEAMBOResults:
+    """Complete STEAM BO results for all texts."""
+    target_lang: str
+    text_results: List[TextSTEAMResult]
+    overall_stats: Dict[str, Any]
+
+
+class STEAMBODetector:
     """
-    Per-Text Bayesian Optimization Enhanced STEAM Watermark Detector.
-    
+    Per-Text STEAM BO Detector for optimal pivot language selection.
+
     For each text:
-    1. Random initial sampling of languages
-    2. BO loop: suggest language → backtranslate → get z-score
-    3. Use genetic distance to guide language selection
-    4. Return best language found
+    1. Initialize with 3 genetically diverse pivot languages
+    2. Use BO to find optimal pivot language that maximizes normalized z-score
+    3. Apply best pivot to mod/hum/val versions of the same text
     """
-    
+
     def __init__(self,
                  watermark_detector,
-                 languages_file: str = 'all_languages.txt',
+                 target_lang: str,
+                 input_dir: str,
+                 output_dir: str,
                  n_initial: int = 3,
                  max_evaluations: int = 8,
-                 acquisition_func: str = 'EI',
                  random_state: int = 42):
         """
-        Initialize per-text BO-enhanced STEAM detector.
-        
+        Initialize STEAM BO Detector.
+
         Args:
-            watermark_detector: Watermark detector instance (XSIR/KGW/UW)
-            languages_file: File containing all 108 language codes
-            n_initial: Number of random initial language evaluations
-            max_evaluations: Maximum total language evaluations per text
-            acquisition_func: BO acquisition function ('EI', 'UCB', 'PI')
-            random_state: Random seed for reproducibility
+            watermark_detector: Watermark detector (KGW/XSIR/etc.)
+            target_lang: Target language (e.g., 'fr', 'de', 'es')
+            input_dir: Directory containing input files
+            output_dir: Directory for output results
+            n_initial: Number of initial diverse languages
+            max_evaluations: Maximum BO evaluations per text
+            random_state: Random seed
         """
         self.watermark_detector = watermark_detector
+        self.target_lang = target_lang
+        self.input_dir = input_dir
+        self.output_dir = output_dir
         self.n_initial = n_initial
         self.max_evaluations = max_evaluations
-        self.acquisition_func = acquisition_func
         self.random_state = random_state
-        
-        # Load all 108 languages
-        self.all_languages = self._load_languages(languages_file)
-        print(f"Loaded {len(self.all_languages)} languages for optimization")
-        
+
         # Initialize components
+        self.diversity_selector = GeneticDiversitySelector(random_seed=random_state)
         self.backtranslator = RealtimeBacktranslator()
-        self.genetic_distance_calc = URIELGeneticDistance()
-        
-        # Cache genetic distances
-        self.genetic_distance_cache = {}
-        
+        self.genetic_distance = URIELGeneticDistance()
+
+        # Convert target language to ISO-3 for URIEL
+        self.target_lang_iso3 = self._normalize_to_iso3(target_lang)
+
+        # Get available pivot languages (exclude target language)
+        self.available_pivots = [lang for lang in self.diversity_selector.available_languages
+                               if lang != self.target_lang_iso3]
+
+        # Setup output directory
+        os.makedirs(output_dir, exist_ok=True)
+
         # Setup logging
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO,
+                          format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
-    
-    def _load_languages(self, languages_file: str) -> List[str]:
-        """Load all 108 language codes from file."""
+
+        self.logger.info(f"Initialized STEAM BO Detector")
+        self.logger.info(f"Target language: {target_lang} -> {self.target_lang_iso3}")
+        self.logger.info(f"Available pivot languages: {len(self.available_pivots)}")
+
+    def _normalize_to_iso3(self, lang_code: str) -> str:
+        """Convert language code to ISO-3 format."""
+        if is_valid_iso3(lang_code):
+            return lang_code
+
+        iso3 = iso1_to_iso3(lang_code)
+        if iso3:
+            return iso3
+
+        raise ValueError(f"Cannot normalize language code {lang_code} to ISO-3")
+
+    def _select_initial_pivot_languages(self) -> List[str]:
+        """Select initial genetically diverse pivot languages."""
         try:
-            with open(languages_file, 'r') as f:
-                languages = [line.strip() for line in f if line.strip()]
-            return sorted(languages)
+            diverse_langs, diversity_score = self.diversity_selector.select_diverse_languages(
+                n_languages=self.n_initial,
+                method="exhaustive" if len(self.available_pivots) < 100 else "random_sample"
+            )
+
+            # Filter to available pivots
+            initial_pivots = [lang for lang in diverse_langs if lang in self.available_pivots]
+
+            # If not enough, add random ones
+            while len(initial_pivots) < self.n_initial and len(initial_pivots) < len(self.available_pivots):
+                remaining = [lang for lang in self.available_pivots if lang not in initial_pivots]
+                if remaining:
+                    np.random.seed(self.random_state)
+                    initial_pivots.append(np.random.choice(remaining))
+                else:
+                    break
+
+            self.logger.info(f"Initial pivot languages: {initial_pivots} (diversity: {diversity_score:.3f})")
+            return initial_pivots
+
         except Exception as e:
-            print(f"Error loading languages from {languages_file}: {e}")
-            # Fallback: use a subset of common languages
-            return ['eng', 'fra', 'deu', 'spa', 'ita', 'por', 'rus', 'zho', 'jpn', 'kor']
-    
-    def get_genetic_distance(self, lang1: str, lang2: str) -> float:
+            self.logger.error(f"Failed to select diverse pivot languages: {e}")
+            # Fallback to random selection
+            np.random.seed(self.random_state)
+            n_select = min(self.n_initial, len(self.available_pivots))
+            fallback_pivots = np.random.choice(self.available_pivots, n_select, replace=False).tolist()
+            self.logger.info(f"Using fallback pivot languages: {fallback_pivots}")
+            return fallback_pivots
+
+    def _get_validation_baseline(self, pivot_lang: str) -> float:
         """
-        Get genetic distance between two languages using simple genetic distance calculator.
-        
-        Args:
-            lang1: First language code
-            lang2: Second language code
-            
-        Returns:
-            Genetic distance in [0, 1] range (0=identical, 1=very distant)
+        Get validation baseline z-score for a pivot language.
+        If validation z-score file doesn't exist, create it by translating validation texts.
         """
-        # Check cache
-        cache_key = tuple(sorted([lang1, lang2]))
-        if cache_key in self.genetic_distance_cache:
-            return self.genetic_distance_cache[cache_key]
-        
-        # Get genetic distance
-        distance = self.genetic_distance_calc.get_genetic_distance(lang1, lang2)
-        
-        # Cache and return
-        self.genetic_distance_cache[cache_key] = distance
-        return distance
-    
-    def get_language_features(self, target_lang: str, intermediate_lang: str) -> np.ndarray:
-        """
-        Extract genetic distance features for a language pair.
-        
-        Args:
-            target_lang: Target language code
-            intermediate_lang: Intermediate language code
-            
-        Returns:
-            Feature vector: [genetic_distance]
-        """
-        genetic_distance = self.get_genetic_distance(target_lang, intermediate_lang)
-        return np.array([genetic_distance])
-    
-    def initial_random_sampling(self, text: str, target_lang: str) -> List[Dict[str, Any]]:
-        """
-        Perform initial random sampling of intermediate languages.
-        
-        Args:
-            text: Input text for detection
-            target_lang: Target language code
-            
-        Returns:
-            List of evaluation results with (language, z_score) pairs
-        """
-        # Filter out target language
-        available_langs = [lang for lang in self.all_languages if lang != target_lang]
-        
-        # Random sampling with text-specific seed for reproducibility
-        rng = np.random.RandomState(self.random_state + hash(text[:50]) % 10000)
-        n_to_sample = min(self.n_initial, len(available_langs))
-        sampled_languages = rng.choice(available_langs, size=n_to_sample, replace=False)
-        
-        print(f"\n=== Initial Random Sampling ({n_to_sample} languages) ===")
-        
-        # Evaluate each sampled language
-        evaluation_history = []
-        for i, lang in enumerate(sampled_languages, 1):
-            print(f"  [{i}/{n_to_sample}] Evaluating {lang}...", end=' ')
-            
-            result = self.backtranslator.translate_and_detect(
-                text, target_lang, lang, self.watermark_detector
-            )
-            
-            z_score = result['z_score'] if result['success'] else -np.inf
-            genetic_dist = self.get_genetic_distance(target_lang, lang)
-            
-            evaluation_record = {
-                'iteration': len(evaluation_history) + 1,
-                'intermediate_lang': lang,
-                'z_score': z_score,
-                'genetic_distance': genetic_dist,
-                'success': result['success'],
-                'translation_result': result
-            }
-            
-            evaluation_history.append(evaluation_record)
-            print(f"z-score: {z_score:.4f}, genetic_dist: {genetic_dist:.3f}")
-        
-        return evaluation_history
-    
-    def create_bo_objective(self, text: str, target_lang: str,
-                           evaluation_history: List[Dict[str, Any]]) -> Tuple:
-        """
-        Create BO objective function for this specific text.
-        
-        The objective function:
-        1. Takes a language as input
-        2. Checks if already evaluated (use cached result)
-        3. If not, backtranslates and gets z-score
-        4. Returns negative z-score (BO minimizes, we want to maximize z-score)
-        
-        Args:
-            text: Text being evaluated (specific to this detection call)
-            target_lang: Target language
-            evaluation_history: Previous evaluations for THIS text
-            
-        Returns:
-            Tuple of (objective_function, dimensions)
-        """
-        # Define search space: categorical over all available languages
-        available_langs = [lang for lang in self.all_languages if lang != target_lang]
-        dimensions = [Categorical(available_langs, name='intermediate_language')]
-        
-        def objective_function(x):
-            """
-            Objective function for BO.
-            
-            Args:
-                x: List containing [intermediate_language]
-                
-            Returns:
-                Negative z-score (for minimization)
-            """
-            intermediate_lang = x[0]  # Extract language from list
-            
-            # Check if this language was already evaluated for THIS text
-            for record in evaluation_history:
-                if record['intermediate_lang'] == intermediate_lang:
-                    if record['success']:
-                        return -record['z_score']  # Return cached result
-                    else:
-                        return 1000.0  # Large penalty for failed evaluations
-            
-            # Evaluate new language for THIS specific text
-            print(f"  BO iteration {len(evaluation_history) + 1}: Trying {intermediate_lang}...", end=' ')
-            
-            result = self.backtranslator.translate_and_detect(
-                text, target_lang, intermediate_lang, self.watermark_detector
-            )
-            
-            z_score = result['z_score'] if result['success'] else -np.inf
-            genetic_dist = self.get_genetic_distance(target_lang, intermediate_lang)
-            
-            # Store evaluation result for THIS text
-            evaluation_record = {
-                'iteration': len(evaluation_history) + 1,
-                'intermediate_lang': intermediate_lang,
-                'z_score': z_score,
-                'genetic_distance': genetic_dist,
-                'success': result['success'],
-                'translation_result': result
-            }
-            
-            evaluation_history.append(evaluation_record)
-            print(f"z-score: {z_score:.4f}, genetic_dist: {genetic_dist:.3f}")
-            
-            if result['success']:
-                return -z_score  # Negative for minimization (BO maximizes z-score)
-            else:
-                return 1000.0  # Large penalty for failed evaluations
-        
-        return objective_function, dimensions
-    
-    def detect_with_bo(self, text: str, target_lang: str) -> PerTextDetectionResult:
-        """
-        Perform per-text BO-enhanced watermark detection.
-        
-        For THIS specific text:
-        1. Random initial sampling of languages → get z-scores
-        2. BO loop: suggest language → backtranslate → get z-score
-        3. Return best language found
-        
-        Args:
-            text: Input text to check for watermarks
-            target_lang: Target language code
-            
-        Returns:
-            PerTextDetectionResult with best z-score and intermediate language
-        """
-        print(f"\n{'='*70}")
-        print(f"STEAM BO Per-Text Detection")
-        print(f"{'='*70}")
-        print(f"Text: {text[:100]}...")
-        print(f"Target language: {target_lang}")
-        print(f"Max evaluations: {self.max_evaluations}")
-        
+        val_z_score_file = os.path.join(self.input_dir, f"mc4.{self.target_lang}-{pivot_lang}-back.val.z_score.jsonl")
+
+        # Check if validation z-score file already exists
+        if os.path.exists(val_z_score_file):
+            try:
+                val_data = read_jsonl(val_z_score_file)
+                z_scores = [item.get('z_score', 0.0) for item in val_data if item.get('z_score') is not None]
+
+                if z_scores:
+                    avg_z_score = sum(z_scores) / len(z_scores)
+                    self.logger.debug(f"Validation baseline for {pivot_lang}: {avg_z_score:.4f} (from existing file)")
+                    return avg_z_score
+                else:
+                    self.logger.warning(f"No valid z-scores in existing {val_z_score_file}")
+
+            except Exception as e:
+                self.logger.error(f"Error reading validation file {val_z_score_file}: {e}")
+
+        # Validation z-score file doesn't exist or is invalid, create it
+        self.logger.info(f"Creating validation baseline for {pivot_lang} by translating validation texts")
+
+        # Load validation texts
+        val_text_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.val.jsonl")
+
+        if not os.path.exists(val_text_file):
+            self.logger.warning(f"Validation text file not found: {val_text_file}")
+            return 0.0
+
         try:
-            # Step 1: Initial random sampling for THIS text
-            evaluation_history = self.initial_random_sampling(text, target_lang)
-            
-            if not evaluation_history:
-                return PerTextDetectionResult(
-                    text=text,
-                    target_lang=target_lang,
-                    z_score=-np.inf,
-                    best_intermediate_lang=None,
-                    total_evaluations=0,
-                    evaluation_history=[],
-                    success=False,
-                    error="No initial evaluations completed"
-                )
-            
-            # Step 2: BO optimization loop for THIS text
-            n_bo_calls = max(0, self.max_evaluations - len(evaluation_history))
-            
-            if n_bo_calls > 0:
-                print(f"\n=== Bayesian Optimization ({n_bo_calls} additional evaluations) ===")
-                
-                # Create BO objective for THIS text
-                objective_func, dimensions = self.create_bo_objective(text, target_lang, evaluation_history)
-                
+            val_texts = read_jsonl(val_text_file)
+
+            # Translate validation texts through pivot language and get z-scores
+            validation_z_scores = []
+            validation_results = []
+
+            self.logger.info(f"Translating {len(val_texts)} validation texts through {pivot_lang}")
+
+            for i, val_item in enumerate(val_texts):
+                text_content = val_item.get('text', '')
+
+                if not text_content:
+                    self.logger.warning(f"Empty validation text at index {i}")
+                    continue
+
+                # Translate and detect
+                raw_z_score, success = self._translate_and_detect(text_content, pivot_lang)
+
+                if success:
+                    validation_z_scores.append(raw_z_score)
+
+                    # Store result for file
+                    validation_results.append({
+                        'text_id': i,
+                        'z_score': raw_z_score,
+                        'pivot_lang': pivot_lang,
+                        'text_length': len(text_content)
+                    })
+                else:
+                    self.logger.warning(f"Failed to process validation text {i} through {pivot_lang}")
+                    validation_results.append({
+                        'text_id': i,
+                        'z_score': None,
+                        'pivot_lang': pivot_lang,
+                        'text_length': len(text_content),
+                        'error': 'translation_failed'
+                    })
+
+            # Calculate baseline
+            if validation_z_scores:
+                avg_z_score = sum(validation_z_scores) / len(validation_z_scores)
+                self.logger.info(f"Computed validation baseline for {pivot_lang}: {avg_z_score:.4f} "
+                               f"(from {len(validation_z_scores)}/{len(val_texts)} successful translations)")
+
+                # Save validation z-scores to file for future use
                 try:
-                    # Run Bayesian optimization
-                    # Note: We use genetic distance to inform the GP kernel
-                    result = gp_minimize(
-                        func=objective_func,
-                        dimensions=dimensions,
-                        n_calls=n_bo_calls,
-                        n_initial_points=0,  # All initial points already done
-                        acq_func=self.acquisition_func,
-                        random_state=self.random_state,
-                        verbose=False
-                    )
-                    
+                    # Create directory if it doesn't exist
+                    os.makedirs(os.path.dirname(val_z_score_file), exist_ok=True)
+
+                    with open(val_z_score_file, 'w') as f:
+                        for result in validation_results:
+                            f.write(json.dumps(result) + '\n')
+
+                    self.logger.debug(f"Saved validation z-scores to {val_z_score_file}")
+
                 except Exception as e:
-                    self.logger.error(f"BO optimization failed: {e}")
-                    import traceback
-                    traceback.print_exc()
-            
-            # Step 3: Find best result for THIS text
-            best_result = None
-            best_z_score = -np.inf
-            
-            for record in evaluation_history:
-                if record['success'] and record['z_score'] > best_z_score:
-                    best_z_score = record['z_score']
-                    best_result = record
-            
-            if best_result is None:
-                return PerTextDetectionResult(
-                    text=text,
-                    target_lang=target_lang,
-                    z_score=-np.inf,
-                    best_intermediate_lang=None,
-                    total_evaluations=len(evaluation_history),
-                    evaluation_history=evaluation_history,
-                    success=False,
-                    error="No successful evaluations"
-                )
-            
-            print(f"\n{'='*70}")
-            print(f"BEST RESULT FOR THIS TEXT")
-            print(f"{'='*70}")
-            print(f"Best intermediate language: {best_result['intermediate_lang']}")
-            print(f"Best z-score: {best_z_score:.4f}")
-            print(f"Genetic distance: {best_result['genetic_distance']:.3f}")
-            print(f"Total evaluations: {len(evaluation_history)}")
-            
-            return PerTextDetectionResult(
-                text=text,
-                target_lang=target_lang,
-                z_score=best_z_score,
-                best_intermediate_lang=best_result['intermediate_lang'],
-                total_evaluations=len(evaluation_history),
-                evaluation_history=evaluation_history,
-                success=True
-            )
-            
+                    self.logger.warning(f"Failed to save validation z-scores: {e}")
+
+                return avg_z_score
+            else:
+                self.logger.error(f"No successful validation translations for {pivot_lang}")
+                return 0.0
+
         except Exception as e:
-            self.logger.error(f"Detection failed: {e}")
-            import traceback
-            traceback.print_exc()
-            
-            return PerTextDetectionResult(
-                text=text,
-                target_lang=target_lang,
-                z_score=-np.inf,
-                best_intermediate_lang=None,
-                total_evaluations=0,
-                evaluation_history=[],
-                success=False,
-                error=str(e)
+            self.logger.error(f"Error creating validation baseline for {pivot_lang}: {e}")
+            return 0.0
+
+    def _translate_and_detect(self, text: str, pivot_lang: str) -> Tuple[float, bool]:
+        """
+        Translate text to pivot language and detect watermark.
+
+        Args:
+            text: Text in target language
+            pivot_lang: Pivot language (ISO-3)
+
+        Returns:
+            Tuple of (raw_z_score, success)
+        """
+        try:
+            # Convert to ISO-1 for Google Translate
+            pivot_iso1 = iso3_to_iso1(pivot_lang)
+            target_iso1 = iso3_to_iso1(self.target_lang_iso3)
+
+            if not pivot_iso1 or not target_iso1:
+                self.logger.error(f"Language code conversion failed: {pivot_lang} or {self.target_lang_iso3}")
+                return 0.0, False
+
+            # Translate: target_lang → pivot_lang
+            translated_text = self.backtranslator.translate_text(text, target_iso1, pivot_iso1)
+
+            if translated_text is None:
+                self.logger.error(f"Translation failed: {target_iso1} → {pivot_iso1}")
+                return 0.0, False
+
+            # Detect watermark
+            detection_result = self.watermark_detector.detect(translated_text)
+            raw_z_score = detection_result.get('z_score', 0.0)
+
+            return raw_z_score, True
+
+        except Exception as e:
+            self.logger.error(f"Error in translate_and_detect for {pivot_lang}: {e}")
+            return 0.0, False
+
+    def _evaluate_pivot_language(self, text: str, pivot_lang: str) -> Dict[str, Any]:
+        """
+        Evaluate a pivot language for a specific text.
+
+        Args:
+            text: Text in target language
+            pivot_lang: Pivot language to evaluate
+
+        Returns:
+            Dictionary with evaluation results
+        """
+        # Get raw z-score
+        raw_z_score, success = self._translate_and_detect(text, pivot_lang)
+
+        if not success:
+            return {
+                'pivot_lang': pivot_lang,
+                'raw_z_score': 0.0,
+                'normalized_z_score': 0.0,
+                'genetic_distance': 0.0,
+                'validation_baseline': 0.0,
+                'success': False
+            }
+
+        # Get validation baseline
+        validation_baseline = self._get_validation_baseline(pivot_lang)
+
+        # Normalize z-score
+        normalized_z_score = raw_z_score - validation_baseline
+
+        # Get genetic distance
+        try:
+            genetic_distance = self.genetic_distance.get_genetic_distance(
+                self.target_lang_iso3, pivot_lang
+            )
+        except Exception as e:
+            self.logger.warning(f"Error getting genetic distance for {pivot_lang}: {e}")
+            genetic_distance = 3.0  # Default middle value
+
+        return {
+            'pivot_lang': pivot_lang,
+            'raw_z_score': raw_z_score,
+            'normalized_z_score': normalized_z_score,
+            'genetic_distance': genetic_distance,
+            'validation_baseline': validation_baseline,
+            'success': True
+        }
+
+    def _bo_suggest_next_pivot(self, evaluations: List[Dict[str, Any]]) -> str:
+        """Use BO to suggest next best pivot language."""
+        if len(evaluations) < 2:
+            # Not enough data for BO, select random
+            evaluated_pivots = {eval_result['pivot_lang'] for eval_result in evaluations}
+            remaining_pivots = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
+
+            if remaining_pivots:
+                np.random.seed(self.random_state)
+                return np.random.choice(remaining_pivots)
+            else:
+                return self.available_pivots[0]  # Fallback
+
+        try:
+            # Prepare BO data
+            X_samples = []
+            y_samples = []
+
+            for eval_result in evaluations:
+                if eval_result['success']:
+                    X_samples.append([eval_result['genetic_distance']])
+                    y_samples.append(eval_result['normalized_z_score'])
+
+            if len(X_samples) < 2:
+                # Still not enough successful evaluations
+                return np.random.choice(self.available_pivots)
+
+            # Define search space
+            search_space = [Real(0.0, 6.0, name='genetic_distance')]
+
+            # Run BO to get next point
+            result = gp_minimize(
+                func=lambda x: -self._bo_objective(x, X_samples, y_samples),  # Negative for maximization
+                dimensions=search_space,
+                n_calls=1,
+                n_initial_points=0,
+                x0=X_samples,
+                y0=[-y for y in y_samples],  # Negative for maximization
+                acquisition_func=gaussian_ei,
+                random_state=self.random_state
             )
 
+            # Get suggested genetic distance
+            suggested_distance = result.x[0]
 
-def test_pertext_detector():
-    """Test function for per-text STEAM BO detector."""
-    # Mock watermark detector for testing
-    class MockWatermarkDetector:
-        def detect(self, text):
-            # Return mock z-score with some randomness
-            base_score = len(text) / 100.0
-            noise = np.random.normal(0, 0.5)
-            z_score = base_score + noise
-            return {"z_score": z_score, "biases": []}
-    
-    # Initialize detector
-    mock_detector = MockWatermarkDetector()
-    steam_bo = SteamBOPerTextDetector(
-        watermark_detector=mock_detector,
-        n_initial=3,
-        max_evaluations=6
+            # Find closest available pivot language
+            best_pivot = self._find_pivot_at_distance(suggested_distance, evaluations)
+            return best_pivot
+
+        except Exception as e:
+            self.logger.error(f"BO suggestion failed: {e}")
+            # Fallback to random selection
+            evaluated_pivots = {eval_result['pivot_lang'] for eval_result in evaluations}
+            remaining_pivots = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
+
+            if remaining_pivots:
+                return np.random.choice(remaining_pivots)
+            else:
+                return self.available_pivots[0]
+
+    def _bo_objective(self, x: List[float], X_samples: List[List[float]], y_samples: List[float]) -> float:
+        """BO objective function (placeholder - actual modeling done by GP)."""
+        return 0.0
+
+    def _find_pivot_at_distance(self, target_distance: float, evaluations: List[Dict[str, Any]]) -> str:
+        """Find pivot language closest to target genetic distance."""
+        evaluated_pivots = {eval_result['pivot_lang'] for eval_result in evaluations}
+
+        best_pivot = None
+        best_diff = float('inf')
+
+        for pivot_lang in self.available_pivots:
+            if pivot_lang in evaluated_pivots:
+                continue
+
+            try:
+                actual_distance = self.genetic_distance.get_genetic_distance(
+                    self.target_lang_iso3, pivot_lang
+                )
+                diff = abs(actual_distance - target_distance)
+
+                if diff < best_diff:
+                    best_diff = diff
+                    best_pivot = pivot_lang
+
+            except Exception:
+                continue
+
+        return best_pivot if best_pivot else self.available_pivots[0]
+
+    def optimize_single_text(self, text: str, text_id: int) -> TextSTEAMResult:
+        """
+        Run STEAM BO optimization for a single text.
+
+        Args:
+            text: Text content in target language
+            text_id: Text identifier
+
+        Returns:
+            TextSTEAMResult with optimization results
+        """
+        self.logger.info(f"Starting STEAM BO for text {text_id}")
+
+        evaluations = []
+
+        # Phase 1: Evaluate initial pivot languages
+        initial_pivots = self._select_initial_pivot_languages()
+
+        for pivot_lang in initial_pivots:
+            eval_result = self._evaluate_pivot_language(text, pivot_lang)
+            evaluations.append(eval_result)
+
+            self.logger.info(f"  Initial {pivot_lang}: norm_z={eval_result['normalized_z_score']:.3f}, "
+                           f"dist={eval_result['genetic_distance']:.3f}")
+
+        # Find current best
+        successful_evals = [e for e in evaluations if e['success']]
+        if not successful_evals:
+            self.logger.error(f"No successful evaluations for text {text_id}")
+            return TextSTEAMResult(
+                text_id=text_id,
+                best_pivot_lang="eng",  # Fallback
+                best_normalized_z_score=0.0,
+                best_raw_z_score=0.0,
+                best_genetic_distance=0.0,
+                evaluations=evaluations,
+                total_evaluations=len(evaluations),
+                convergence_iteration=0
+            )
+
+        best_eval = max(successful_evals, key=lambda x: x['normalized_z_score'])
+        convergence_iteration = len(evaluations)
+
+        # Phase 2: BO optimization loop
+        for iteration in range(self.max_evaluations - self.n_initial):
+            # Get next pivot from BO
+            next_pivot = self._bo_suggest_next_pivot(evaluations)
+
+            if not next_pivot:
+                break
+
+            self.logger.info(f"  BO iteration {iteration + 1}: trying {next_pivot}")
+
+            # Evaluate
+            eval_result = self._evaluate_pivot_language(text, next_pivot)
+            evaluations.append(eval_result)
+
+            # Check if new best
+            if eval_result['success'] and eval_result['normalized_z_score'] > best_eval['normalized_z_score']:
+                best_eval = eval_result
+                convergence_iteration = len(evaluations)
+
+            self.logger.info(f"    {next_pivot}: norm_z={eval_result['normalized_z_score']:.3f}, "
+                           f"dist={eval_result['genetic_distance']:.3f}")
+
+        return TextSTEAMResult(
+            text_id=text_id,
+            best_pivot_lang=best_eval['pivot_lang'],
+            best_normalized_z_score=best_eval['normalized_z_score'],
+            best_raw_z_score=best_eval['raw_z_score'],
+            best_genetic_distance=best_eval['genetic_distance'],
+            evaluations=evaluations,
+            total_evaluations=len(evaluations),
+            convergence_iteration=convergence_iteration
+        )
+
+    def run_steam_bo_optimization(self, num_texts: int = 500) -> STEAMBOResults:
+        """
+        Run STEAM BO optimization for all texts.
+
+        Args:
+            num_texts: Number of texts to process
+
+        Returns:
+            STEAMBOResults with all optimization results
+        """
+        self.logger.info(f"Starting STEAM BO optimization for {num_texts} texts")
+
+        # Load input files
+        mod_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
+        hum_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
+        val_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.val.jsonl")
+
+        if not all(os.path.exists(f) for f in [mod_file, hum_file, val_file]):
+            raise FileNotFoundError(f"Input files not found in {self.input_dir}")
+
+        mod_data = read_jsonl(mod_file)[:num_texts]
+        hum_data = read_jsonl(hum_file)[:num_texts]
+        val_data = read_jsonl(val_file)[:num_texts]
+
+        text_results = []
+
+        # Process each text
+        for i in range(len(mod_data)):
+            try:
+                # Use watermarked text for BO optimization
+                text_content = mod_data[i].get('text', '')
+
+                if not text_content:
+                    self.logger.warning(f"Empty text at index {i}, skipping")
+                    continue
+
+                # Run BO optimization for this text
+                result = self.optimize_single_text(text_content, i)
+                text_results.append(result)
+
+                self.logger.info(f"Text {i}: Best pivot = {result.best_pivot_lang}, "
+                               f"Best norm_z = {result.best_normalized_z_score:.3f}")
+
+            except Exception as e:
+                self.logger.error(f"Error processing text {i}: {e}")
+                continue
+
+        # Compute overall statistics
+        if text_results:
+            best_scores = [r.best_normalized_z_score for r in text_results]
+            pivot_counts = {}
+            for r in text_results:
+                pivot_counts[r.best_pivot_lang] = pivot_counts.get(r.best_pivot_lang, 0) + 1
+
+            overall_stats = {
+                'num_texts_processed': len(text_results),
+                'mean_best_score': np.mean(best_scores),
+                'std_best_score': np.std(best_scores),
+                'max_best_score': np.max(best_scores),
+                'min_best_score': np.min(best_scores),
+                'pivot_language_distribution': pivot_counts,
+                'avg_evaluations_per_text': np.mean([r.total_evaluations for r in text_results])
+            }
+        else:
+            overall_stats = {}
+
+        return STEAMBOResults(
+            target_lang=self.target_lang,
+            text_results=text_results,
+            overall_stats=overall_stats
+        )
+
+    def save_results(self, results: STEAMBOResults) -> None:
+        """Save STEAM BO results to files."""
+        # Save detailed results
+        results_file = os.path.join(self.output_dir, f"steam_bo_results_{self.target_lang}.json")
+
+        results_data = {
+            'target_lang': results.target_lang,
+            'overall_stats': results.overall_stats,
+            'text_results': []
+        }
+
+        for text_result in results.text_results:
+            results_data['text_results'].append({
+                'text_id': text_result.text_id,
+                'best_pivot_lang': text_result.best_pivot_lang,
+                'best_normalized_z_score': text_result.best_normalized_z_score,
+                'best_raw_z_score': text_result.best_raw_z_score,
+                'best_genetic_distance': text_result.best_genetic_distance,
+                'total_evaluations': text_result.total_evaluations,
+                'convergence_iteration': text_result.convergence_iteration,
+                'evaluations': text_result.evaluations
+            })
+
+        with open(results_file, 'w') as f:
+            json.dump(results_data, f, indent=2)
+
+        self.logger.info(f"Results saved to {results_file}")
+
+        # Save summary
+        summary_file = os.path.join(self.output_dir, f"steam_bo_summary_{self.target_lang}.json")
+
+        summary_data = {
+            'target_lang': results.target_lang,
+            'overall_stats': results.overall_stats,
+            'best_pivots_per_text': [
+                {
+                    'text_id': r.text_id,
+                    'best_pivot': r.best_pivot_lang,
+                    'best_score': r.best_normalized_z_score
+                }
+                for r in results.text_results
+            ]
+        }
+
+        with open(summary_file, 'w') as f:
+            json.dump(summary_data, f, indent=2)
+
+        self.logger.info(f"Summary saved to {summary_file}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="STEAM BO Detector")
+    parser.add_argument("--base_model", type=str, required=True, help="Base model name")
+    parser.add_argument("--tgt_lang", type=str, required=True, help="Target language")
+    parser.add_argument("--input_dir", type=str, required=True, help="Input directory")
+    parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
+    parser.add_argument("--watermark_method", type=str, default="kgw", help="Watermark method")
+    parser.add_argument("--n_initial", type=int, default=3, help="Initial pivot languages")
+    parser.add_argument("--max_evaluations", type=int, default=8, help="Max BO evaluations")
+    parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
+    parser.add_argument("--random_state", type=int, default=42, help="Random seed")
+
+    # Watermark method specific arguments
+    parser.add_argument("--transform_model", type=str, help="Transform model for XSIR/SIR")
+    parser.add_argument("--embedding_model", type=str, help="Embedding model for XSIR/SIR")
+    parser.add_argument("--mapping_file", type=str, help="Mapping file for XSIR/SIR")
+
+    args = parser.parse_args()
+
+    # Initialize watermark detector
+    detector_args = {
+        'watermark_method': args.watermark_method,
+        'base_model': args.base_model
+    }
+
+    if args.transform_model:
+        detector_args['transform_model'] = args.transform_model
+    if args.embedding_model:
+        detector_args['embedding_model'] = args.embedding_model
+    if args.mapping_file:
+        detector_args['mapping_file'] = args.mapping_file
+
+    watermark_detector = get_watermark_detector(**detector_args)
+
+    # Initialize STEAM BO detector
+    steam_detector = STEAMBODetector(
+        watermark_detector=watermark_detector,
+        target_lang=args.tgt_lang,
+        input_dir=args.input_dir,
+        output_dir=args.output_dir,
+        n_initial=args.n_initial,
+        max_evaluations=args.max_evaluations,
+        random_state=args.random_state
     )
-    
-    # Test detection on TWO different texts
-    test_texts = [
-        "This is the first test sentence for watermark detection.",
-        "Here is a completely different second text to test per-text optimization."
-    ]
-    
-    target_lang = "fra"  # French as target
-    
-    for i, test_text in enumerate(test_texts, 1):
-        print(f"\n\n{'#'*80}")
-        print(f"# TEXT {i}: INDEPENDENT PER-TEXT OPTIMIZATION")
-        print(f"{'#'*80}")
-        
-        result = steam_bo.detect_with_bo(test_text, target_lang)
-        
-        print(f"\nFinal result for text {i}:")
-        print(f"  Success: {result.success}")
-        print(f"  Best z-score: {result.z_score:.4f}")
-        print(f"  Best language: {result.best_intermediate_lang}")
-        print(f"  Total evaluations: {result.total_evaluations}")
-        
-        if result.error:
-            print(f"  Error: {result.error}")
+
+    # Run optimization
+    results = steam_detector.run_steam_bo_optimization(num_texts=args.num_texts)
+
+    # Save results
+    steam_detector.save_results(results)
+
+    # Print summary
+    print("\n" + "="*50)
+    print("STEAM BO Optimization Complete")
+    print("="*50)
+    print(f"Target Language: {results.target_lang}")
+    print(f"Texts Processed: {results.overall_stats.get('num_texts_processed', 0)}")
+    print(f"Mean Best Score: {results.overall_stats.get('mean_best_score', 0.0):.4f}")
+    print(f"Std Best Score: {results.overall_stats.get('std_best_score', 0.0):.4f}")
+    print(f"Avg Evaluations per Text: {results.overall_stats.get('avg_evaluations_per_text', 0.0):.1f}")
+
+    pivot_dist = results.overall_stats.get('pivot_language_distribution', {})
+    print(f"\nPivot Language Distribution:")
+    for lang, count in sorted(pivot_dist.items(), key=lambda x: x[1], reverse=True):
+        print(f"  {lang}: {count} texts ({count/len(results.text_results)*100:.1f}%)")
 
 
 if __name__ == "__main__":
-    test_pertext_detector()
+    main()

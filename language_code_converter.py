@@ -10,6 +10,7 @@ Author: Asim
 
 # Mapping from ISO 639-1 (2-letter) to ISO 639-3 (3-letter)
 # Based on common languages in watermark evaluation
+# PLUS specific URIEL codes that map to Google Translate
 ISO_639_1_TO_3 = {
     # High-resource languages
     'en': 'eng',  # English
@@ -26,12 +27,13 @@ ISO_639_1_TO_3 = {
     'hi': 'hin',  # Hindi
     'ko': 'kor',  # Korean
     'ja': 'jpn',  # Japanese
-    'zh': 'zho',  # Chinese (Mandarin)
-    'ar': 'ara',  # Arabic
+    'zh-CN': 'zho',  # Chinese (Mandarin) - deep_translator uses zh-CN
+    'zh': 'zho',  # Chinese (Mandarin) - fallback
+    'ar': 'arb',  # Arabic (Standard) - URIEL uses 'arb'
     
     # Low-resource languages
     'bn': 'ben',  # Bengali
-    'fa': 'fas',  # Persian (Farsi)
+    'fa': 'pes',  # Persian (Western) - URIEL uses 'pes'
     'vi': 'vie',  # Vietnamese
     'he': 'heb',  # Hebrew
     'iw': 'heb',  # Hebrew (old code)
@@ -41,7 +43,7 @@ ISO_639_1_TO_3 = {
     'tr': 'tur',  # Turkish
     'id': 'ind',  # Indonesian
     'ms': 'msa',  # Malay
-    'sw': 'swa',  # Swahili
+    'sw': 'swh',  # Swahili - URIEL uses 'swh'
     'ro': 'ron',  # Romanian
     'cs': 'ces',  # Czech
     'sv': 'swe',  # Swedish
@@ -66,10 +68,10 @@ ISO_639_1_TO_3 = {
     'sq': 'sqi',  # Albanian
     'ka': 'kat',  # Georgian
     'hy': 'hye',  # Armenian
-    'az': 'aze',  # Azerbaijani
-    'uz': 'uzb',  # Uzbek
+    'az': 'azj',  # Azerbaijani (North) - URIEL uses 'azj'
+    'uz': 'uzn',  # Uzbek (Northern) - URIEL uses 'uzn'
     'kk': 'kaz',  # Kazakh
-    'mn': 'mon',  # Mongolian
+    'mn': 'khk',  # Mongolian (Halh) - URIEL uses 'khk'
     'ur': 'urd',  # Urdu
     'ne': 'nep',  # Nepali
     'si': 'sin',  # Sinhala
@@ -86,6 +88,25 @@ ISO_639_1_TO_3 = {
     'sn': 'sna',  # Shona
     'ha': 'hau',  # Hausa
     'mg': 'mlg',  # Malagasy
+    'so': 'som',  # Somali
+    'te': 'tel',  # Telugu
+    'kn': 'kan',  # Kannada
+    'ml': 'mal',  # Malayalam
+    'mr': 'mar',  # Marathi
+    'gu': 'guj',  # Gujarati
+    'pa': 'pan',  # Punjabi
+    'or': 'ori',  # Oriya
+    'as': 'asm',  # Assamese
+    'tg': 'tgk',  # Tajik
+
+    # Additional mappings for URIEL compatibility with deep_translator
+    'be': 'bel',  # Belarusian
+    'cy': 'cym',  # Welsh
+    'gd': 'gla',  # Scots Gaelic
+    'ga': 'gle',  # Irish
+    'co': 'cos',  # Corsican
+    'mt': 'mlt',  # Maltese
+    'mn': 'khk',  # Mongolian (Halh) - URIEL uses 'khk'
 }
 
 # Reverse mapping: ISO 639-3 to ISO 639-1
