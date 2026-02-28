@@ -22,7 +22,6 @@ import time
 
 from skopt import gp_minimize
 from skopt.space import Real
-from skopt.acquisition import gaussian_ei
 
 # Import your existing components
 from genetic_diversity_selector import GeneticDiversitySelector
@@ -58,7 +57,7 @@ def get_watermark_detector(watermark_method: str, base_model: str, **kwargs):
             tokenizer=tokenizer,
             z_threshold=kwargs.get('z_threshold', 4.0),
             normalizers=kwargs.get('normalizers', []),
-            ignore_repeated_bigrams=kwargs.get('ignore_repeated_bigrams', False),
+            ignore_repeated_ngrams=kwargs.get('ignore_repeated_ngrams', True),
         )
     elif watermark_method in ["xsir", "sir"]:
         watermark_type = kwargs.get('watermark_type', 'context')
@@ -149,6 +148,11 @@ class STEAMBODetector:
         self.max_evaluations = max_evaluations
         self.random_state = random_state
 
+        # Setup logging first
+        logging.basicConfig(level=logging.INFO,
+                          format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.logger = logging.getLogger(__name__)
+
         # Initialize components
         self.diversity_selector = GeneticDiversitySelector(random_seed=random_state)
         self.backtranslator = RealtimeBacktranslator()
@@ -157,17 +161,28 @@ class STEAMBODetector:
         # Convert target language to ISO-3 for URIEL
         self.target_lang_iso3 = self._normalize_to_iso3(target_lang)
 
-        # Get available pivot languages (exclude target language)
-        self.available_pivots = [lang for lang in self.diversity_selector.available_languages
-                               if lang != self.target_lang_iso3]
+        # Get available pivot languages (exclude target language and filter for Google Translate support)
+        all_pivots = [lang for lang in self.diversity_selector.available_languages
+                     if lang != self.target_lang_iso3]
+
+        # Filter to only languages supported by Google Translate
+        from deep_translator import GoogleTranslator
+        google_supported = set(GoogleTranslator().get_supported_languages(as_dict=True).values())
+
+        self.available_pivots = []
+        for lang in all_pivots:
+            try:
+                lang_iso1 = iso3_to_iso1(lang)
+                if lang_iso1 in google_supported:
+                    self.available_pivots.append(lang)
+            except ValueError:
+                # Skip languages without ISO-1 equivalents
+                continue
+
+        self.logger.info(f"Filtered to {len(self.available_pivots)} Google Translate supported languages from {len(all_pivots)} total")
 
         # Setup output directory
         os.makedirs(output_dir, exist_ok=True)
-
-        # Setup logging
-        logging.basicConfig(level=logging.INFO,
-                          format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        self.logger = logging.getLogger(__name__)
 
         self.logger.info(f"Initialized STEAM BO Detector")
         self.logger.info(f"Target language: {target_lang} -> {self.target_lang_iso3}")
@@ -185,36 +200,16 @@ class STEAMBODetector:
         raise ValueError(f"Cannot normalize language code {lang_code} to ISO-3")
 
     def _select_initial_pivot_languages(self) -> List[str]:
-        """Select initial genetically diverse pivot languages."""
-        try:
-            diverse_langs, diversity_score = self.diversity_selector.select_diverse_languages(
-                n_languages=self.n_initial,
-                method="exhaustive" if len(self.available_pivots) < 100 else "random_sample"
-            )
+        """Select initial pivot languages using simple random selection for speed."""
+        self.logger.info(f"Using fast random selection from {len(self.available_pivots)} available languages...")
 
-            # Filter to available pivots
-            initial_pivots = [lang for lang in diverse_langs if lang in self.available_pivots]
+        # Simple random selection - bypass genetic diversity for speed
+        np.random.seed(self.random_state)
+        n_select = min(self.n_initial, len(self.available_pivots))
+        selected_pivots = np.random.choice(self.available_pivots, n_select, replace=False).tolist()
 
-            # If not enough, add random ones
-            while len(initial_pivots) < self.n_initial and len(initial_pivots) < len(self.available_pivots):
-                remaining = [lang for lang in self.available_pivots if lang not in initial_pivots]
-                if remaining:
-                    np.random.seed(self.random_state)
-                    initial_pivots.append(np.random.choice(remaining))
-                else:
-                    break
-
-            self.logger.info(f"Initial pivot languages: {initial_pivots} (diversity: {diversity_score:.3f})")
-            return initial_pivots
-
-        except Exception as e:
-            self.logger.error(f"Failed to select diverse pivot languages: {e}")
-            # Fallback to random selection
-            np.random.seed(self.random_state)
-            n_select = min(self.n_initial, len(self.available_pivots))
-            fallback_pivots = np.random.choice(self.available_pivots, n_select, replace=False).tolist()
-            self.logger.info(f"Using fallback pivot languages: {fallback_pivots}")
-            return fallback_pivots
+        self.logger.info(f"Selected random pivot languages: {selected_pivots}")
+        return selected_pivots
 
     def _get_validation_baseline(self, pivot_lang: str) -> float:
         """
@@ -252,14 +247,20 @@ class STEAMBODetector:
         try:
             val_texts = read_jsonl(val_text_file)
 
+            # Randomly sample 50 validation texts for efficiency
+            import random
+            random.seed(self.random_state)
+            n_val_sample = min(50, len(val_texts))
+            val_sample = random.sample(val_texts, n_val_sample)
+
             # Translate validation texts through pivot language and get z-scores
             validation_z_scores = []
             validation_results = []
 
-            self.logger.info(f"Translating {len(val_texts)} validation texts through {pivot_lang}")
+            self.logger.info(f"Translating {n_val_sample} validation texts (sampled from {len(val_texts)}) through {pivot_lang}")
 
-            for i, val_item in enumerate(val_texts):
-                text_content = val_item.get('text', '')
+            for i, val_item in enumerate(val_sample):
+                text_content = val_item.get('response', '')
 
                 if not text_content:
                     self.logger.warning(f"Empty validation text at index {i}")
@@ -292,7 +293,7 @@ class STEAMBODetector:
             if validation_z_scores:
                 avg_z_score = sum(validation_z_scores) / len(validation_z_scores)
                 self.logger.info(f"Computed validation baseline for {pivot_lang}: {avg_z_score:.4f} "
-                               f"(from {len(validation_z_scores)}/{len(val_texts)} successful translations)")
+                               f"(from {len(validation_z_scores)}/{n_val_sample} successful translations, sampled from {len(val_texts)} total)")
 
                 # Save validation z-scores to file for future use
                 try:
@@ -440,7 +441,7 @@ class STEAMBODetector:
                 n_initial_points=0,
                 x0=X_samples,
                 y0=[-y for y in y_samples],  # Negative for maximization
-                acquisition_func=gaussian_ei,
+                acq_func='EI',  # Use string instead of deprecated acquisition_func
                 random_state=self.random_state
             )
 
@@ -598,7 +599,7 @@ class STEAMBODetector:
         for i in range(len(mod_data)):
             try:
                 # Use watermarked text for BO optimization
-                text_content = mod_data[i].get('text', '')
+                text_content = mod_data[i].get('response', '')
 
                 if not text_content:
                     self.logger.warning(f"Empty text at index {i}, skipping")
