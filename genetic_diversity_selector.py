@@ -124,7 +124,7 @@ class GeneticDiversitySelector:
 
         return best_languages, best_diversity
 
-    def _random_sample_selection(self, n_languages: int, n_samples: int = 10000) -> Tuple[List[str], float]:
+    def _random_sample_selection(self, n_languages: int, n_samples: int = 100) -> Tuple[List[str], float]:
         """Randomly sample combinations for maximum diversity (faster for large sets)"""
         print(f"Random sampling {n_samples} combinations...")
 
