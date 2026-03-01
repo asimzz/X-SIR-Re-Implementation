@@ -19,13 +19,13 @@ BATCH_SIZE=32
 
 # Model names and abbreviations
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
+    "meta-llama/Llama-3.2-1B"
     "LLaMAX/LLaMAX3-8B"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
+    "llama-3.2-1B"
     "llamax3-8B"
 )
 
@@ -33,18 +33,17 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 SUPPORTED_LANGS=(
-    # "af" "sq" "am" "ar" "hy" "as" "ay" "az" "bm" "eu"
-    # "be" "bn" "bho" "bs" "bg" "ca" "ceb" "ny" "zh-CN" "zh-TW"
-    # "co" "hr" "cs" "da" "dv" "doi" "nl" "en" "eo" "et"
-    # "ee" "tl" "fi" "fr" "fy" "gl" "ka" "de" "el" "gn"
-    # "gu" "ht" "ha" "haw" "iw" "hi" "hmn" "hu" "is" "ig"
-    # "ilo" "id" "ga" "it" "ja" "jw" "kn" "kk" "km" "rw"
-    # "gom" "ko" "kri" "ku" "ckb" "ky" "lo" "la" "lv" "ln"
-    # "lt" "lg" "lb" "mk" "mai" "mg" "ms" "ml" "mt" "mi"
-    # "mr" "mni-Mtei" "lus" "mn" "my" "ne" "no" "or" "om" "ps"
-    # "fa" "pl" "pt" "pa" "qu" "ro" "ru" "sm" "sa" "gd"
-    # "nso" "sr" "st" "sn" 
-    "sd" "si" "sk" "sl" "so" "es"
+    "af" "sq" "am" "ar" "hy" "as" "ay" "az" "bm" "eu"
+    "be" "bn" "bho" "bs" "bg" "ca" "ceb" "ny" "zh-CN" "zh-TW"
+    "co" "hr" "cs" "da" "dv" "doi" "nl" "en" "eo" "et"
+    "ee" "tl" "fi" "fr" "fy" "gl" "ka" "de" "el" "gn"
+    "gu" "ht" "ha" "haw" "iw" "hi" "hmn" "hu" "is" "ig"
+    "ilo" "id" "ga" "it" "ja" "jw" "kn" "kk" "km" "rw"
+    "gom" "ko" "kri" "ku" "ckb" "ky" "lo" "la" "lv" "ln"
+    "lt" "lg" "lb" "mk" "mai" "mg" "ms" "ml" "mt" "mi"
+    "mr" "mni-Mtei" "lus" "mn" "my" "ne" "no" "or" "om" "ps"
+    "fa" "pl" "pt" "pa" "qu" "ro" "ru" "sm" "sa" "gd"
+    "nso" "sr" "st" "sn" "sd" "si" "sk" "sl" "so" "es"
     "su" "sw" "sv" "tg" "ta" "tt" "te" "th" "ti" "ts"
     "tr" "tk" "ak" "uk" "ur" "ug" "uz" "vi" "cy" "xh"
     "yi" "yo" "zu"
@@ -85,21 +84,21 @@ for i in "${!MODEL_NAMES[@]}"; do
                 echo "🌍 Translating and detecting for $TGT_LANG"
 
                 # Translation of validation text
-                echo "🌐 Translating validation text to $TGT_LANG"
-                python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.val.jsonl" \
-                    --output_file "$DATA_DIR/dataset/mc4/mc4.${TGT_LANG}.val.jsonl" \
-                    --translation_part response \
-                    --src_lang en \
-                    --tgt_lang "$TGT_LANG"
-
                 # echo "🌐 Translating validation text to $TGT_LANG"
                 # python3 "$ATTACK_DIR/google_translate.py" \
-                #     --input_file "$DATA_DIR/dataset/mc4/mc4.${TGT_LANG}.val.jsonl" \
+                #     --input_file "$DATA_DIR/dataset/mc4/mc4.en.val.jsonl" \
                 #     --output_file "$DATA_DIR/dataset/mc4/mc4.${TGT_LANG}.val.jsonl" \
                 #     --translation_part response \
                 #     --src_lang en \
                 #     --tgt_lang "$TGT_LANG"
+
+                echo "🌐 Detecting on $TGT_LANG validation set"
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --seed "$SEED" \
+                    --detect_file "$DATA_DIR/dataset/mc4/mc4.${TGT_LANG}.val.jsonl" \
+                    --output_file "$OUT_DIR/mc4.${TGT_LANG}.val.z_score.jsonl" \
+                    $WATERMARK_FLAGS
             done
         done
     done
