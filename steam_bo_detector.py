@@ -2,7 +2,7 @@
 """
 STEAM BO Detector - Per-Text Bayesian Optimization for Pivot Language Selection
 
-This implements the correct STEAM BO approach:
+This implements a feature-space STEAM BO approach:
 1. For each individual text, run separate BO optimization
 2. Find optimal pivot language that maximizes normalized z-score
 3. Translation flow: tgt_lang → pivot_lang (single step)
@@ -21,12 +21,14 @@ import logging
 import argparse
 from typing import Dict, List, Any, Tuple
 
-from skopt import gp_minimize
-from skopt.space import Real
+from scipy.stats import norm
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
+from sklearn.preprocessing import StandardScaler
 
 # Import your existing components
 from realtime_backtranslation import RealtimeBacktranslator
-from uriel_genetic_distance import URIELGeneticDistance
+from uriel_language_space import URIELLanguageSpace
 from language_code_converter import iso3_to_iso1, iso1_to_iso3, is_valid_iso3
 from utils import read_jsonl
 
@@ -60,9 +62,10 @@ class STEAMBODetector:
     Per-Text STEAM BO Detector for optimal pivot language selection.
 
     For each text:
-    1. Sample 3 initial pivots from a genetically diverse pool
-    2. Use BO to find optimal pivot language that maximizes normalized z-score
-    3. Output: {z_score, prompt, response} where response is text in best pivot language
+    1. Sample initial pivot languages from the supported pool
+    2. Fit BO on the evaluated pivot-language feature vectors
+    3. Use EI to find the next pivot language that maximizes normalized z-score
+    4. Output: {z_score, prompt, response} where response is text in best pivot language
     """
 
     def __init__(self,
@@ -72,7 +75,8 @@ class STEAMBODetector:
                  output_dir: str,
                  n_initial: int = 3,
                  max_evaluations: int = 15,
-                 random_state: int = 42):
+                 random_state: int = 42,
+                 bo_feature_sets: Tuple[str, ...] = ("geo",)):
         self.watermark_detector = watermark_detector
         self.target_lang = target_lang
         self.input_dir = input_dir
@@ -80,6 +84,7 @@ class STEAMBODetector:
         self.n_initial = n_initial
         self.max_evaluations = max_evaluations
         self.random_state = random_state
+        self.bo_feature_sets = tuple(bo_feature_sets)
 
         # Setup logging
         logging.basicConfig(level=logging.INFO,
@@ -88,28 +93,58 @@ class STEAMBODetector:
 
         # Initialize components
         self.backtranslator = RealtimeBacktranslator()
-        self.genetic_distance = URIELGeneticDistance()
+        self.language_space = URIELLanguageSpace()
 
         # Convert target language to ISO-3 for URIEL
         self.target_lang_iso3 = self._normalize_to_iso3(target_lang)
 
-        # Get available pivot languages (exclude target, filter for Google Translate)
-        all_pivots = [lang for lang in self.genetic_distance.available_languages
-                     if lang != self.target_lang_iso3]
-
-        from deep_translator import GoogleTranslator
-        google_supported = set(GoogleTranslator().get_supported_languages(as_dict=True).values())
+        # Discover supported pivot languages from pre-computed validation z-score files
+        # These are the languages with mc4.{lang}.val.z_score.jsonl in the input directory
+        import glob
+        val_files = glob.glob(os.path.join(input_dir, "mc4.*.val.z_score.jsonl"))
 
         self.available_pivots = []
-        for lang in all_pivots:
+        for val_file in val_files:
+            # Extract language code from filename: mc4.{lang}.val.z_score.jsonl
+            basename = os.path.basename(val_file)
+            lang_iso1 = basename.split('.')[1]
+
+            # Skip target language
             try:
-                lang_iso1 = iso3_to_iso1(lang)
-                if lang_iso1 in google_supported:
-                    self.available_pivots.append(lang)
+                lang_iso3 = iso1_to_iso3(lang_iso1)
             except ValueError:
                 continue
 
-        self.logger.info(f"Filtered to {len(self.available_pivots)} Google Translate supported languages from {len(all_pivots)} total")
+            if lang_iso3 == self.target_lang_iso3:
+                continue
+
+            # Only include if URIEL has genetic data for it
+            if lang_iso3 in self.language_space.available_languages:
+                self.available_pivots.append(lang_iso3)
+
+        self.logger.info(f"Available pivot languages: {len(self.available_pivots)} (from {len(val_files)} validation files)")
+        self.logger.info(f"BO language feature sets: {', '.join(self.bo_feature_sets)}")
+
+        # Pre-compute BO feature vectors for each pivot so per-text optimization only
+        # needs to fit the surrogate and score remaining candidates.
+        self.pivot_features = {}
+        filtered_pivots = []
+        for pivot_lang in self.available_pivots:
+            try:
+                self.pivot_features[pivot_lang] = self.language_space.get_feature_vector(
+                    pivot_lang, self.bo_feature_sets
+                )
+                filtered_pivots.append(pivot_lang)
+            except Exception as e:
+                self.logger.warning(
+                    f"Skipping pivot {pivot_lang}: unable to load URIEL features "
+                    f"{self.bo_feature_sets} ({e})"
+                )
+        self.available_pivots = filtered_pivots
+        if not self.available_pivots:
+            raise ValueError(
+                f"No pivot languages with URIEL features {self.bo_feature_sets} were found"
+            )
 
         # Cache for validation baselines (pivot_lang -> avg_z_score)
         self._validation_cache = {}
@@ -212,7 +247,7 @@ class STEAMBODetector:
                 'pivot_lang': pivot_lang,
                 'raw_z_score': 0.0,
                 'normalized_z_score': 0.0,
-                'genetic_distance': 0.0,
+                'feature_vector': self.pivot_features.get(pivot_lang),
                 'translated_text': '',
                 'success': False
             }
@@ -221,95 +256,75 @@ class STEAMBODetector:
         validation_baseline = self._get_validation_baseline(pivot_lang)
         normalized_z_score = raw_z_score - validation_baseline
 
-        # Get genetic distance
-        try:
-            genetic_distance = self.genetic_distance.get_genetic_distance(
-                self.target_lang_iso3, pivot_lang
-            )
-        except Exception as e:
-            self.logger.warning(f"Error getting genetic distance for {pivot_lang}: {e}")
-            genetic_distance = 3.0
-
         return {
             'pivot_lang': pivot_lang,
             'raw_z_score': raw_z_score,
             'normalized_z_score': normalized_z_score,
-            'genetic_distance': genetic_distance,
+            'feature_vector': self.pivot_features[pivot_lang],
             'translated_text': translated_text,
             'success': True
         }
 
     def _bo_suggest_next_pivot(self, evaluations: List[Dict[str, Any]]) -> str:
-        """Use BO to suggest next best pivot language."""
-        if len(evaluations) < 2:
-            evaluated_pivots = {e['pivot_lang'] for e in evaluations}
-            remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
-            if remaining:
-                return np.random.choice(remaining)
+        """Use BO over language vectors to suggest the next pivot language."""
+        evaluated_pivots = {e['pivot_lang'] for e in evaluations}
+        remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
+        if not remaining:
             return self.available_pivots[0]
 
+        successful_evals = [e for e in evaluations if e['success']]
+        if len(successful_evals) < 2:
+            return np.random.choice(remaining)
+
         try:
-            X_samples = []
-            y_samples = []
+            X_samples = np.vstack([e['feature_vector'] for e in successful_evals])
+            y_samples = np.asarray([e['normalized_z_score'] for e in successful_evals], dtype=float)
+            X_candidates = np.vstack([self.pivot_features[lang] for lang in remaining])
 
-            for e in evaluations:
-                if e['success']:
-                    X_samples.append([e['genetic_distance']])
-                    y_samples.append(e['normalized_z_score'])
+            scaler = StandardScaler()
+            X_train = scaler.fit_transform(X_samples)
+            X_remaining = scaler.transform(X_candidates)
 
-            if len(X_samples) < 2:
-                evaluated_pivots = {e['pivot_lang'] for e in evaluations}
-                remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
-                return np.random.choice(remaining) if remaining else self.available_pivots[0]
-
-            search_space = [Real(0.0, 6.0, name='genetic_distance')]
-
-            # gp_minimize fits a GP on (x0, y0) and uses EI to suggest next point
-            # We negate y because gp_minimize minimizes, but we want to maximize normalized_z_score
-            result = gp_minimize(
-                func=lambda x: 0.0,  # Dummy — not called with n_calls=1, n_initial_points=0
-                dimensions=search_space,
-                n_calls=1,
-                n_initial_points=0,
-                x0=X_samples,
-                y0=[-y for y in y_samples],
-                acq_func='EI',
-                random_state=self.random_state
+            kernel = (
+                ConstantKernel(1.0, constant_value_bounds="fixed")
+                * Matern(length_scale=1.0, length_scale_bounds="fixed", nu=2.5)
+                + WhiteKernel(noise_level=1e-5, noise_level_bounds="fixed")
             )
+            gp = GaussianProcessRegressor(
+                kernel=kernel,
+                optimizer=None,
+                normalize_y=True,
+                random_state=self.random_state,
+            )
+            gp.fit(X_train, y_samples)
 
-            suggested_distance = result.x[0]
-            return self._find_pivot_at_distance(suggested_distance, evaluations)
+            mu, sigma = gp.predict(X_remaining, return_std=True)
+            best_observed = float(np.max(y_samples))
+            expected_improvement = self._expected_improvement(mu, sigma, best_observed)
+
+            return remaining[int(np.argmax(expected_improvement))]
 
         except Exception as e:
             self.logger.error(f"BO suggestion failed: {e}")
-            evaluated_pivots = {e_['pivot_lang'] for e_ in evaluations}
-            remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
-            if remaining:
-                return np.random.choice(remaining)
-            return self.available_pivots[0]
+            return np.random.choice(remaining)
 
-    def _find_pivot_at_distance(self, target_distance: float, evaluations: List[Dict[str, Any]]) -> str:
-        """Find pivot language closest to target genetic distance."""
-        evaluated_pivots = {e['pivot_lang'] for e in evaluations}
+    @staticmethod
+    def _expected_improvement(mu: np.ndarray,
+                              sigma: np.ndarray,
+                              best_observed: float,
+                              xi: float = 0.01) -> np.ndarray:
+        """Compute Expected Improvement for a maximization objective."""
+        sigma = np.asarray(sigma, dtype=float)
+        improvement = np.asarray(mu, dtype=float) - best_observed - xi
+        ei = np.zeros_like(improvement)
 
-        best_pivot = None
-        best_diff = float('inf')
+        valid = sigma > 0
+        if not np.any(valid):
+            return ei
 
-        for pivot_lang in self.available_pivots:
-            if pivot_lang in evaluated_pivots:
-                continue
-            try:
-                actual_distance = self.genetic_distance.get_genetic_distance(
-                    self.target_lang_iso3, pivot_lang
-                )
-                diff = abs(actual_distance - target_distance)
-                if diff < best_diff:
-                    best_diff = diff
-                    best_pivot = pivot_lang
-            except Exception:
-                continue
-
-        return best_pivot if best_pivot else self.available_pivots[0]
+        z = improvement[valid] / sigma[valid]
+        ei[valid] = improvement[valid] * norm.cdf(z) + sigma[valid] * norm.pdf(z)
+        return ei
 
     def optimize_single_text(self, text: str, prompt: str, text_id: int) -> Dict[str, Any]:
         """
@@ -322,15 +337,16 @@ class STEAMBODetector:
 
         evaluations = []
 
-        # Phase 1: Evaluate initial pivot languages (sampled from diverse pool)
+        # Phase 1: Evaluate initial pivot languages
         initial_pivots = self._sample_initial_pivots(text_id)
         self.logger.info(f"  Initial pivots for text {text_id}: {initial_pivots}")
 
         for pivot_lang in initial_pivots:
             eval_result = self._evaluate_pivot_language(text, pivot_lang)
             evaluations.append(eval_result)
-            self.logger.info(f"  Initial {pivot_lang}: norm_z={eval_result['normalized_z_score']:.3f}, "
-                           f"dist={eval_result['genetic_distance']:.3f}")
+            self.logger.info(
+                f"  Initial {pivot_lang}: norm_z={eval_result['normalized_z_score']:.3f}"
+            )
 
         # Find current best
         successful_evals = [e for e in evaluations if e['success']]
@@ -354,8 +370,9 @@ class STEAMBODetector:
             if eval_result['success'] and eval_result['normalized_z_score'] > best_eval['normalized_z_score']:
                 best_eval = eval_result
 
-            self.logger.info(f"    {next_pivot}: norm_z={eval_result['normalized_z_score']:.3f}, "
-                           f"dist={eval_result['genetic_distance']:.3f}")
+            self.logger.info(
+                f"    {next_pivot}: norm_z={eval_result['normalized_z_score']:.3f}"
+            )
 
         self.logger.info(f"  Text {text_id}: best pivot={best_eval['pivot_lang']}, "
                         f"norm_z={best_eval['normalized_z_score']:.3f}")
@@ -419,6 +436,12 @@ def main():
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed")
+    parser.add_argument(
+        "--bo_feature_sets",
+        type=str,
+        default="geo",
+        help="Comma-separated lang2vec/URIEL feature sets used as BO inputs",
+    )
 
     args = parser.parse_args()
 
@@ -432,7 +455,10 @@ def main():
         output_dir=args.output_dir,
         n_initial=args.n_initial,
         max_evaluations=args.max_evaluations,
-        random_state=args.random_state
+        random_state=args.random_state,
+        bo_feature_sets=tuple(
+            feature.strip() for feature in args.bo_feature_sets.split(",") if feature.strip()
+        ),
     )
 
     output_file = steam_detector.run(num_texts=args.num_texts)
