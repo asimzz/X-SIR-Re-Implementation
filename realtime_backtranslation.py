@@ -68,6 +68,16 @@ class RealtimeBacktranslator:
             # Rate limiting
             time.sleep(self.rate_limit_delay)
 
+            # Handle special cases for language codes
+            if src_lang == "zh":
+                src_lang = "zh-CN"
+            if tgt_lang == "zh":
+                tgt_lang = "zh-CN"
+            if src_lang == "he":
+                src_lang = "iw"
+            if tgt_lang == "he":
+                tgt_lang = "iw"
+
             # Initialize translator
             translator = GoogleTranslator(source=source_lang, target=target_lang)
 
