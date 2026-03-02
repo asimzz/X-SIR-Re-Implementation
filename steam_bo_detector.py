@@ -25,7 +25,6 @@ from skopt import gp_minimize
 from skopt.space import Real
 
 # Import your existing components
-from genetic_diversity_selector import GeneticDiversitySelector
 from realtime_backtranslation import RealtimeBacktranslator
 from uriel_genetic_distance import URIELGeneticDistance
 from language_code_converter import iso3_to_iso1, iso1_to_iso3, is_valid_iso3
@@ -88,7 +87,6 @@ class STEAMBODetector:
         self.logger = logging.getLogger(__name__)
 
         # Initialize components
-        self.diversity_selector = GeneticDiversitySelector(random_seed=random_state)
         self.backtranslator = RealtimeBacktranslator()
         self.genetic_distance = URIELGeneticDistance()
 
@@ -96,7 +94,7 @@ class STEAMBODetector:
         self.target_lang_iso3 = self._normalize_to_iso3(target_lang)
 
         # Get available pivot languages (exclude target, filter for Google Translate)
-        all_pivots = [lang for lang in self.diversity_selector.available_languages
+        all_pivots = [lang for lang in self.genetic_distance.available_languages
                      if lang != self.target_lang_iso3]
 
         from deep_translator import GoogleTranslator
@@ -113,9 +111,6 @@ class STEAMBODetector:
 
         self.logger.info(f"Filtered to {len(self.available_pivots)} Google Translate supported languages from {len(all_pivots)} total")
 
-        # Select a diverse pool of pivot languages (done once, sampled per text)
-        self.diverse_pivot_pool = self._select_diverse_pivot_pool()
-
         # Cache for validation baselines (pivot_lang -> avg_z_score)
         self._validation_cache = {}
 
@@ -125,7 +120,6 @@ class STEAMBODetector:
         self.logger.info(f"Initialized STEAM BO Detector")
         self.logger.info(f"Target language: {target_lang} -> {self.target_lang_iso3}")
         self.logger.info(f"Available pivot languages: {len(self.available_pivots)}")
-        self.logger.info(f"Diverse pivot pool ({len(self.diverse_pivot_pool)}): {self.diverse_pivot_pool}")
 
     def _normalize_to_iso3(self, lang_code: str) -> str:
         """Convert language code to ISO-3 format."""
@@ -136,42 +130,11 @@ class STEAMBODetector:
             return iso3
         raise ValueError(f"Cannot normalize language code {lang_code} to ISO-3")
 
-    def _select_diverse_pivot_pool(self, pool_size: int = 10) -> List[str]:
-        """Select a pool of maximally genetically diverse pivot languages.
-
-        This pool is computed once at init. For each text, n_initial languages
-        are randomly sampled from this pool, ensuring diverse but varied starting points.
-        """
-        pool_size = min(pool_size, len(self.available_pivots))
-        self.logger.info(f"Selecting diverse pool of {pool_size} pivots from {len(self.available_pivots)} available...")
-
-        pivot_set = set(self.available_pivots)
-        selector_available = [lang for lang in self.diversity_selector.available_languages
-                             if lang in pivot_set]
-
-        if len(selector_available) < pool_size:
-            self.logger.warning(f"Only {len(selector_available)} languages available for diversity selection")
-            return selector_available
-
-        # Temporarily override the selector's available languages
-        original_available = self.diversity_selector.available_languages
-        self.diversity_selector.available_languages = selector_available
-
-        selected_pivots, diversity_score = self.diversity_selector.select_diverse_languages(
-            n_languages=pool_size,
-            method="random_sample"
-        )
-
-        self.diversity_selector.available_languages = original_available
-
-        self.logger.info(f"Diverse pivot pool: {selected_pivots} (diversity={diversity_score:.4f})")
-        return selected_pivots
-
     def _sample_initial_pivots(self, text_id: int) -> List[str]:
-        """Sample n_initial pivots from the diverse pool for a specific text."""
+        """Sample n_initial random pivots from all available languages for a specific text."""
         rng = np.random.RandomState(self.random_state + text_id)
-        n_select = min(self.n_initial, len(self.diverse_pivot_pool))
-        return rng.choice(self.diverse_pivot_pool, n_select, replace=False).tolist()
+        n_select = min(self.n_initial, len(self.available_pivots))
+        return rng.choice(self.available_pivots, n_select, replace=False).tolist()
 
     def _get_validation_baseline(self, pivot_lang: str) -> float:
         """Get validation baseline z-score for a pivot language from pre-computed files."""
