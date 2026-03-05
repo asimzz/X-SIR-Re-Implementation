@@ -360,6 +360,7 @@ class STEAMBODetector:
 
         return {
             'z_score': best_eval['normalized_z_score'],
+            'raw_zscore': best_eval['raw_z_score'],
             'prompt': prompt,
             'response': best_eval['translated_text'],
             'best_pivot': best_pivot_iso1
