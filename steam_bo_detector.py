@@ -8,8 +8,9 @@ This implements the correct STEAM BO approach:
 3. Translation flow: tgt_lang → pivot_lang (single step)
 4. Normalization: raw_z_score - avg_validation_z_score_for_pivot_lang
 
-Output: single JSONL file (mc4.{target_lang}.bo.z_score.jsonl) with one entry per text:
-  {z_score, prompt, response} where response is text in best pivot language
+Output:
+  - mc4.{target_lang}.bo.z_score.jsonl      (watermarked texts, BO-optimized)
+  - mc4.{target_lang}.bo.hum.z_score.jsonl  (human texts, matched pivot from BO)
 
 Author: Asim
 """
@@ -24,7 +25,6 @@ from typing import Dict, List, Any, Tuple
 from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_mll
 from botorch.acquisition import LogExpectedImprovement
-from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
 # Import your existing components
@@ -149,8 +149,13 @@ class STEAMBODetector:
         n_select = min(self.n_initial, len(self.available_pivots))
         return rng.choice(self.available_pivots, n_select, replace=False).tolist()
 
-    def _get_validation_baseline(self, pivot_lang: str) -> float:
-        """Get validation baseline z-score for a pivot language from pre-computed files."""
+    def _get_validation_baseline(self, pivot_lang: str) -> Tuple[float, float, int]:
+        """
+        Get validation baseline stats for a pivot language from pre-computed files.
+
+        Returns:
+            Tuple of (mean_z_score, std_z_score, n_samples)
+        """
         if pivot_lang in self._validation_cache:
             return self._validation_cache[pivot_lang]
 
@@ -158,31 +163,33 @@ class STEAMBODetector:
             pivot_iso1 = iso3_to_iso1(pivot_lang)
         except ValueError:
             self.logger.error(f"Cannot convert {pivot_lang} to ISO-1 for validation file lookup")
-            return 0.0
+            return 0.0, 1.0, 0
 
         val_z_score_file = os.path.join(self.input_dir, f"mc4.{pivot_iso1}.val.z_score.jsonl")
 
         if not os.path.exists(val_z_score_file):
             self.logger.warning(f"Pre-computed validation file not found: {val_z_score_file}")
-            return 0.0
+            return 0.0, 1.0, 0
 
         try:
             val_data = read_jsonl(val_z_score_file)
             z_scores = [item.get('z_score', 0.0) for item in val_data if item.get('z_score') is not None]
 
             if z_scores:
-                avg_z_score = sum(z_scores) / len(z_scores)
-                self._validation_cache[pivot_lang] = avg_z_score
-                self.logger.debug(f"Validation baseline for {pivot_lang} ({pivot_iso1}): {avg_z_score:.4f} "
-                                f"(from {len(z_scores)} pre-computed scores)")
-                return avg_z_score
+                mean_z = sum(z_scores) / len(z_scores)
+                std_z = float(np.std(z_scores)) if len(z_scores) > 1 else 1.0
+                n = len(z_scores)
+                self._validation_cache[pivot_lang] = (mean_z, std_z, n)
+                self.logger.debug(f"Validation baseline for {pivot_lang} ({pivot_iso1}): "
+                                f"mean={mean_z:.4f}, std={std_z:.4f}, n={n}")
+                return mean_z, std_z, n
             else:
                 self.logger.warning(f"No valid z-scores in {val_z_score_file}")
-                return 0.0
+                return 0.0, 1.0, 0
 
         except Exception as e:
             self.logger.error(f"Error reading validation file {val_z_score_file}: {e}")
-            return 0.0
+            return 0.0, 1.0, 0
 
     def _translate_and_detect(self, text: str, pivot_lang: str) -> Tuple[float, str, bool]:
         """
@@ -230,9 +237,12 @@ class STEAMBODetector:
                 'success': False
             }
 
-        # Get validation baseline and normalize
-        validation_baseline = self._get_validation_baseline(pivot_lang)
-        normalized_z_score = raw_z_score - validation_baseline
+        # Penalized normalization: subtract upper confidence bound of validation baseline
+        # This penalizes languages with noisy/uncertain baselines (winner's curse correction)
+        mean_z, std_z, n = self._get_validation_baseline(pivot_lang)
+        stderr = std_z / np.sqrt(n) if n > 0 else std_z
+        penalized_baseline = mean_z + 1.96 * stderr  # 95% upper confidence bound
+        normalized_z_score = raw_z_score - penalized_baseline
 
         return {
             'pivot_lang': pivot_lang,
@@ -244,29 +254,29 @@ class STEAMBODetector:
         }
 
     def _bo_suggest_next_pivot(self, evaluations: List[Dict[str, Any]]) -> str:
-        """Use BoTorch GP + EI to suggest next best pivot language in feature vector space."""
-        if len(evaluations) < 2:
-            evaluated_pivots = {e['pivot_lang'] for e in evaluations}
-            remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
-            if remaining:
-                return np.random.choice(remaining)
-            return self.available_pivots[0]
+        """
+        Use BoTorch GP + LogEI to suggest next pivot language.
+
+        Instead of optimizing the acquisition function in continuous space and mapping
+        to the nearest language (which breaks in 131-D with ~100 discrete candidates),
+        we evaluate the acquisition function directly at all unevaluated language
+        feature vectors and pick the one with highest Expected Improvement.
+        """
+        evaluated_pivots = {e['pivot_lang'] for e in evaluations}
+        remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
+
+        if not remaining:
+            return None
+
+        # Need at least 2 successful evaluations to fit a GP
+        successful = [e for e in evaluations if e['success']]
+        if len(successful) < 2:
+            return np.random.choice(remaining)
 
         try:
-            X_samples = []
-            y_samples = []
+            X_samples = [list(e['feature_vector']) for e in successful]
+            y_samples = [e['normalized_z_score'] for e in successful]
 
-            for e in evaluations:
-                if e['success']:
-                    X_samples.append(list(e['feature_vector']))
-                    y_samples.append(e['normalized_z_score'])
-
-            if len(X_samples) < 2:
-                evaluated_pivots = {e['pivot_lang'] for e in evaluations}
-                remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
-                return np.random.choice(remaining) if remaining else self.available_pivots[0]
-
-            # Convert to torch tensors (BoTorch uses double precision)
             train_X = torch.from_numpy(np.array(X_samples)).double()
             train_Y = torch.tensor(y_samples, dtype=torch.double).unsqueeze(-1)
 
@@ -275,47 +285,24 @@ class STEAMBODetector:
             mll = ExactMarginalLogLikelihood(gp.likelihood, gp)
             fit_gpytorch_mll(mll)
 
-            # Maximize Expected Improvement
-            best_f = train_Y.max()
-            ei = LogExpectedImprovement(gp, best_f=best_f)
-            bounds = torch.stack([
-                torch.zeros(self.feature_dim, dtype=torch.double),
-                torch.ones(self.feature_dim, dtype=torch.double)
-            ])
-            candidate, _ = optimize_acqf(
-                ei, bounds=bounds, q=1, num_restarts=5, raw_samples=20
+            # Build tensor of ALL unevaluated candidate feature vectors
+            candidate_features = torch.tensor(
+                [self._feature_vectors[lang].tolist() for lang in remaining],
+                dtype=torch.double
             )
 
-            suggested_point = candidate.squeeze().detach().numpy()
-            return self._find_nearest_pivot(suggested_point, evaluations)
+            # Evaluate acquisition function at each discrete candidate
+            best_f = train_Y.max()
+            ei = LogExpectedImprovement(gp, best_f=best_f)
+            # LogEI expects shape (batch, q, d) — add q=1 dimension
+            ei_values = ei(candidate_features.unsqueeze(1))
+            best_idx = ei_values.argmax().item()
+
+            return remaining[best_idx]
 
         except Exception as e:
             self.logger.error(f"BO suggestion failed: {e}")
-            evaluated_pivots = {e_['pivot_lang'] for e_ in evaluations}
-            remaining = [lang for lang in self.available_pivots if lang not in evaluated_pivots]
-            if remaining:
-                return np.random.choice(remaining)
-            return self.available_pivots[0]
-
-    def _find_nearest_pivot(self, target_point: np.ndarray, evaluations: List[Dict[str, Any]]) -> str:
-        """Find the nearest unevaluated pivot language to a point in feature space."""
-        evaluated_pivots = {e['pivot_lang'] for e in evaluations}
-
-        best_pivot = None
-        best_dist = float('inf')
-
-        for pivot_lang in self.available_pivots:
-            if pivot_lang in evaluated_pivots:
-                continue
-            fv = self._feature_vectors.get(pivot_lang)
-            if fv is None:
-                continue
-            dist = np.linalg.norm(np.array(fv) - target_point)
-            if dist < best_dist:
-                best_dist = dist
-                best_pivot = pivot_lang
-
-        return best_pivot if best_pivot else self.available_pivots[0]
+            return np.random.choice(remaining)
 
     def optimize_single_text(self, text: str, prompt: str, text_id: int) -> Dict[str, Any]:
         """
@@ -364,35 +351,65 @@ class STEAMBODetector:
         self.logger.info(f"  Text {text_id}: best pivot={best_eval['pivot_lang']}, "
                         f"norm_z={best_eval['normalized_z_score']:.3f}")
 
+        # Convert best pivot to ISO-1 for readability in output
+        best_pivot_iso3 = best_eval['pivot_lang']
+        try:
+            best_pivot_iso1 = iso3_to_iso1(best_pivot_iso3)
+        except ValueError:
+            best_pivot_iso1 = best_pivot_iso3
+
         return {
             'z_score': best_eval['normalized_z_score'],
             'prompt': prompt,
-            'response': best_eval['translated_text']
+            'response': best_eval['translated_text'],
+            'best_pivot': best_pivot_iso1
+        }
+
+    def _process_human_text(self, text: str, prompt: str, best_pivot_iso3: str) -> Dict[str, Any]:
+        """Translate human text to the BO-selected pivot, detect and normalize."""
+        raw_z_score, translated_text, success = self._translate_and_detect(text, best_pivot_iso3)
+
+        if not success:
+            return {'z_score': 0.0, 'prompt': prompt, 'response': text}
+
+        mean_z, std_z, n = self._get_validation_baseline(best_pivot_iso3)
+        stderr = std_z / np.sqrt(n) if n > 0 else std_z
+        penalized_baseline = mean_z + 1.96 * stderr
+        normalized_z_score = raw_z_score - penalized_baseline
+
+        return {
+            'z_score': normalized_z_score,
+            'prompt': prompt,
+            'response': translated_text
         }
 
     def run(self, num_texts: int = 500) -> str:
         """
-        Run STEAM BO optimization for all texts and write output JSONL.
+        Run STEAM BO on watermarked texts, then apply the selected pivot
+        to corresponding human texts.
 
-        Args:
-            num_texts: Number of texts to process
-
-        Returns:
-            Path to the output JSONL file
+        Produces:
+          - mc4.{target_lang}.bo.z_score.jsonl      (watermarked, BO-optimized)
+          - mc4.{target_lang}.bo.hum.z_score.jsonl   (human, matched pivot)
         """
-        self.logger.info(f"Starting STEAM BO optimization for {num_texts} texts")
+        self.logger.info(f"Starting STEAM BO for {num_texts} texts")
 
         # Load watermarked texts
         mod_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
         if not os.path.exists(mod_file):
             raise FileNotFoundError(f"Input file not found: {mod_file}")
-
         mod_data = read_jsonl(mod_file)[:num_texts]
 
-        # Output file
-        output_file = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.z_score.jsonl")
+        # Load corresponding human texts
+        hum_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
+        if not os.path.exists(hum_file):
+            raise FileNotFoundError(f"Human text file not found: {hum_file}")
+        hum_data = read_jsonl(hum_file)[:num_texts]
 
-        with open(output_file, 'w') as f:
+        mod_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.z_score.jsonl")
+        hum_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.hum.z_score.jsonl")
+
+        with open(mod_output, 'w') as f_mod, open(hum_output, 'w') as f_hum:
             for i, item in enumerate(mod_data):
                 text_content = item.get('response', '')
                 prompt = item.get('prompt', '')
@@ -402,15 +419,29 @@ class STEAMBODetector:
                     continue
 
                 try:
+                    # BO on watermarked text
                     result = self.optimize_single_text(text_content, prompt, i)
-                    f.write(json.dumps(result) + '\n')
+                    f_mod.write(json.dumps(result) + '\n')
+
+                    # Apply same pivot to human text (no BO, just translate + detect)
+                    best_pivot_iso1 = result['best_pivot']
+                    best_pivot_iso3 = iso1_to_iso3(best_pivot_iso1)
+                    if i < len(hum_data):
+                        hum_text = hum_data[i].get('response', '')
+                        hum_prompt = hum_data[i].get('prompt', '')
+                        hum_result = self._process_human_text(hum_text, hum_prompt, best_pivot_iso3)
+                    else:
+                        hum_result = {'z_score': 0.0, 'prompt': '', 'response': ''}
+                    f_hum.write(json.dumps(hum_result) + '\n')
+
                 except Exception as e:
                     self.logger.error(f"Error processing text {i}: {e}")
-                    # Write fallback entry so indices stay aligned
-                    f.write(json.dumps({'z_score': 0.0, 'prompt': prompt, 'response': text_content}) + '\n')
+                    f_mod.write(json.dumps({'z_score': 0.0, 'prompt': prompt, 'response': text_content}) + '\n')
+                    f_hum.write(json.dumps({'z_score': 0.0, 'prompt': '', 'response': ''}) + '\n')
 
-        self.logger.info(f"Results saved to {output_file}")
-        return output_file
+        self.logger.info(f"Watermarked results: {mod_output}")
+        self.logger.info(f"Human results:       {hum_output}")
+        return mod_output
 
 
 def main():
@@ -428,7 +459,6 @@ def main():
 
     watermark_detector = get_watermark_detector(base_model=args.base_model)
 
-    # Initialize and run STEAM BO detector
     steam_detector = STEAMBODetector(
         watermark_detector=watermark_detector,
         target_lang=args.tgt_lang,
