@@ -275,7 +275,7 @@ class STEAMBODetector:
 
         try:
             X_samples = [list(e['feature_vector']) for e in successful]
-            y_samples = [e['normalized_z_score'] for e in successful]
+            y_samples = [e['raw_z_score'] for e in successful]
 
             train_X = torch.from_numpy(np.array(X_samples)).double()
             train_Y = torch.tensor(y_samples, dtype=torch.double).unsqueeze(-1)
@@ -322,15 +322,15 @@ class STEAMBODetector:
         for pivot_lang in initial_pivots:
             eval_result = self._evaluate_pivot_language(text, pivot_lang)
             evaluations.append(eval_result)
-            self.logger.info(f"  Initial {pivot_lang}: norm_z={eval_result['normalized_z_score']:.3f}")
+            self.logger.info(f"  Initial {pivot_lang}: raw_z={eval_result['raw_z_score']:.3f}, norm_z={eval_result['normalized_z_score']:.3f}")
 
-        # Find current best
+        # Find current best (by RAW z-score — BO optimizes watermark signal, not normalized score)
         successful_evals = [e for e in evaluations if e['success']]
         if not successful_evals:
             self.logger.error(f"No successful evaluations for text {text_id}")
             return {'z_score': 0.0, 'prompt': prompt, 'response': text}
 
-        best_eval = max(successful_evals, key=lambda x: x['normalized_z_score'])
+        best_eval = max(successful_evals, key=lambda x: x['raw_z_score'])
 
         # Phase 2: BO optimization loop
         for iteration in range(self.max_evaluations - self.n_initial):
@@ -343,13 +343,13 @@ class STEAMBODetector:
             eval_result = self._evaluate_pivot_language(text, next_pivot)
             evaluations.append(eval_result)
 
-            if eval_result['success'] and eval_result['normalized_z_score'] > best_eval['normalized_z_score']:
+            if eval_result['success'] and eval_result['raw_z_score'] > best_eval['raw_z_score']:
                 best_eval = eval_result
 
-            self.logger.info(f"    {next_pivot}: norm_z={eval_result['normalized_z_score']:.3f}")
+            self.logger.info(f"    {next_pivot}: raw_z={eval_result['raw_z_score']:.3f}, norm_z={eval_result['normalized_z_score']:.3f}")
 
         self.logger.info(f"  Text {text_id}: best pivot={best_eval['pivot_lang']}, "
-                        f"norm_z={best_eval['normalized_z_score']:.3f}")
+                        f"raw_z={best_eval['raw_z_score']:.3f}, norm_z={best_eval['normalized_z_score']:.3f}")
 
         # Convert best pivot to ISO-1 for readability in output
         best_pivot_iso3 = best_eval['pivot_lang']
