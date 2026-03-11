@@ -1,5 +1,12 @@
 #!/bin/bash
 # STEAM BO Detection Pipeline (KGW)
+#
+# Prerequisites:
+#   1. Run compute_gamma_lang.py to generate gamma_lang.json:
+#      python3 compute_gamma_lang.py \
+#        --base_model CohereForAI/aya-23-8B \
+#        --input_dir data/dataset/mc4 \
+#        --output_file gen/aya-23-8B/kgw_seed0/gamma_lang.json
 set -e
 
 # Configuration
@@ -14,6 +21,7 @@ TARGET_LANGS=("fr" "de" "es" "it" "pt" "nl" "pl" "ru" "hi" "ko" "ja" "bn" "fa" "
 # Directories
 INPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0"
 OUTPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0"
+GAMMA_LANG_FILE="gen/${MODEL_ABBR}/kgw_seed0/gamma_lang.json"
 
 # Allow running a single language
 if [[ -n "$1" ]]; then
@@ -28,6 +36,7 @@ for TGT_LANG in "${TARGET_LANGS[@]}"; do
         --tgt_lang "$TGT_LANG" \
         --input_dir "$INPUT_DIR" \
         --output_dir "$OUTPUT_DIR" \
+        --gamma_lang_file "$GAMMA_LANG_FILE" \
         --n_initial "$N_INITIAL" \
         --max_evaluations "$MAX_EVALUATIONS" \
         --num_texts "$NUM_TEXTS"

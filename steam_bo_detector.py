@@ -4,9 +4,10 @@ STEAM BO Detector - Per-Text Bayesian Optimization for Pivot Language Selection
 
 This implements the correct STEAM BO approach:
 1. For each individual text, run separate BO optimization
-2. Find optimal pivot language that maximizes normalized z-score
+2. Find optimal pivot language that maximizes γ_lang-corrected z-score
 3. Translation flow: tgt_lang → pivot_lang (single step)
-4. Normalization: raw_z_score - avg_validation_z_score_for_pivot_lang
+4. Z-score correction: use per-language γ_lang in the z-score formula
+   (no post-hoc normalization needed)
 
 Output:
   - mc4.{target_lang}.bo.z_score.jsonl      (watermarked texts, BO-optimized)
@@ -17,6 +18,7 @@ Author: Asim
 
 import os
 import json
+import math
 import numpy as np
 import logging
 import argparse
@@ -73,6 +75,7 @@ class STEAMBODetector:
                  target_lang: str,
                  input_dir: str,
                  output_dir: str,
+                 gamma_lang_file: str,
                  n_initial: int = 3,
                  max_evaluations: int = 15,
                  random_state: int = 42):
@@ -83,6 +86,11 @@ class STEAMBODetector:
         self.n_initial = n_initial
         self.max_evaluations = max_evaluations
         self.random_state = random_state
+
+        # Load γ_lang values (language-specific green token fractions)
+        with open(gamma_lang_file, 'r') as f:
+            self._gamma_lang_data = json.load(f)
+        logging.info(f"Loaded γ_lang for {len(self._gamma_lang_data)} languages from {gamma_lang_file}")
 
         # Setup logging
         logging.basicConfig(level=logging.INFO,
@@ -124,9 +132,6 @@ class STEAMBODetector:
         self.feature_dim = len(next(iter(self._feature_vectors.values())))
         self.logger.info(f"Language feature vectors: {self.feature_dim} dimensions")
 
-        # Cache for validation baselines (pivot_lang -> avg_z_score)
-        self._validation_cache = {}
-
         # Setup output directory
         os.makedirs(output_dir, exist_ok=True)
 
@@ -149,54 +154,40 @@ class STEAMBODetector:
         n_select = min(self.n_initial, len(self.available_pivots))
         return rng.choice(self.available_pivots, n_select, replace=False).tolist()
 
-    def _get_validation_baseline(self, pivot_lang: str) -> Tuple[float, float, int]:
+    def _get_gamma_lang(self, pivot_lang: str) -> float:
         """
-        Get validation baseline stats for a pivot language from pre-computed files.
+        Get γ_lang for a pivot language.
 
-        Returns:
-            Tuple of (mean_z_score, std_z_score, n_samples)
+        Returns the empirical green token fraction from calibration data.
+        Falls back to the detector's default gamma (0.25) if not available.
         """
-        if pivot_lang in self._validation_cache:
-            return self._validation_cache[pivot_lang]
-
         try:
             pivot_iso1 = iso3_to_iso1(pivot_lang)
         except ValueError:
-            self.logger.error(f"Cannot convert {pivot_lang} to ISO-1 for validation file lookup")
-            return 0.0, 1.0, 0
+            self.logger.warning(f"Cannot convert {pivot_lang} to ISO-1, using default gamma")
+            return self.watermark_detector.gamma
 
-        val_z_score_file = os.path.join(self.input_dir, f"mc4.{pivot_iso1}.val.z_score.jsonl")
+        if pivot_iso1 in self._gamma_lang_data:
+            return self._gamma_lang_data[pivot_iso1]["gamma_lang"]
 
-        if not os.path.exists(val_z_score_file):
-            self.logger.warning(f"Pre-computed validation file not found: {val_z_score_file}")
-            return 0.0, 1.0, 0
+        self.logger.warning(f"No γ_lang for {pivot_iso1}, using default gamma={self.watermark_detector.gamma}")
+        return self.watermark_detector.gamma
 
-        try:
-            val_data = read_jsonl(val_z_score_file)
-            z_scores = [item.get('z_score', 0.0) for item in val_data if item.get('z_score') is not None]
-
-            if z_scores:
-                mean_z = sum(z_scores) / len(z_scores)
-                std_z = float(np.std(z_scores)) if len(z_scores) > 1 else 1.0
-                n = len(z_scores)
-                self._validation_cache[pivot_lang] = (mean_z, std_z, n)
-                self.logger.debug(f"Validation baseline for {pivot_lang} ({pivot_iso1}): "
-                                f"mean={mean_z:.4f}, std={std_z:.4f}, n={n}")
-                return mean_z, std_z, n
-            else:
-                self.logger.warning(f"No valid z-scores in {val_z_score_file}")
-                return 0.0, 1.0, 0
-
-        except Exception as e:
-            self.logger.error(f"Error reading validation file {val_z_score_file}: {e}")
-            return 0.0, 1.0, 0
+    def _recompute_z_score(self, num_green_tokens: int, num_tokens_scored: int, gamma_lang: float) -> float:
+        """Recompute z-score using language-specific γ_lang."""
+        numer = num_green_tokens - gamma_lang * num_tokens_scored
+        denom = math.sqrt(num_tokens_scored * gamma_lang * (1 - gamma_lang))
+        return numer / denom
 
     def _translate_and_detect(self, text: str, pivot_lang: str) -> Tuple[float, str, bool]:
         """
         Translate text to pivot language and detect watermark.
 
+        The z-score is recomputed using γ_lang (language-specific green token fraction)
+        instead of the default γ=0.25, which corrects for tokenizer bias.
+
         Returns:
-            Tuple of (raw_z_score, translated_text, success)
+            Tuple of (corrected_z_score, translated_text, success)
         """
         try:
             pivot_iso1 = iso3_to_iso1(pivot_lang)
@@ -213,11 +204,19 @@ class STEAMBODetector:
                 self.logger.error(f"Translation failed: {target_iso1} → {pivot_iso1}")
                 return 0.0, "", False
 
-            # Detect watermark
+            # Detect watermark (uses default γ=0.25 for green list partitioning)
             detection_result = self.watermark_detector.detect(translated_text)
-            raw_z_score = detection_result.get('z_score', 0.0)
+            num_green = detection_result.get('num_green_tokens')
+            num_scored = detection_result.get('num_tokens_scored')
 
-            return raw_z_score, translated_text, True
+            if num_green is None or num_scored is None or num_scored == 0:
+                return 0.0, "", False
+
+            # Recompute z-score using γ_lang
+            gamma_lang = self._get_gamma_lang(pivot_lang)
+            corrected_z = self._recompute_z_score(int(num_green), int(num_scored), gamma_lang)
+
+            return corrected_z, translated_text, True
 
         except Exception as e:
             self.logger.error(f"Error in translate_and_detect for {pivot_lang}: {e}")
@@ -225,29 +224,20 @@ class STEAMBODetector:
 
     def _evaluate_pivot_language(self, text: str, pivot_lang: str) -> Dict[str, Any]:
         """Evaluate a pivot language for a specific text."""
-        raw_z_score, translated_text, success = self._translate_and_detect(text, pivot_lang)
+        z_score, translated_text, success = self._translate_and_detect(text, pivot_lang)
 
         if not success:
             return {
                 'pivot_lang': pivot_lang,
-                'raw_z_score': 0.0,
-                'normalized_z_score': 0.0,
+                'z_score': 0.0,
                 'feature_vector': self._feature_vectors.get(pivot_lang, np.zeros(self.feature_dim)),
                 'translated_text': '',
                 'success': False
             }
 
-        # Penalized normalization: subtract upper confidence bound of validation baseline
-        # This penalizes languages with noisy/uncertain baselines (winner's curse correction)
-        mean_z, std_z, n = self._get_validation_baseline(pivot_lang)
-        stderr = std_z / np.sqrt(n) if n > 0 else std_z
-        penalized_baseline = mean_z + 1.96 * stderr  # 95% upper confidence bound
-        normalized_z_score = raw_z_score - penalized_baseline
-
         return {
             'pivot_lang': pivot_lang,
-            'raw_z_score': raw_z_score,
-            'normalized_z_score': normalized_z_score,
+            'z_score': z_score,
             'feature_vector': self._feature_vectors[pivot_lang],
             'translated_text': translated_text,
             'success': True
@@ -275,7 +265,7 @@ class STEAMBODetector:
 
         try:
             X_samples = [list(e['feature_vector']) for e in successful]
-            y_samples = [e['raw_z_score'] for e in successful]
+            y_samples = [e['z_score'] for e in successful]
 
             train_X = torch.from_numpy(np.array(X_samples)).double()
             train_Y = torch.tensor(y_samples, dtype=torch.double).unsqueeze(-1)
@@ -322,15 +312,15 @@ class STEAMBODetector:
         for pivot_lang in initial_pivots:
             eval_result = self._evaluate_pivot_language(text, pivot_lang)
             evaluations.append(eval_result)
-            self.logger.info(f"  Initial {pivot_lang}: raw_z={eval_result['raw_z_score']:.3f}, norm_z={eval_result['normalized_z_score']:.3f}")
+            self.logger.info(f"  Initial {pivot_lang}: z={eval_result['z_score']:.3f}")
 
-        # Find current best (by RAW z-score — BO optimizes watermark signal, not normalized score)
+        # Find current best (by γ_lang-corrected z-score)
         successful_evals = [e for e in evaluations if e['success']]
         if not successful_evals:
             self.logger.error(f"No successful evaluations for text {text_id}")
             return {'z_score': 0.0, 'prompt': prompt, 'response': text}
 
-        best_eval = max(successful_evals, key=lambda x: x['raw_z_score'])
+        best_eval = max(successful_evals, key=lambda x: x['z_score'])
 
         # Phase 2: BO optimization loop
         for iteration in range(self.max_evaluations - self.n_initial):
@@ -343,13 +333,12 @@ class STEAMBODetector:
             eval_result = self._evaluate_pivot_language(text, next_pivot)
             evaluations.append(eval_result)
 
-            if eval_result['success'] and eval_result['raw_z_score'] > best_eval['raw_z_score']:
+            if eval_result['success'] and eval_result['z_score'] > best_eval['z_score']:
                 best_eval = eval_result
 
-            self.logger.info(f"    {next_pivot}: raw_z={eval_result['raw_z_score']:.3f}, norm_z={eval_result['normalized_z_score']:.3f}")
+            self.logger.info(f"    {next_pivot}: z={eval_result['z_score']:.3f}")
 
-        self.logger.info(f"  Text {text_id}: best pivot={best_eval['pivot_lang']}, "
-                        f"raw_z={best_eval['raw_z_score']:.3f}, norm_z={best_eval['normalized_z_score']:.3f}")
+        self.logger.info(f"  Text {text_id}: best pivot={best_eval['pivot_lang']}, z={best_eval['z_score']:.3f}")
 
         # Convert best pivot to ISO-1 for readability in output
         best_pivot_iso3 = best_eval['pivot_lang']
@@ -359,27 +348,21 @@ class STEAMBODetector:
             best_pivot_iso1 = best_pivot_iso3
 
         return {
-            'z_score': best_eval['normalized_z_score'],
-            'raw_zscore': best_eval['raw_z_score'],
+            'z_score': best_eval['z_score'],
             'best_pivot': best_pivot_iso1,
             'prompt': prompt,
             'response': best_eval['translated_text']
         }
 
     def _process_human_text(self, text: str, prompt: str, best_pivot_iso3: str) -> Dict[str, Any]:
-        """Translate human text to the BO-selected pivot, detect and normalize."""
-        raw_z_score, translated_text, success = self._translate_and_detect(text, best_pivot_iso3)
+        """Translate human text to the BO-selected pivot and detect with γ_lang correction."""
+        z_score, translated_text, success = self._translate_and_detect(text, best_pivot_iso3)
 
         if not success:
             return {'z_score': 0.0, 'prompt': prompt, 'response': text}
 
-        mean_z, std_z, n = self._get_validation_baseline(best_pivot_iso3)
-        stderr = std_z / np.sqrt(n) if n > 0 else std_z
-        penalized_baseline = mean_z + 1.96 * stderr
-        normalized_z_score = raw_z_score - penalized_baseline
-
         return {
-            'z_score': normalized_z_score,
+            'z_score': z_score,
             'prompt': prompt,
             'response': translated_text
         }
@@ -451,6 +434,7 @@ def main():
     parser.add_argument("--tgt_lang", type=str, required=True, help="Target language")
     parser.add_argument("--input_dir", type=str, required=True, help="Input directory")
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
+    parser.add_argument("--gamma_lang_file", type=str, required=True, help="Path to gamma_lang.json")
     parser.add_argument("--n_initial", type=int, default=3, help="Initial pivot languages")
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
@@ -465,6 +449,7 @@ def main():
         target_lang=args.tgt_lang,
         input_dir=args.input_dir,
         output_dir=args.output_dir,
+        gamma_lang_file=args.gamma_lang_file,
         n_initial=args.n_initial,
         max_evaluations=args.max_evaluations,
         random_state=args.random_state
