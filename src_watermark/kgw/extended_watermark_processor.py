@@ -308,9 +308,11 @@ class WatermarkDetector(WatermarkBase):
 
         return output_dict
 
-    def _compute_z_score(self, observed_count, T):
+    def _compute_z_score(self, observed_count, T, gamma_override=None):
         # count refers to number of green tokens, T is total number of tokens
-        expected_count = self.gamma
+        # gamma_override allows using a language-specific γ (e.g., γ_lang) for the
+        # z-score formula while keeping the green list based on the original γ.
+        expected_count = gamma_override if gamma_override is not None else self.gamma
         numer = observed_count - expected_count * T
         denom = sqrt(T * expected_count * (1 - expected_count))
         z = numer / denom
