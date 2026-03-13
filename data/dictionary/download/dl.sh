@@ -1,10 +1,59 @@
-wget https://dl.fbaipublicfiles.com/arrival/dictionaries/de-en.txt
+# Download dictionaries for High-Resource Languages
 wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-de.txt
-wget https://dl.fbaipublicfiles.com/arrival/dictionaries/de-fr.txt
-wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fr-de.txt
-wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fr-en.txt
 wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-fr.txt
-wget https://dl.fbaipublicfiles.com/arrival/dictionaries/zh-en.txt
-wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-zh.txt
-wget https://dl.fbaipublicfiles.com/arrival/dictionaries/ja-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-es.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-it.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-pt.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/de-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/de-fr.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/de-es.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/de-it.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/de-pt.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fr-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fr-de.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fr-es.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fr-it.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fr-pt.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/es-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/es-de.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/es-fr.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/es-it.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/es-pt.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/it-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/it-de.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/it-fr.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/it-es.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/it-pt.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/pt-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/pt-de.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/pt-fr.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/pt-es.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/pt-it.txt
+
+# Download dictionaries for Medium-Resource Languages
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-pl.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-nl.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-ru.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-hi.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-ko.txt
 wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-ja.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/pl-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/nl-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/ru-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/hi-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/ko-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/ja-en.txt
+
+# Download dictionaries for Low-Resource Languages
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-bn.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-fa.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-vi.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-he.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-uk.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/en-ta.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/bn-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/fa-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/vi-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/he-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/uk-en.txt
+wget https://dl.fbaipublicfiles.com/arrival/dictionaries/ta-en.txt

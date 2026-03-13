@@ -19,18 +19,9 @@ echo "✅ Python 3.10 installed."
 # Create virtual environment
 echo "📦 Creating virtual environment with Python 3.10..."
 python3.10 -m venv .venv
-source .venv/bin/activate
 
-# Confirm Python version
-echo "🐍 Using Python version: $(python --version)"
-
-# Install requirements
-echo "📥 Installing required Python packages..."
-pip install --upgrade pip
-pip install -r requirements.txt
-pip install python-dotenv
-pip install bitsandbytes
-pip install deep-translator
-
+sudo apt update
+sudo apt install -y nvidia-driver-525
+sudo reboot
 
 echo "✅ Environment setup complete!"

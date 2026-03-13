@@ -1,116 +1,200 @@
+#!/usr/bin/env python3
+# ------------------------------------------------------------------
+# translation_attack_grid.py
+# ------------------------------------------------------------------
 import os
 import json
-import numpy as np
+import math
+import argparse
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from scipy import interpolate
+from matplotlib.patches import FancyBboxPatch
+from scipy.interpolate import interp1d
 from sklearn.metrics import roc_curve, auc
-import seaborn as sns
-import argparse
 
-# ─── Global Style ─────────────────────────────────────────────────────────────
-sns.set(style="whitegrid", context="notebook", palette="colorblind")
-plt.rc('font', size=18)
-plt.rc('axes', labelsize=18)
+# ────────────────────────────────────────────────────────────────
+# global style  (Times / Computer-Modern look)
 plt.rcParams.update({
     "font.family": "serif",
-    "font.serif": ["Times New Roman", "Computer Modern Roman"],
-    "mathtext.fontset": "cm",
-    "axes.labelsize": 12,
-    "font.size": 13,
+    "font.size": 14,
+    "axes.labelsize": 16,
+    "axes.titlesize": 16,
+    "xtick.labelsize": 12,
+    "ytick.labelsize": 12,
+    "axes.linewidth": 1.1,
+    "grid.color": "grey",
+    "grid.alpha": 0.4,
+    "grid.linestyle": "--",
 })
 
-# ─── Helpers ──────────────────────────────────────────────────────────────────
-def tpr_at_fpr(fpr, tpr, fpr_target=0.1):
-    interp = interpolate.interp1d(fpr, tpr, kind="linear", fill_value="extrapolate")
-    return float(interp(fpr_target))
+# colours for the three seeds
+SEED_COL = {"0": "C0", "42": "C1", "123": "C2"}
 
+# ────────────────────────────────────────────────────────────────
 def load_zscores(path):
-    scores = []
-    with open(path, 'r') as f:
-        for line in f:
-            data = json.loads(line)
-            z = data.get("z_score")
-            if z is not None:
-                scores.append(float(z))
-            else:
-                # fallback if the file is just numbers
-                scores.append(float(data))
-    return scores
+    """Return a list of floats (z-scores) from a jsonl file."""
+    with open(path) as f:
+        return [
+            float(json.loads(line)["z_score"]) if "z_score" in line else float(line)
+            for line in f
+        ]
 
-# ─── Plotting ────────────────────────────────────────────────────────────────
-def plot_all_langs_grid(model_abbr, seeds, base_dir, out_path, tgt_langs):
-    # assign one distinct color per seed
-    seed_colors = {"0":"C0","42":"C1","123":"C2"}
+def tpr_at_fpr(fpr, tpr, target=0.1):
+    return float(interp1d(fpr, tpr, kind="linear", fill_value="extrapolate")(target))
 
-    # grid: 2 rows × 4 cols
-    fig, axs = plt.subplots(2, 4, figsize=(16, 8), sharex=True, sharey=True)
+# ────────────────────────────────────────────────────────────────
+def plot_all_langs_grid(model_abbr, seeds, base_dir, out_png, tgt_langs):
+    # grid: 5 columns, rows auto
+    n_col, n_lang = 5, len(tgt_langs)
+    n_row = math.ceil(n_lang / n_col)
+    fig, axs = plt.subplots(
+        n_row,
+        n_col,
+        figsize=(3.2 * n_col, 3.2 * n_row),
+        sharex=True,
+        sharey=True,
+    )
     axs = axs.flatten()
 
-    for i, lang in enumerate(tgt_langs):
-        ax = axs[i]
-        for seed in seeds:
-            inp = os.path.join(base_dir, model_abbr, f"xsir_seed{seed}")
-            hum = os.path.join(inp, "mc4.en.hum.z_score.jsonl")
-            atk = os.path.join(inp, f"mc4.en-{lang}.mod.z_score.jsonl")
+    for idx, lang in enumerate(tgt_langs):
+        ax = axs[idx]
+
+        auc_rows, tpr_rows = [], []
+
+        # ── draw ROC curves for each seed ──────────────────────
+        for s in seeds:
+            subdir = os.path.join(base_dir, model_abbr, f"xsir_seed{s}")
+            hum = os.path.join(subdir, "mc4.en.hum.z_score.jsonl")
+            atk = os.path.join(subdir, f"mc4.en-{lang}.mod.z_score.jsonl")
             if not (os.path.exists(hum) and os.path.exists(atk)):
                 continue
 
-            h_scores = load_zscores(hum)
-            a_scores = load_zscores(atk)
-            y_true  = [0]*len(h_scores) + [1]*len(a_scores)
-            y_score = h_scores + a_scores
+            h = load_zscores(hum)
+            a = load_zscores(atk)
+            y_true = [0] * len(h) + [1] * len(a)
+            y_score = h + a
 
             fpr, tpr, _ = roc_curve(y_true, y_score)
-            auc_v = auc(fpr, tpr)
-            tpr_m = tpr_at_fpr(fpr, tpr, 0.1)
+            auc_val = auc(fpr, tpr)
+            tpr_val = tpr_at_fpr(fpr, tpr)
 
-            c = seed_colors[seed]
-            ax.plot(fpr, tpr,
-                    color=c, lw=2.5,
-                    label=f"seed {seed} (AUC {auc_v:.3f})")
-            ax.plot(0.1, tpr_m,
-                    color=c, marker='o', ms=6,
-                    mfc='white', mec=c, mew=2)
+            col = SEED_COL[s]
+            ax.plot(fpr, tpr, lw=2.2, color=col)
+            ax.plot(0.1, tpr_val, marker="o", ms=6, mfc="white", mew=2, color=col)
 
-        # style each subplot
-        ax.axvline(0.1, color='gray', alpha=0.3, lw=1.2)
-        ax.grid(axis='y', linestyle="--", alpha=0.4)
-        ax.set_xlim(0,1); ax.set_ylim(0,1)
-        ax.set_title(f"{lang}", fontsize=14)
-        if i>=4:  ax.set_xlabel("FPR")
-        if i%4==0: ax.set_ylabel("TPR")
+            auc_rows.append((s, auc_val))
+            tpr_rows.append((s, tpr_val))
 
-    # hide the extra (8th) subplot
-    axs[-1].axis('off')
+        # ── axis cosmetics ────────────────────────────────────
+        ax.axvline(0.1, lw=1, color="grey", alpha=0.3)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.set_title(lang)
+        if idx // n_col == n_row - 1:
+            ax.set_xlabel("FPR")
+        if idx % n_col == 0:
+            ax.set_ylabel("TPR")
 
-    # shared legend at bottom
-    handles = [Line2D([0],[0],color=seed_colors[s],lw=2.5) for s in seeds]
-    labels  = [f"seed {s}" for s in seeds]
-    fig.legend(handles, labels,
-               loc='center', ncol=len(seeds),
-               frameon=True, fontsize=16, bbox_to_anchor=(0.5, 0.02))
+        # ── inset white box  ----------------------------------
+        ix, iy, iw, ih = 0.62, 0.04, 0.33, 0.42  # position & size
+        ax.add_patch(
+            FancyBboxPatch(
+                (ix, iy),
+                iw,
+                ih,
+                boxstyle="round,pad=0.25",
+                fc="white",
+                ec="black",
+                lw=0.8,
+                transform=ax.transAxes,
+                zorder=2,
+            )
+        )
 
-    # fig.suptitle(f"Translation‐attack ROC curves on {model_abbr}", fontsize=16, y=0.98)
-    plt.tight_layout(rect=[0,0.05,1,0.95])
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    fig.savefig(out_path, dpi=300, bbox_inches='tight')
+        # monospace font so decimals align
+        def add_text(x, y, txt, **kw):
+            ax.text(x, y, txt, transform=ax.transAxes, fontfamily="monospace", **kw)
+
+        # headers
+        add_text(ix + 0.04, iy + ih - 0.08, "AUC", fontsize=10, fontweight="bold", ha="left", va="top")
+        add_text(ix + 0.04, iy + ih - 0.26, "TPR", fontsize=10, fontweight="bold", ha="left", va="top")
+
+        # draw three rows under AUC
+        row_y = iy + ih - 0.14
+        for s, v in sorted(auc_rows, key=lambda x: int(x[0])):
+            col = SEED_COL[s]
+            # tiny dash
+            ax.plot(
+                [ix + 0.02, ix + 0.035],
+                [row_y, row_y],
+                transform=ax.transAxes,
+                color=col,
+                lw=2,
+                solid_capstyle="butt",
+            )
+            add_text(ix + 0.04, row_y, f"{v:0.3f}", color=col, ha="left", va="center", fontsize=9)
+            row_y -= 0.07
+
+        # draw three rows under TPR
+        row_y = iy + ih - 0.34
+        for s, v in sorted(tpr_rows, key=lambda x: int(x[0])):
+            col = SEED_COL[s]
+            ax.plot(
+                [ix + 0.02, ix + 0.035],
+                [row_y, row_y],
+                transform=ax.transAxes,
+                color=col,
+                lw=2,
+                solid_capstyle="butt",
+            )
+            add_text(ix + 0.04, row_y, f"{v:0.3f}", color=col, ha="left", va="center", fontsize=9)
+            row_y -= 0.07
+
+    # hide unused axes
+    for j in range(idx + 1, len(axs)):
+        axs[j].set_visible(False)
+
+    # global legend strip
+    handles = [
+        Line2D(
+            [0], [0],
+            color=SEED_COL[s],
+            lw=2.2,
+            marker="o",
+            ms=6,
+            mfc="white",
+            mew=2,
+        )
+        for s in seeds
+    ]
+    labels = [f"seed {s}" for s in seeds]
+    fig.legend(handles, labels, loc="upper center", ncol=len(seeds),
+               frameon=True, fontsize=13, bbox_to_anchor=(0.5, 1.02))
+
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    os.makedirs(os.path.dirname(out_png), exist_ok=True)
+    fig.savefig(out_png, dpi=400, bbox_inches="tight")
     plt.close(fig)
 
-# ─── CLI ─────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    p = argparse.ArgumentParser()
-    p.add_argument("--model_abbr", type=str, required=True)
-    p.add_argument("--base_dir",   type=str, required=True)
-    p.add_argument("--output",     type=str, required=True)
-    args = p.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_abbr", required=True)
+    parser.add_argument("--base_dir",   required=True)
+    parser.add_argument("--output",     required=True)
+    args = parser.parse_args()
 
-    SEEDS     = ["0","42","123"]
-    LANGS     = ["it","es","pt","tr","ar","sw","am"]
+    SEEDS = ["0", "42", "123"]
+    LANGS = [
+        "fr","de","it","es","pt",
+        "pl","nl","ru","hi","ko","ja",
+        "bn","fa","vi","iw","uk","ta"
+    ]
+
     plot_all_langs_grid(
         args.model_abbr,
         SEEDS,
         args.base_dir,
         args.output,
-        LANGS
+        LANGS,
     )

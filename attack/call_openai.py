@@ -21,11 +21,11 @@ def api_endpoint_from_url(request_url):
     """Extract the API endpoint from the request URL."""
     match = re.search("^https://[^/]+/v\\d+/(.+)$", request_url)
     if match is None:
-        # for Azure OpenAI deployment urls
-        match = re.search(
-            r"^https://[^/]+/openai/deployments/[^/]+/(.+?)(\?|$)", request_url
-        )
-    return match[1]
+        match = re.search(r"^https://[^/]+/openai/deployments/[^/]+/(.+?)(\?|$)", request_url)
+    if match:
+        return match[1]
+    # fallback for simple URLs like https://api.deepseek.com/chat/completions
+    return request_url.split("https://")[-1].split("/", 1)[-1]
 
 def task_id_generator_function():
     """Generate integers 0, 1, 2, and so on."""
@@ -40,7 +40,7 @@ def num_tokens_consumed_from_request(
     model: str,
 ):
     """Count the number of tokens in the request. Only supports completion and embedding requests."""
-    encoding = tiktoken.encoding_for_model(model)
+    encoding = tiktoken.get_encoding("cl100k_base")
     # if completions request, tokens = prompt + n * max_tokens
     if api_endpoint.endswith("completions"):
         max_tokens = request_json.get("max_tokens", 15)
