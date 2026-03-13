@@ -50,8 +50,9 @@ def get_watermark_detector(base_model: str, **kwargs):
 
     return KGWDetector(
         vocab=list(tokenizer.get_vocab().values()),
-        gamma=kwargs.get('gamma', 0.5),
-        seeding_scheme=kwargs.get('seeding_scheme', 'simple_1'),
+        gamma=kwargs.get('gamma', 0.25),
+        seed=kwargs.get('seed', 0),
+        seeding_scheme=kwargs.get('seeding_scheme', 'minhash'),
         device=device,
         tokenizer=tokenizer,
         z_threshold=kwargs.get('z_threshold', 4.0),
@@ -87,19 +88,23 @@ class STEAMBODetector:
         self.max_evaluations = max_evaluations
         self.random_state = random_state
 
-        # Load γ_lang values (language-specific green token fractions)
-        with open(gamma_lang_file, 'r') as f:
-            self._gamma_lang_data = json.load(f)
-        logging.info(f"Loaded γ_lang for {len(self._gamma_lang_data)} languages from {gamma_lang_file}")
-
-        # Setup logging
+        # Setup logging first so all messages are visible
         logging.basicConfig(level=logging.INFO,
                           format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
+        # Load γ_lang values (language-specific green token fractions)
+        print("Loading gamma_lang file...")
+        with open(gamma_lang_file, 'r') as f:
+            self._gamma_lang_data = json.load(f)
+        self.logger.info(f"Loaded γ_lang for {len(self._gamma_lang_data)} languages from {gamma_lang_file}")
+
         # Initialize components
+        print("Initializing backtranslator...")
         self.backtranslator = RealtimeBacktranslator()
+        print("Initializing language features...")
         self.lang_features = LanguageFeatures(feature_sets=['syntax_knn', 'phonology_knn'])
+        print("Language features loaded.")
 
         # Convert target language to ISO-3 for URIEL
         self.target_lang_iso3 = self._normalize_to_iso3(target_lang)
@@ -125,12 +130,13 @@ class STEAMBODetector:
         self.logger.info(f"Available pivot languages: {len(self.available_pivots)} (from {len(supported_iso1)} supported)")
 
         # Pre-compute feature vectors for all pivot languages
+        print(f"Pre-computing feature vectors for {len(self.available_pivots)} pivots...")
         self._feature_vectors = {}
         for lang in self.available_pivots:
             self._feature_vectors[lang] = self.lang_features.get_feature_vector(lang)
 
         self.feature_dim = len(next(iter(self._feature_vectors.values())))
-        self.logger.info(f"Language feature vectors: {self.feature_dim} dimensions")
+        print(f"Feature vectors ready: {self.feature_dim} dimensions")
 
         # Setup output directory
         os.makedirs(output_dir, exist_ok=True)

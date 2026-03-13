@@ -13,10 +13,10 @@ set -e
 BASE_MODEL="CohereForAI/aya-23-8B"
 MODEL_ABBR="aya-23-8B"
 N_INITIAL=3
-MAX_EVALUATIONS=15
+MAX_EVALUATIONS=20
 NUM_TEXTS=500
 
-TARGET_LANGS=("fr" "de" "es" "it" "pt" "nl" "pl" "ru" "hi" "ko" "ja" "bn" "fa" "vi" "iw" "uk" "ta")
+TARGET_LANGS=("bn" "fa" "vi" "iw" "uk" "ta")
 
 # Directories
 INPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0"
