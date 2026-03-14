@@ -399,8 +399,22 @@ class STEAMBODetector:
         mod_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.z_score.jsonl")
         hum_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.hum.z_score.jsonl")
 
-        with open(mod_output, 'w') as f_mod, open(hum_output, 'w') as f_hum:
+        # Resume: count existing lines in output files
+        start_idx = 0
+        if os.path.exists(mod_output) and os.path.exists(hum_output):
+            with open(mod_output, 'r') as f:
+                start_idx = sum(1 for _ in f)
+            # Verify human file has same count
+            with open(hum_output, 'r') as f:
+                hum_count = sum(1 for _ in f)
+            start_idx = min(start_idx, hum_count)
+            if start_idx > 0:
+                self.logger.info(f"Resuming from text {start_idx} ({start_idx} already processed)")
+
+        with open(mod_output, 'a') as f_mod, open(hum_output, 'a') as f_hum:
             for i, item in enumerate(mod_data):
+                if i < start_idx:
+                    continue
                 text_content = item.get('response', '')
                 prompt = item.get('prompt', '')
 
