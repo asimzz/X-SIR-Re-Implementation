@@ -31,6 +31,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 
 # Import your existing components
 from realtime_backtranslation import RealtimeBacktranslator
+from realtime_deepseek_backtranslation import RealtimeDeepseekTranslator
 from language_features import LanguageFeatures
 from language_code_converter import iso3_to_iso1, iso1_to_iso3, is_valid_iso3
 from utils import read_jsonl
@@ -79,7 +80,8 @@ class STEAMBODetector:
                  gamma_lang_file: str,
                  n_initial: int = 3,
                  max_evaluations: int = 15,
-                 random_state: int = 42):
+                 random_state: int = 42,
+                 translator: str = "google"):
         self.watermark_detector = watermark_detector
         self.target_lang = target_lang
         self.input_dir = input_dir
@@ -99,9 +101,12 @@ class STEAMBODetector:
             self._gamma_lang_data = json.load(f)
         self.logger.info(f"Loaded γ_lang for {len(self._gamma_lang_data)} languages from {gamma_lang_file}")
 
-        # Initialize components
-        print("Initializing backtranslator...")
-        self.backtranslator = RealtimeBacktranslator()
+        # Initialize backtranslator based on selected translator
+        print(f"Initializing backtranslator ({translator})...")
+        if translator == "deepseek":
+            self.backtranslator = RealtimeDeepseekTranslator()
+        else:
+            self.backtranslator = RealtimeBacktranslator()
         print("Initializing language features...")
         self.lang_features = LanguageFeatures(feature_sets=['syntax_knn', 'phonology_knn'])
         print("Language features loaded.")
@@ -373,31 +378,35 @@ class STEAMBODetector:
             'response': translated_text
         }
 
-    def run(self, num_texts: int = 500) -> str:
+    def run(self, num_texts: int = 500, input_mod: str = None,
+            input_hum: str = None, output_prefix: str = None) -> str:
         """
         Run STEAM BO on watermarked texts, then apply the selected pivot
         to corresponding human texts.
 
-        Produces:
-          - mc4.{target_lang}.bo.z_score.jsonl      (watermarked, BO-optimized)
-          - mc4.{target_lang}.bo.hum.z_score.jsonl   (human, matched pivot)
+        Args:
+            num_texts: Number of texts to process
+            input_mod: Override watermarked input file path
+            input_hum: Override human input file path
+            output_prefix: Override output prefix (e.g. 'en-de.gpt4o' -> mc4.en-de.gpt4o.bo.z_score.jsonl)
         """
         self.logger.info(f"Starting STEAM BO for {num_texts} texts")
 
         # Load watermarked texts
-        mod_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
+        mod_file = input_mod or os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
         if not os.path.exists(mod_file):
             raise FileNotFoundError(f"Input file not found: {mod_file}")
         mod_data = read_jsonl(mod_file)[:num_texts]
 
         # Load corresponding human texts
-        hum_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
+        hum_file = input_hum or os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
         if not os.path.exists(hum_file):
             raise FileNotFoundError(f"Human text file not found: {hum_file}")
         hum_data = read_jsonl(hum_file)[:num_texts]
 
-        mod_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.z_score.jsonl")
-        hum_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.hum.z_score.jsonl")
+        prefix = output_prefix or self.target_lang
+        mod_output = os.path.join(self.output_dir, f"mc4.{prefix}.bo.z_score.jsonl")
+        hum_output = os.path.join(self.output_dir, f"mc4.{prefix}.bo.hum.z_score.jsonl")
 
         # Resume: count existing lines in output files
         start_idx = 0
@@ -459,6 +468,14 @@ def main():
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed")
+    parser.add_argument("--translator", type=str, default="google", choices=["google", "deepseek"],
+                        help="Translator for back-translation (default: google)")
+    parser.add_argument("--input_mod", type=str, default=None,
+                        help="Override watermarked input file path")
+    parser.add_argument("--input_hum", type=str, default=None,
+                        help="Override human input file path")
+    parser.add_argument("--output_prefix", type=str, default=None,
+                        help="Override output prefix (e.g. en-de.gpt4o)")
 
     args = parser.parse_args()
 
@@ -472,10 +489,16 @@ def main():
         gamma_lang_file=args.gamma_lang_file,
         n_initial=args.n_initial,
         max_evaluations=args.max_evaluations,
-        random_state=args.random_state
+        random_state=args.random_state,
+        translator=args.translator
     )
 
-    output_file = steam_detector.run(num_texts=args.num_texts)
+    output_file = steam_detector.run(
+        num_texts=args.num_texts,
+        input_mod=args.input_mod,
+        input_hum=args.input_hum,
+        output_prefix=args.output_prefix
+    )
     print(f"\nOutput: {output_file}")
 
 
