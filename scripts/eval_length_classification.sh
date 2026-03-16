@@ -24,25 +24,25 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("kgw")
 TGT_LANGS=(
     # High-resource languages
-    # "fr" # French
+    "fr" # French
     "de" # German
-    # "it" # Italian
+    "it" # Italian
     "es" # Spanish
-    # "pt" # Portuguese
+    "pt" # Portuguese
     # Medium-resource languages
-    # "pl" # Polish
-    # "nl" # Dutch
+    "pl" # Polish
+    "nl" # Dutch
     "ru" # Russian
     "hi" # Hindi
-    # "ko" # Korean
+    "ko" # Korean
     "ja" # Japanese
     # Low-resource languages
     "bn" # Bengali
     "fa" # Persian
-    # "vi" # Vietnamese
+    "vi" # Vietnamese
     "iw" # Hebrew
-    # "uk" # Ukrainian
-    # "ta" # Tamil
+    "uk" # Ukrainian
+    "ta" # Tamil
     )
 SEEDS=(0)
 
