@@ -73,8 +73,8 @@ TGT_LANGS=(
 )
 
 PVT_LANGS=(
-    # "de" # German
-    # "ko" # Korean
+    "de" # German
+    "ko" # Korean
     "bn" # Bengali
 )
 

@@ -373,31 +373,32 @@ class STEAMBODetector:
             'response': translated_text
         }
 
-    def run(self, num_texts: int = 500) -> str:
+    def run(self, num_texts: int = 500, input_mod: str = None, input_hum: str = None, output_prefix: str = None) -> str:
         """
         Run STEAM BO on watermarked texts, then apply the selected pivot
         to corresponding human texts.
 
         Produces:
-          - mc4.{target_lang}.bo.z_score.jsonl      (watermarked, BO-optimized)
-          - mc4.{target_lang}.bo.hum.z_score.jsonl   (human, matched pivot)
+          - mc4.{prefix}.bo.z_score.jsonl      (watermarked, BO-optimized)
+          - mc4.{prefix}.bo.hum.z_score.jsonl   (human, matched pivot)
         """
         self.logger.info(f"Starting STEAM BO for {num_texts} texts")
 
         # Load watermarked texts
-        mod_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
+        mod_file = input_mod or os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
         if not os.path.exists(mod_file):
             raise FileNotFoundError(f"Input file not found: {mod_file}")
         mod_data = read_jsonl(mod_file)[:num_texts]
 
         # Load corresponding human texts
-        hum_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
+        hum_file = input_hum or os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
         if not os.path.exists(hum_file):
             raise FileNotFoundError(f"Human text file not found: {hum_file}")
         hum_data = read_jsonl(hum_file)[:num_texts]
 
-        mod_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.z_score.jsonl")
-        hum_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.hum.z_score.jsonl")
+        prefix = output_prefix or self.target_lang
+        mod_output = os.path.join(self.output_dir, f"mc4.{prefix}.bo.z_score.jsonl")
+        hum_output = os.path.join(self.output_dir, f"mc4.{prefix}.bo.hum.z_score.jsonl")
 
         # Resume: count existing lines in output files
         start_idx = 0
@@ -459,6 +460,9 @@ def main():
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed")
+    parser.add_argument("--input_mod", type=str, default=None, help="Override watermarked input file path")
+    parser.add_argument("--input_hum", type=str, default=None, help="Override human input file path")
+    parser.add_argument("--output_prefix", type=str, default=None, help="Override output prefix (e.g. fr-de-pivot)")
 
     args = parser.parse_args()
 
@@ -475,7 +479,12 @@ def main():
         random_state=args.random_state
     )
 
-    output_file = steam_detector.run(num_texts=args.num_texts)
+    output_file = steam_detector.run(
+        num_texts=args.num_texts,
+        input_mod=args.input_mod,
+        input_hum=args.input_hum,
+        output_prefix=args.output_prefix
+    )
     print(f"\nOutput: {output_file}")
 
 
