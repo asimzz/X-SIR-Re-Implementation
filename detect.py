@@ -87,9 +87,16 @@ def main(args):
                     raise e
             z_score = detect_res["z_score"]
             biases = detect_res["biases"] if "biases" in detect_res else None
+            num_green_tokens = detect_res.get("num_green_tokens")
+            num_tokens_scored = detect_res.get("num_tokens_scored")
             if is_nan(z_score):
                 z_score = None
-            append_jsonl(args.output_file, {"z_score": z_score, "prompt": dd["prompt"], "response": dd["response"], "biases": biases})
+            output = {"z_score": z_score, "prompt": dd["prompt"], "response": dd["response"], "biases": biases}
+            if num_green_tokens is not None:
+                output["num_green_tokens"] = int(num_green_tokens) if not is_nan(num_green_tokens) else None
+            if num_tokens_scored is not None:
+                output["num_tokens_scored"] = int(num_tokens_scored) if not is_nan(num_tokens_scored) else None
+            append_jsonl(args.output_file, output)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Compare the z-scores of strings in detect_file.')
