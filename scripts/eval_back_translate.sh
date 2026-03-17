@@ -17,25 +17,25 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("kgw")
 TGT_LANGS=(
     # High-resource languages
-    "fr"
-    "de"
-    "it"
-    "es"
-    "pt"
+    # "fr" # French
+    "de" # German
+    # "it" # Italian
+    # "es" # Spanish
+    # "pt" # Portuguese
     # Medium-resource languages
-    "pl"
-    "nl"
-    "ru"
-    "hi"
-    "ko"
-    "ja"
+    # "pl" # Polish
+    # "nl" # Dutch
+    # "ru" # Russian
+    "hi" # Hindi
+    # "ko" # Korean
+    # "ja" # Japanese
     # Low-resource languages
-    "bn"
-    "fa"
-    "vi"
+    # "bn" # Bengali
+    # "fa" # Persian
+    # "vi" # Vietnamese
     "iw" # Hebrew
-    "uk"
-    "ta"
+    # "uk" # Ukrainian
+    # "ta" # Tamil
     )
 SEEDS=(0)
 
@@ -53,19 +53,19 @@ for i in "${!MODEL_NAMES[@]}"; do
 
             WATERMARK_DIR=$GEN_DIR/$MODEL_ABBR/${WATERMARK_METHOD}_seed${SEED}
 
-            echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) No-attack"
-            python3 $WORK_DIR/eval_detection.py \
-                --hm_zscore $WATERMARK_DIR/mc4.en.hum.z_score.jsonl \
-                --wm_zscore $WATERMARK_DIR/mc4.en.mod.z_score.jsonl
+            # echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) No-attack"
+            # python3 $WORK_DIR/eval_detection.py \
+            #     --hm_zscore $WATERMARK_DIR/mc4.en.hum.z_score.jsonl \
+            #     --wm_zscore $WATERMARK_DIR/mc4.en.mod.z_score.jsonl
 
             echo "======================================="
 
             for TGT_LANG in "${TGT_LANGS[@]}"; do                
-                echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
+                # echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
 
-                python3 $WORK_DIR/eval_detection.py \
-                    --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
+                # python3 $WORK_DIR/eval_detection.py \
+                #     --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
+                #     --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
 
                 # echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Back-Translation without Normalization ($TGT_LANG)"
                 # python3 $WORK_DIR/back_eval_detection.py \

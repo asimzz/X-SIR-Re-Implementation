@@ -10,25 +10,25 @@ import json
 ORG_LANGS = [
         "en", # English
         # High-resource languages
-        "fr", # French
+        # "fr", # French
         "de", # German
-        "it", # Italian
-        "es", # Spanish
-        "pt", # Portuguese
+        # "it", # Italian
+        # "es", # Spanish
+        # "pt", # Portuguese
         # Medium-resource languages
-        "pl", # Polish
-        "nl", # Dutch
-        "ru", # Russian
+        # "pl", # Polish
+        # "nl", # Dutch
+        # "ru", # Russian
         "hi", # Hindi
-        "ko", # Korean
-        "ja", # Japanese
+        # "ko", # Korean
+        # "ja", # Japanese
         # Low-resource languages
-        "bn", # Bengali
-        "fa", # Persian
-        "vi", # Vietnamese
+        # "bn", # Bengali
+        # "fa", # Persian
+        # "vi", # Vietnamese
         "iw", # Hebrew
-        "uk", # Ukrainian
-        "ta", # Tamil
+        # "uk", # Ukrainian
+        # "ta", # Tamil
     ]
 
 
@@ -84,7 +84,7 @@ def main(args):
         if lang == tgt_lang:
             continue
         hum_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.hum.z_score.jsonl"
-        wm_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.deepseek.z_score.jsonl"
+        wm_zscore_file = args.base_wm_dir + f"/mc4.{tgt_lang}-{lang}-back.gpt4o.z_score.jsonl"
         hum_list = read_jsonl(hum_zscore_file)
         wm_list = read_jsonl(wm_zscore_file)
         if len(hum_list) != len(wm_list):
