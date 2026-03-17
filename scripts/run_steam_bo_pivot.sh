@@ -16,7 +16,7 @@ GAMMA_LANG_FILE="$INPUT_DIR/gamma_lang.json"
 
 # BO settings
 N_INITIAL=3
-MAX_EVALUATIONS=15
+MAX_EVALUATIONS=20
 NUM_TEXTS=500
 
 # 17 target languages (first step of attack)
