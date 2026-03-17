@@ -32,6 +32,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 # Import your existing components
 from realtime_backtranslation import RealtimeBacktranslator
 from realtime_deepseek_backtranslation import RealtimeDeepseekTranslator
+from realtime_openai_backtranslation import RealtimeOpenAITranslator
 from language_features import LanguageFeatures
 from language_code_converter import iso3_to_iso1, iso1_to_iso3, is_valid_iso3
 from utils import read_jsonl
@@ -105,6 +106,8 @@ class STEAMBODetector:
         print(f"Initializing backtranslator ({translator})...")
         if translator == "deepseek":
             self.backtranslator = RealtimeDeepseekTranslator()
+        elif translator == "gpt4o":
+            self.backtranslator = RealtimeOpenAITranslator()
         else:
             self.backtranslator = RealtimeBacktranslator()
         print("Initializing language features...")
@@ -468,7 +471,7 @@ def main():
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed")
-    parser.add_argument("--translator", type=str, default="google", choices=["google", "deepseek"],
+    parser.add_argument("--translator", type=str, default="google", choices=["google", "deepseek", "gpt4o"],
                         help="Translator for back-translation (default: google)")
     parser.add_argument("--input_mod", type=str, default=None,
                         help="Override watermarked input file path")
