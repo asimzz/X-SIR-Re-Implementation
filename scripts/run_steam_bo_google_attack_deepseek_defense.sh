@@ -30,9 +30,9 @@ for TGT_LANG in "${TARGET_LANGS[@]}"; do
         --max_evaluations "$MAX_EVALUATIONS" \
         --num_texts "$NUM_TEXTS" \
         --translator deepseek \
-        --input_mod "${GEN_DIR}/mc4.en-${TGT_LANG}.deepseek.jsonl" \
+        --input_mod "${GEN_DIR}/mc4.en-${TGT_LANG}.mod.jsonl" \
         --input_hum "${GEN_DIR}/mc4.en-${TGT_LANG}.hum.jsonl" \
-        --output_prefix "deepseek.deepseek.${TGT_LANG}"
+        --output_prefix "google.deepseek.${TGT_LANG}"
 
     echo ""
 done

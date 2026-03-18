@@ -1,5 +1,5 @@
 #!/bin/bash
-# Attacker-Defender Matched: Attack=DeepSeek, Defense=DeepSeek
+# Attacker-Defender Mismatch: Attack=DeepSeek, Defense=GPT-4o-mini
 set -e
 
 BASE_MODEL="CohereForAI/aya-23-8B"
@@ -8,7 +8,7 @@ N_INITIAL=3
 MAX_EVALUATIONS=20
 NUM_TEXTS=500
 
-TARGET_LANGS=("iw")
+TARGET_LANGS=("hi")
 
 GEN_DIR="gen/${MODEL_ABBR}/kgw_seed0"
 GAMMA_LANG_FILE="${GEN_DIR}/gamma_lang.json"
@@ -18,7 +18,7 @@ if [[ -n "$1" ]]; then
 fi
 
 for TGT_LANG in "${TARGET_LANGS[@]}"; do
-    echo "=== DeepSeek attack / DeepSeek defense: $TGT_LANG ==="
+    echo "=== DeepSeek attack / GPT-4o-mini defense: $TGT_LANG ==="
 
     python3 steam_bo_detector.py \
         --base_model "$BASE_MODEL" \
@@ -29,10 +29,10 @@ for TGT_LANG in "${TARGET_LANGS[@]}"; do
         --n_initial "$N_INITIAL" \
         --max_evaluations "$MAX_EVALUATIONS" \
         --num_texts "$NUM_TEXTS" \
-        --translator deepseek \
-        --input_mod "${GEN_DIR}/mc4.en-${TGT_LANG}.deepseek.jsonl" \
+        --translator gpt4o \
+        --input_mod "${GEN_DIR}/mc4.en-${TGT_LANG}.mod.jsonl" \
         --input_hum "${GEN_DIR}/mc4.en-${TGT_LANG}.hum.jsonl" \
-        --output_prefix "deepseek.deepseek.${TGT_LANG}"
+        --output_prefix "google.gpt4o.${TGT_LANG}"
 
     echo ""
 done
