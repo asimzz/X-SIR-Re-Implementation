@@ -25,7 +25,6 @@ da
 dv
 doi
 nl
-en
 eo
 et
 ee
