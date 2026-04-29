@@ -13,15 +13,15 @@ TRANSFORM_MODEL=$WORK_DIR/data/model/transform_model_x-sbert.pth
 EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
 
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
+    # "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
-    "LLaMAX/LLaMAX3-8B"
+    # "LLaMAX/LLaMAX3-8B"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
+    # "llama-3.2-1B"
     "aya-23-8B"
-    "llamax3-8B"
+    # "llamax3-8B"
 )
 
 WATERMARK_METHODS=("xsir")
