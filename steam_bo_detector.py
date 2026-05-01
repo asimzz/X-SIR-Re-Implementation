@@ -61,6 +61,39 @@ def get_watermark_detector(base_model: str, **kwargs):
     )
 
 
+def _count_complete_lines_and_truncate(path: str) -> int:
+    """Return the number of complete (newline-terminated) lines in a JSONL file.
+
+    If a trailing partial line is present (interrupted mid-write), the file is
+    rewritten to drop it so subsequent appends produce valid JSONL.
+    """
+    if not os.path.exists(path):
+        return 0
+    with open(path, 'rb') as f:
+        data = f.read()
+    if not data:
+        return 0
+    parts = data.split(b'\n')
+    # If file ends in '\n', the final element is b'' → no partial line.
+    complete = parts[:-1]
+    if parts[-1] != b'':
+        with open(path, 'wb') as f:
+            f.write(b'\n'.join(complete) + (b'\n' if complete else b''))
+    return len(complete)
+
+
+def _truncate_to_n_lines(path: str, n: int) -> None:
+    """Rewrite `path` to contain only its first `n` complete lines."""
+    if not os.path.exists(path):
+        return
+    with open(path, 'rb') as f:
+        data = f.read()
+    parts = data.split(b'\n')
+    keep = parts[:n]
+    with open(path, 'wb') as f:
+        f.write(b'\n'.join(keep) + (b'\n' if keep else b''))
+
+
 class STEAMBODetector:
     """
     Per-Text STEAM BO Detector for optimal pivot language selection.
@@ -399,17 +432,29 @@ class STEAMBODetector:
         mod_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.z_score.jsonl")
         hum_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.hum.z_score.jsonl")
 
-        # Resume: count existing lines in output files
-        start_idx = 0
-        if os.path.exists(mod_output) and os.path.exists(hum_output):
-            with open(mod_output, 'r') as f:
-                start_idx = sum(1 for _ in f)
-            # Verify human file has same count
-            with open(hum_output, 'r') as f:
-                hum_count = sum(1 for _ in f)
-            start_idx = min(start_idx, hum_count)
-            if start_idx > 0:
-                self.logger.info(f"Resuming from text {start_idx} ({start_idx} already processed)")
+        # Resume: drop any partial trailing lines, then realign the two files
+        # to a common index so appends stay in lockstep.
+        mod_count = _count_complete_lines_and_truncate(mod_output)
+        hum_count = _count_complete_lines_and_truncate(hum_output)
+        start_idx = min(mod_count, hum_count)
+        if mod_count != hum_count:
+            self.logger.warning(
+                f"Output files out of sync (mod={mod_count}, hum={hum_count}); "
+                f"truncating both to {start_idx} to realign."
+            )
+            if mod_count > start_idx:
+                _truncate_to_n_lines(mod_output, start_idx)
+            if hum_count > start_idx:
+                _truncate_to_n_lines(hum_output, start_idx)
+
+        if start_idx >= num_texts:
+            self.logger.info(
+                f"All {num_texts} texts already processed for {self.target_lang}, skipping"
+            )
+            return mod_output
+
+        if start_idx > 0:
+            self.logger.info(f"Resuming from text {start_idx} ({start_idx} already processed)")
 
         with open(mod_output, 'a') as f_mod, open(hum_output, 'a') as f_hum:
             for i, item in enumerate(mod_data):
