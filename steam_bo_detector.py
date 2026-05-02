@@ -22,7 +22,7 @@ import math
 import numpy as np
 import logging
 import argparse
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Optional, Tuple
 
 from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_mll
@@ -112,7 +112,9 @@ class STEAMBODetector:
                  gamma_lang_file: str,
                  n_initial: int = 3,
                  max_evaluations: int = 15,
-                 random_state: int = 42):
+                 random_state: int = 42,
+                 max_candidate_langs: Optional[int] = None,
+                 pool_seed: int = 42):
         self.watermark_detector = watermark_detector
         self.target_lang = target_lang
         self.input_dir = input_dir
@@ -161,6 +163,22 @@ class STEAMBODetector:
                 self.available_pivots_iso1.append(lang_iso1)
 
         self.logger.info(f"Available pivot languages: {len(self.available_pivots)} (from {len(supported_iso1)} supported)")
+
+        # Optional pool-size restriction for FPR calibration sweeps.
+        # Subsample pivots and the parallel ISO-1 list with the same indices so they stay aligned.
+        if max_candidate_langs is not None and max_candidate_langs < len(self.available_pivots):
+            rng = np.random.RandomState(pool_seed)
+            indices = rng.choice(
+                len(self.available_pivots),
+                size=max_candidate_langs,
+                replace=False,
+            ).tolist()
+            self.available_pivots = [self.available_pivots[i] for i in indices]
+            self.available_pivots_iso1 = [self.available_pivots_iso1[i] for i in indices]
+            self.logger.info(
+                f"Subsampled to {max_candidate_langs} candidate languages "
+                f"(pool_seed={pool_seed}): {self.available_pivots}"
+            )
 
         # Pre-compute feature vectors for all pivot languages
         print(f"Pre-computing feature vectors for {len(self.available_pivots)} pivots...")
@@ -504,6 +522,12 @@ def main():
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed")
+    parser.add_argument("--max_candidate_langs", type=int, default=None,
+                        help="Limit BO candidate pool to a random subset of this size "
+                             "(default: use full pool)")
+    parser.add_argument("--pool_seed", type=int, default=42,
+                        help="Seed for reproducible candidate-pool subsampling "
+                             "(only used when --max_candidate_langs is set)")
 
     args = parser.parse_args()
 
@@ -517,7 +541,9 @@ def main():
         gamma_lang_file=args.gamma_lang_file,
         n_initial=args.n_initial,
         max_evaluations=args.max_evaluations,
-        random_state=args.random_state
+        random_state=args.random_state,
+        max_candidate_langs=args.max_candidate_langs,
+        pool_seed=args.pool_seed,
     )
 
     output_file = steam_detector.run(num_texts=args.num_texts)

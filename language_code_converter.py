@@ -27,8 +27,9 @@ ISO_639_1_TO_3 = {
     'hi': 'hin',  # Hindi
     'ko': 'kor',  # Korean
     'ja': 'jpn',  # Japanese
+    'zh-TW': 'zho',  # Chinese (Traditional) - URIEL has no separate Traditional code
     'zh-CN': 'zho',  # Chinese (Mandarin) - deep_translator uses zh-CN
-    'zh': 'zho',  # Chinese (Mandarin) - fallback
+    'zh': 'zho',  # Chinese (Mandarin) - fallback (canonical ISO-1 reverse target)
     'ar': 'arb',  # Arabic (Standard) - URIEL uses 'arb'
     
     # Low-resource languages
@@ -106,11 +107,15 @@ ISO_639_1_TO_3 = {
     'ga': 'gle',  # Irish
     'co': 'cos',  # Corsican
     'mt': 'mlt',  # Maltese
-    'mn': 'khk',  # Mongolian (Halh) - URIEL uses 'khk'
 }
 
 # Reverse mapping: ISO 639-3 to ISO 639-1
 ISO_639_3_TO_1 = {v: k for k, v in ISO_639_1_TO_3.items()}
+
+# Case-insensitive lookup view. Values keep their original casing
+# (e.g. 'zh-CN') because translator backends require it; only the
+# lookup key is normalized.
+_ISO_639_1_TO_3_LOWER = {k.lower(): v for k, v in ISO_639_1_TO_3.items()}
 
 
 def iso1_to_iso3(code: str) -> str:
@@ -126,10 +131,10 @@ def iso1_to_iso3(code: str) -> str:
     Raises:
         ValueError: If code is not recognized
     """
-    code = code.lower()
-    if code not in ISO_639_1_TO_3:
+    code_lower = code.lower()
+    if code_lower not in _ISO_639_1_TO_3_LOWER:
         raise ValueError(f"Unknown ISO 639-1 code: {code}")
-    return ISO_639_1_TO_3[code]
+    return _ISO_639_1_TO_3_LOWER[code_lower]
 
 
 def iso3_to_iso1(code: str) -> str:
@@ -153,7 +158,7 @@ def iso3_to_iso1(code: str) -> str:
 
 def is_valid_iso1(code: str) -> bool:
     """Check if code is a valid ISO 639-1 code."""
-    return code.lower() in ISO_639_1_TO_3
+    return code.lower() in _ISO_639_1_TO_3_LOWER
 
 
 def is_valid_iso3(code: str) -> bool:

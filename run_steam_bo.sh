@@ -31,6 +31,18 @@ fi
 for TGT_LANG in "${TARGET_LANGS[@]}"; do
     echo "=== Processing: $TGT_LANG ==="
 
+    MOD_OUT="${OUTPUT_DIR}/mc4.${TGT_LANG}.bo.z_score.jsonl"
+    HUM_OUT="${OUTPUT_DIR}/mc4.${TGT_LANG}.bo.hum.z_score.jsonl"
+    if [[ -f "$MOD_OUT" && -f "$HUM_OUT" ]]; then
+        MOD_LINES=$(wc -l < "$MOD_OUT" | tr -d ' ')
+        HUM_LINES=$(wc -l < "$HUM_OUT" | tr -d ' ')
+        if [[ "$MOD_LINES" -ge "$NUM_TEXTS" && "$HUM_LINES" -ge "$NUM_TEXTS" ]]; then
+            echo "Skipping $TGT_LANG: already complete ($MOD_LINES/$NUM_TEXTS)."
+            echo ""
+            continue
+        fi
+    fi
+
     python3 steam_bo_detector.py \
         --base_model "$BASE_MODEL" \
         --tgt_lang "$TGT_LANG" \
