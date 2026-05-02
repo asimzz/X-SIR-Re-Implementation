@@ -46,8 +46,13 @@ POOL_SIZES=(33 66 133)
 # 33-language subset is identical for every run, and likewise for 66.
 POOL_SEED=42
 
-# How many texts to process per language (matches run_steam_bo.sh default)
+# How many texts to process per language (matches run_steam_bo.sh)
 NUM_TEXTS=500
+
+# BO evaluation budget per text — must match the production sweep so that the
+# only thing varying across pool sizes is the candidate pool itself.
+N_INITIAL=3
+MAX_EVALUATIONS=20
 
 # Allow scoping to a single target language for debugging
 if [[ -n "${1:-}" ]]; then
@@ -102,6 +107,8 @@ for i in "${!MODEL_NAMES[@]}"; do
                         --input_dir "$INPUT_DIR" \
                         --output_dir "$OUTPUT_DIR" \
                         --gamma_lang_file "$GAMMA_LANG_FILE" \
+                        --n_initial "$N_INITIAL" \
+                        --max_evaluations "$MAX_EVALUATIONS" \
                         --num_texts "$NUM_TEXTS" \
                         --max_candidate_langs "$POOL_SIZE" \
                         --pool_seed "$POOL_SEED"
