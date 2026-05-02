@@ -19,11 +19,9 @@ WORK_DIR="$SCRIPT_DIR/.."
 GEN_DIR="$WORK_DIR/gen"
 
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
 )
 
@@ -31,12 +29,26 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 
 TGT_LANGS=(
-    # High-resource
-    "fr" "de" "it" "es" "pt"
-    # Medium-resource
-    "pl" "nl" "ru" "hi" "ko" "ja"
-    # Low-resource
-    "bn" "fa" "vi" "iw" "uk" "ta"
+    # High-resource languages
+    "fr" # French
+    "de" # German
+    "it" # Italian
+    "es" # Spanish
+    "pt" # Portuguese
+    # Medium-resource languages
+    "pl" # Polish
+    "nl" # Dutch
+    "ru" # Russian
+    "hi" # Hindi
+    "ko" # Korean
+    "ja" # Japanese
+    # Low-resource languages
+    "bn" # Bengali
+    "fa" # Persian
+    "vi" # Vietnamese
+    "iw" # Hebrew
+    "uk" # Ukrainian
+    "ta" # Tamil
 )
 
 # Pool sizes for the sweep
