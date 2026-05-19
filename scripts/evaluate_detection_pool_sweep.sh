@@ -14,11 +14,9 @@ WORK_DIR="$SCRIPT_DIR/.."
 GEN_DIR="$WORK_DIR/gen"
 
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
 )
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
 )
 
@@ -26,9 +24,8 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 
 TGT_LANGS=(
-    "fr" "de" "it" "es" "pt"
-    "pl" "nl" "ru" "hi" "ko" "ja"
-    "bn" "fa" "vi" "iw" "uk" "ta"
+    "fr" "de" "it" "es" "hi" "ko" "ja"
+    "bn"
 )
 
 POOL_SIZES=(33 66 133)

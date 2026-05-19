@@ -17,36 +17,14 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("kgw")
 TGT_LANGS=(
      # Target languages
-    "ar" # Arabic
-    "da" # Danish
-    "hr" # Croatian
-    "fi" # Finnish
-    "no" # Norwegian
-    "sv" # Swedish
-    "hu" # Hungarian
-    "cs" # Czech
-    "el" # Greek
-    "af" # Afrikaans
-    "bg" # Bulgarian
-    "ro" # Romanian
-    "sk" # Slovak
-    "sl" # Slovenian
-    "lt" # Lithuanian
-    "lv" # Latvian
-    "et" # Estonian
-    "sr" # Serbian
-    "zh-CN" # Chinese (Simplified)
-    "sw" # Swahili
-    "zu" # Zulu
-    "yo" # Yoruba
-    "tg" # Tajik
-    "ka" # Georgian
-    "ha" # Hausa
-    "ca" # Catalan
-    "be" # Belarusian
-    "am" # Amharic
-    "tr" # Turkish
-    "id" # Indonesian
+    "fr"
+    "de"
+    "it"
+    "es"
+    "hi"
+    "ko"
+    "ja"
+    "bn"
     )
 SEEDS=(0)
 
