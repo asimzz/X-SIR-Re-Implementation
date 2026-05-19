@@ -26,9 +26,16 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 
 TGT_LANGS=(
-    "fr" "de" "it" "es" "pt"
-    "pl" "nl" "ru" "hi" "ko" "ja"
-    "bn" "fa" "vi" "iw" "uk" "ta"
+    # High-resource languages
+    "fr" # French
+    # "de" # German
+    # "it" # Italian
+    # "es" # Spanish
+    # "pt" # Portuguese
+    # # Medium-resource languages
+    # "pl" # Polish
+    # "nl" # Dutch
+    # "ru" # Russian
 )
 
 POOL_SIZES=(33 66 133)

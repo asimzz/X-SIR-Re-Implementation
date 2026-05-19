@@ -39,20 +39,20 @@ TGT_LANGS=(
     "pl" # Polish
     "nl" # Dutch
     "ru" # Russian
-    "hi" # Hindi
-    "ko" # Korean
-    "ja" # Japanese
-    # Low-resource languages
-    "bn" # Bengali
-    "fa" # Persian
-    "vi" # Vietnamese
-    "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    # "hi" # Hindi
+    # "ko" # Korean
+    # "ja" # Japanese
+    # # Low-resource languages
+    # "bn" # Bengali
+    # "fa" # Persian
+    # "vi" # Vietnamese
+    # "iw" # Hebrew
+    # "uk" # Ukrainian
+    # "ta" # Tamil
 )
 
 # Pool sizes for the sweep
-POOL_SIZES=(33 66 133)
+POOL_SIZES=(33)
 
 # Reproducible subsampling: same seed across all (method, seed, lang) so the
 # 33-language subset is identical for every run, and likewise for 66.
