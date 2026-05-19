@@ -29,16 +29,16 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 
 TGT_LANGS=(
-    # # High-resource languages
-    # "fr" # French
-    # "de" # German
-    # "it" # Italian
-    # "es" # Spanish
-    # "pt" # Portuguese
-    # # Medium-resource languages
-    # "pl" # Polish
-    # "nl" # Dutch
-    # "ru" # Russian
+    # High-resource languages
+    "fr" # French
+    "de" # German
+    "it" # Italian
+    "es" # Spanish
+    "pt" # Portuguese
+    # Medium-resource languages
+    "pl" # Polish
+    "nl" # Dutch
+    "ru" # Russian
     "hi" # Hindi
     "ko" # Korean
     "ja" # Japanese
@@ -52,7 +52,7 @@ TGT_LANGS=(
 )
 
 # Pool sizes for the sweep
-POOL_SIZES=(66)
+POOL_SIZES=(33 66 133)
 
 # Reproducible subsampling: same seed across all (method, seed, lang) so the
 # 33-language subset is identical for every run, and likewise for 66.

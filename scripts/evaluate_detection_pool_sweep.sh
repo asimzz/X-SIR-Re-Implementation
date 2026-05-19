@@ -26,16 +26,9 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 
 TGT_LANGS=(
-    "hi" # Hindi
-    "ko" # Korean
-    "ja" # Japanese
-    # Low-resource languages
-    "bn" # Bengali
-    "fa" # Persian
-    "vi" # Vietnamese
-    "iw" # Hebrew
-    "uk" # Ukrainian
-    "ta" # Tamil
+    "fr" "de" "it" "es" "pt"
+    "pl" "nl" "ru" "hi" "ko" "ja"
+    "bn" "fa" "vi" "iw" "uk" "ta"
 )
 
 POOL_SIZES=(33 66 133)
