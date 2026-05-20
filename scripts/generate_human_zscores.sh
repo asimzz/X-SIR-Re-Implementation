@@ -34,36 +34,90 @@ WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 TGT_LANGS=(
     # Target languages
-    "ar" # Arabic
-    "da" # Danish
-    "hr" # Croatian
-    "fi" # Finnish
-    "no" # Norwegian
-    "sv" # Swedish
-    "hu" # Hungarian
-    "cs" # Czech
-    "el" # Greek
-    "af" # Afrikaans
-    "bg" # Bulgarian
-    "ro" # Romanian
-    "sk" # Slovak
-    "sl" # Slovenian
-    "lt" # Lithuanian
-    "lv" # Latvian
-    "et" # Estonian
-    "sr" # Serbian
-    "zh-CN" # Chinese (Simplified)
-    "sw" # Swahili
-    "zu" # Zulu
-    "yo" # Yoruba
-    "tg" # Tajik
-    "ka" # Georgian
-    "ha" # Hausa
-    "ca" # Catalan
-    "be" # Belarusian
-    "am" # Amharic
-    "tr" # Turkish
-    "id" # Indonesian
+    "sq" # Albanian
+    "hy" # Armenian
+    "as" # Assamese
+    "ay" # Aymara
+    "az" # Azerbaijani
+    "bm" # Bambara
+    "eu" # Basque
+    "bho" # Bhojpuri
+    "bs" # Bosnian
+    "ceb" # Cebuano
+    "ny" # Chichewa
+    "co" # Corsican
+    "dv" # Dhivehi
+    "doi" # Dogri
+    "en" # English
+    "eo" # Esperanto
+    "ee" # Ewe
+    "tl" # Tagalog
+    "fy" # Frisian
+    "gl" # Galician
+    "gn" # Guarani
+    "gu" # Gujarati
+    "ht" # Haitian Creole
+    "haw" # Hawaiian
+    "hmn" # Hmong
+    "is" # Icelandic
+    "ig" # Igbo
+    "ilo" # Ilocano
+    "ga" # Irish
+    "jw" # Javanese
+    "kn" # Kannada
+    "kk" # Kazakh
+    "km" # Khmer
+    "rw" # Kinyarwanda
+    "gom" # Goan Konkani
+    "kri" # Krio
+    "ku" # Kurdish
+    "ckb" # Central Kurdish
+    "ky" # Kirghiz
+    "lo" # Lao
+    "la" # Latin
+    "ln" # Lingala
+    "lg" # Luganda
+    "lb" # Luxembourgish
+    "mk" # Macedonian
+    # "mai" # Maithili
+    # "mg" # Malagasy
+    # "ms" # Malay
+    # "ml" # Malayala
+    # "mt" # Maltese
+    # "mi" # Māori
+    # "mr" # Marathi
+    # "mni-Mtei" # Manipuri
+    # "lus" # Mizo
+    # "mn" # Mongolian
+    # "my" # Myanmar
+    # "ne" # Nepali
+    # "or" # Odia
+    # "om" # Oromo
+    # "ps" # Pashto
+    # "qu" # Quechua
+    # "sm" # Samoan
+    # "sa" # Sanskrit
+    # "gd" # Scottish Gaelic
+    # "nso" # Northern Sotho
+    # "st" # Sesotho
+    # "sn" # Shona
+    # "sd" # Sindhi
+    # "si" # Sinhala
+    # "so" # Somali
+    # "su" # Sundanese
+    # "tt" # Tatar
+    # "te" # Telugu
+    # "th" # Thai
+    # "ti" # Tigrinya
+    # "ts" # Tsonga
+    # "tk" # Turkmen
+    # "ak" # Twi
+    # "ur" # Urdu
+    # "ug" # Uyghur
+    # "uz" # Uzbek
+    # "cy" # Welsh
+    # "xh" # Xhosa
+    # "yi" # Yiddish
 )
 
 # Validate model list lengths
