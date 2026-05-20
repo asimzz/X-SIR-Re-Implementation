@@ -66,7 +66,7 @@ ISO_639_1_TO_3 = {
     'gl': 'glg',  # Galician
     'af': 'afr',  # Afrikaans
     'is': 'isl',  # Icelandic
-    'sq': 'sqi',  # Albanian
+    'sq': 'als',  # Albanian (Tosk) - URIEL has no 'sqi' macrolanguage
     'ka': 'kat',  # Georgian
     'hy': 'hye',  # Armenian
     'az': 'azj',  # Azerbaijani (North) - URIEL uses 'azj'
@@ -107,6 +107,48 @@ ISO_639_1_TO_3 = {
     'ga': 'gle',  # Irish
     'co': 'cos',  # Corsican
     'mt': 'mlt',  # Maltese
+
+    # Additional languages from supported_languages.txt (URIEL-verified)
+    'ak':       'aka',  # Akan / Twi
+    'ay':       'aym',  # Aymara
+    'bm':       'bam',  # Bambara
+    'bho':      'bho',  # Bhojpuri (input already ISO-3)
+    'bs':       'bos',  # Bosnian
+    'ceb':      'ceb',  # Cebuano (input already ISO-3)
+    'ckb':      'ckb',  # Central Kurdish / Sorani (input already ISO-3)
+    'dv':       'div',  # Dhivehi / Maldivian
+    'ee':       'ewe',  # Ewe
+    'eo':       'epo',  # Esperanto
+    'fy':       'fry',  # Western Frisian
+    'haw':      'haw',  # Hawaiian (input already ISO-3)
+    'ht':       'hat',  # Haitian Creole
+    'ilo':      'ilo',  # Ilocano (input already ISO-3)
+    'jw':       'jav',  # Javanese (legacy code for 'jv')
+    'kri':      'kri',  # Krio (input already ISO-3)
+    'ku':       'kur',  # Kurdish
+    'ky':       'kir',  # Kyrgyz
+    'la':       'lat',  # Latin
+    'lb':       'ltz',  # Luxembourgish
+    'lg':       'lug',  # Luganda
+    'ln':       'lin',  # Lingala
+    'lus':      'lus',  # Mizo (input already ISO-3)
+    'mai':      'mai',  # Maithili (input already ISO-3)
+    'mi':       'mri',  # Maori
+    'mk':       'mkd',  # Macedonian
+    'mni-Mtei': 'mni',  # Manipuri / Meitei (script-tagged input)
+    'nso':      'nso',  # Northern Sotho (input already ISO-3)
+    'ny':       'nya',  # Chichewa / Chewa
+    'rw':       'kin',  # Kinyarwanda
+    'sa':       'san',  # Sanskrit
+    'sd':       'snd',  # Sindhi
+    'sm':       'smo',  # Samoan
+    'su':       'sun',  # Sundanese
+    'tk':       'tuk',  # Turkmen
+    'tl':       'tgl',  # Tagalog / Filipino
+    'ts':       'tso',  # Tsonga
+    'tt':       'tat',  # Tatar
+    'ug':       'uig',  # Uyghur
+    'yi':       'yid',  # Yiddish
 }
 
 # Reverse mapping: ISO 639-3 to ISO 639-1
