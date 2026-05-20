@@ -23,7 +23,6 @@ hr
 cs
 da
 dv
-doi
 nl
 en
 eo
@@ -37,14 +36,12 @@ gl
 ka
 de
 el
-gn
 gu
 ht
 ha
 haw
 iw
 hi
-hmn
 hu
 is
 ig
@@ -58,7 +55,6 @@ kn
 kk
 km
 rw
-gom
 ko
 kri
 ku
@@ -86,13 +82,10 @@ my
 ne
 no
 or
-om
-ps
 fa
 pl
 pt
 pa
-qu
 ro
 ru
 sm
