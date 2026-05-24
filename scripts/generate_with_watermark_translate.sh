@@ -17,6 +17,16 @@ TRANSFORM_MODEL="$DATA_DIR/model/transform_model_x-sbert.pth"
 EMBEDDING_MODEL="paraphrase-multilingual-mpnet-base-v2"
 BATCH_SIZE=32
 
+# Quantization: set QUANT=4bit or QUANT=8bit to load via bitsandbytes (smaller GPU footprint)
+QUANT="${QUANT:-}"
+QUANT_FLAGS=""
+case "$QUANT" in
+    4bit) QUANT_FLAGS="--load_in_4bit" ;;
+    8bit) QUANT_FLAGS="--load_in_8bit" ;;
+    "")   ;;
+    *) echo "❌ Unknown QUANT='$QUANT' (expected 4bit, 8bit, or empty)"; exit 1 ;;
+esac
+
 # Model names and abbreviations
 MODEL_NAMES=(
     "meta-llama/Llama-3.2-1B"
@@ -94,6 +104,7 @@ for i in "${!MODEL_NAMES[@]}"; do
                 --seed "$SEED" \
                 --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
                 --output_file "$OUT_DIR/mc4.en.mod.jsonl" \
+                $QUANT_FLAGS \
                 $WATERMARK_FLAGS
 
             # Step 2: Detect watermark in English

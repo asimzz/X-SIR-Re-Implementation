@@ -9,7 +9,7 @@ import tqdm
 import torch
 import argparse
 from transformers.utils import is_flash_attn_2_available
-from transformers import AutoModelForCausalLM, AutoTokenizer, LogitsProcessorList, GenerationConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, LogitsProcessorList, GenerationConfig
 from src_watermark.xsir.watermark import (
     WatermarkWindow as XSIRWindow,
     WatermarkContext as XSIRContext,
@@ -36,10 +36,24 @@ OUTPUT_LENGTH = 200
 def main(args):
     print(args)
     assert not (args.fp16 and args.bf16), "Cannot use both fp16 and bf16"
+    assert not (args.load_in_4bit and args.load_in_8bit), "Cannot use both 4-bit and 8-bit quantization"
 
     # seed & device
     torch.manual_seed(0)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    load_dtype = torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32
+    quantization_config = None
+    if args.load_in_4bit:
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=load_dtype if (args.fp16 or args.bf16) else torch.bfloat16,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+    elif args.load_in_8bit:
+        quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+    quantized = quantization_config is not None
 
     # Load data
     input_data = read_jsonl(args.input_file)
@@ -59,22 +73,22 @@ def main(args):
 
     # Load model & tokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)
+    load_kwargs = dict(
+        device_map="auto",
+        dtype=load_dtype,
+        trust_remote_code=True,
+    )
+    if quantization_config is not None:
+        load_kwargs["quantization_config"] = quantization_config
     try:
         model = AutoModelForCausalLM.from_pretrained(
             args.base_model,
-            device_map="auto",
             attn_implementation="flash_attention_2" if is_flash_attn_2_available() and (args.fp16 or args.bf16) else "eager",
-            dtype=torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32,
-            trust_remote_code=True
+            **load_kwargs,
         )
     except ValueError as e:
         if "does not support Flash Attention 2.0" in str(e):
-            model = AutoModelForCausalLM.from_pretrained(
-                args.base_model,
-                device_map="auto",
-                dtype=torch.bfloat16 if args.bf16 else torch.float16 if args.fp16 else torch.float32,
-                trust_remote_code=True
-            )
+            model = AutoModelForCausalLM.from_pretrained(args.base_model, **load_kwargs)
         else:
             raise e
 
@@ -86,7 +100,7 @@ def main(args):
         model.config.pad_token_id = model.config.eos_token_id
         print("Set pad token to eos token")
 
-    if torch.__version__ >= "2" and sys.platform != "win32":
+    if torch.__version__ >= "2" and sys.platform != "win32" and not quantized:
         model = torch.compile(model)
 
     # Load watermark
@@ -185,6 +199,8 @@ if __name__ == "__main__":
     parser.add_argument('--base_model', type=str, required=True, help="Base model to generate text from")
     parser.add_argument('--fp16', action="store_true", help="Use fp16")
     parser.add_argument('--bf16', action="store_true", help="Use bf16")
+    parser.add_argument('--load_in_4bit', action="store_true", help="Load model with bitsandbytes 4-bit (NF4 + double quant)")
+    parser.add_argument('--load_in_8bit', action="store_true", help="Load model with bitsandbytes 8-bit")
 
     # Data
     parser.add_argument('--input_file', type=str, required=True, help="Input file containing prompts")
