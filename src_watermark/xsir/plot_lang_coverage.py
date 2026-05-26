@@ -105,7 +105,7 @@ def _annotate_bars(ax, horizontal=True, fmt="{:.2f}%", min_threshold=0.3, label_
             if height >= min_threshold:
                 ax.text(
                     x, height + 0.15, fmt.format(height),
-                    ha="center", va="bottom",
+                    ha="center", va="bottom", rotation=90,
                     fontsize=label_fontsize,
                     path_effects=[pe.withStroke(linewidth=2.5, foreground="white")],
                 )
@@ -173,6 +173,9 @@ def plot_vocab_contribution(lang_stats_file, output_file,
     # Set y-axis limits with nice upper bound
     ymax = _nice_upper_limit(contributions, step=max(1.0, y_major_step)) if contributions else 5.0
     ax.set_ylim(0, ymax)
+
+    # Add percentage labels on bars (vertical orientation)
+    _annotate_bars(ax, horizontal=False, fmt="{:.2f}%", min_threshold=0.0, label_fontsize=axis_fontsize-2)
 
     # Adjust layout
     fig.tight_layout()
