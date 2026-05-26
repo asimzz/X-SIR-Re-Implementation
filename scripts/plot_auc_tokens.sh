@@ -21,4 +21,6 @@ python3 $WORK_DIR/plot_auc_tokens.py \
   --data_dir "${DATA_DIR}/dictionary" \
   --stats_file "tokenizer_lang_coverage.json" \
   --base_dir "${GEN_DIR}" \
-  --output_dir "${FIGURE_DIR}"
+  --output_dir "${FIGURE_DIR}" \
+  --latex_width_in 8.0 \
+  --latex_height_in 6.0

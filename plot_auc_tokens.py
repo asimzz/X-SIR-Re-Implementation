@@ -1,14 +1,13 @@
 import argparse
 import os
 import json
-import math
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import roc_auc_score
 from utils import read_jsonl
-import matplotlib.patheffects as pe
 from matplotlib import colors as mcolors
+from adjustText import adjust_text
 
 # --- Config ---
 TGT_LANGS = [
@@ -86,35 +85,6 @@ def compute_auc(base_dir, model_abbr, tgt_lang, seed):
     return roc_auc_score(y_true, y_scores)
 
 
-def repel_text(ax, texts, anchors, max_iter=250, step=0.01):
-    """Simple force-based label repulsion; draws leader lines afterward."""
-    fig = ax.figure
-    fig.canvas.draw()
-    for _ in range(max_iter):
-        moved = False
-        bboxes = [t.get_window_extent(renderer=fig.canvas.get_renderer()).expanded(1.08, 1.25)
-                  for t in texts]
-        for i in range(len(texts)):
-            for j in range(i+1, len(texts)):
-                if not bboxes[i].overlaps(bboxes[j]):
-                    continue
-                xi, yi = texts[i].get_position()
-                xj, yj = texts[j].get_position()
-                dx, dy = xi - xj, yi - yj
-                dist = math.hypot(dx, dy) or 1e-6
-                ux, uy = dx / dist, dy / dist
-                texts[i].set_position((xi + ux * step, yi + uy * step))
-                texts[j].set_position((xj - ux * step, yj - uy * step))
-                moved = True
-        if not moved:
-            break
-
-    # Leader lines after settling
-    for t, (xa, ya) in zip(texts, anchors):
-        xt, yt = t.get_position()
-        ax.plot([xa, xt], [ya, yt], lw=0.6, alpha=0.45, color="#666")
-
-
 def lighten(color, amount=0.6):
     """
     Lighten a color by mixing with white.
@@ -179,12 +149,9 @@ def main():
     ax.grid(True, which="minor", linestyle=":", linewidth=0.5, alpha=0.25)
 
     labeled_models = set()
-    texts, anchors = [], []
+    texts = []
     all_x_for_limits = []
-
-    # Alternating initial label offsets (before repulsion)
-    dx_dy = [(0.0, +0.010), (0.0, -0.010), (0.0, +0.014), (0.0, -0.014),
-             (0.0, +0.018), (0.0, -0.018), (0.0, +0.022), (0.0, -0.022)]
+    all_marker_x, all_marker_y = [], []    # every plotted marker — for adjust_text to repel from
 
     for midx, model_abbr in enumerate(MODEL_ABBR):
         color = PALETTE[midx % len(PALETTE)]
@@ -219,6 +186,8 @@ def main():
             x_plot.append(x_tokens + x_jitter)
             y_plot.append(avg_auc + y_jitter)
             langs.append(tgt_lang)
+            all_marker_x.append(x_tokens + x_jitter)
+            all_marker_y.append(avg_auc + y_jitter)
 
         if not x_plot:
             continue
@@ -281,32 +250,47 @@ def main():
         if label:
             labeled_models.add(model_abbr)
 
-        # --- language labels (with halo) ---
-        for i, (x, y, lang) in enumerate(zip(x_plot, y_plot, langs)):
-            dx, dy = dx_dy[i % len(dx_dy)]
+        # --- one label per (model, language) at the marker, adjust_text spreads them ---
+        for x, y, lang in zip(x_plot, y_plot, langs):
             t = ax.text(
-                x + dx, y + dy, lang,
-                fontsize=args.lang_fontsize, ha="center", va="center",
-                path_effects=[pe.withStroke(linewidth=2.2, foreground="white")]
+                x, y, lang,
+                fontsize=args.lang_fontsize,
+                ha="center", va="center",
+                fontweight="medium",
+                bbox=dict(facecolor="white", edgecolor="none", alpha=0.85,
+                          boxstyle="round,pad=0.18"),
+                zorder=50,
             )
             texts.append(t)
-            anchors.append((x, y))
 
-    # Repel labels & draw leader lines
-    repel_text(ax, texts, anchors, max_iter=300, step=0.012)
+    # Spread labels + repel from markers; draw leader arrows from each settled
+    # label back toward its original marker.
+    adjust_text(
+        texts,
+        x=all_marker_x,
+        y=all_marker_y,
+        ax=ax,
+        expand=(1.2, 1.4),
+        expand_axes=False,
+        arrowprops=dict(arrowstyle="-", color="#666", lw=0.6, alpha=0.55,
+                        shrinkA=2, shrinkB=4),
+        only_move={"text": "xy", "static": "xy"},
+        force_text=(0.6, 0.8),
+        force_static=(0.8, 1.0),
+    )
 
     # Axis labels with larger, bold font
     ax.set_xlabel("Number of Words in the Tokenizer Vocabulary",
-                  fontsize=args.axis_fontsize + 3, labelpad=10)
-    ax.set_ylabel("AUC",
-                  fontsize=args.axis_fontsize + 3, labelpad=10)
+                  fontsize=args.axis_fontsize + 6, labelpad=10)
+    ax.set_ylabel("Watermark Strength (AUC)",
+                  fontsize=args.axis_fontsize + 6, labelpad=10)
 
     # Tick parameters for better visibility
     ax.tick_params(axis="both", which="major",
-                   labelsize=args.axis_fontsize + 2,
+                   labelsize=args.axis_fontsize + 5,
                    width=1.4, length=6, direction="out")
     ax.tick_params(axis="both", which="minor",
-                   labelsize=args.axis_fontsize + 1,
+                   labelsize=args.axis_fontsize + 4,
                    width=1.0, length=4, direction="out")
     ax.legend(frameon=True, fontsize=args.axis_fontsize + 1, loc="lower right")
     sns.despine(ax=ax)
