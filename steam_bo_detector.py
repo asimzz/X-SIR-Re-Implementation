@@ -112,7 +112,10 @@ class STEAMBODetector:
                  gamma_lang_file: str,
                  n_initial: int = 3,
                  max_evaluations: int = 15,
-                 random_state: int = 42):
+                 random_state: int = 42,
+                 per_example_attack: bool = False,
+                 mod_file: str = None,
+                 hum_file: str = None):
         self.watermark_detector = watermark_detector
         self.target_lang = target_lang
         self.input_dir = input_dir
@@ -120,6 +123,13 @@ class STEAMBODetector:
         self.n_initial = n_initial
         self.max_evaluations = max_evaluations
         self.random_state = random_state
+        # Per-example-attack mode: each input line carries its own `attack_lang`
+        # (the language it was translated into). The source language S is passed
+        # as `target_lang` and is kept as an eligible pivot (back-translating
+        # attack_lang -> S recovers the watermark's native token space).
+        self.per_example_attack = per_example_attack
+        self.mod_file = mod_file
+        self.hum_file = hum_file
 
         # Setup logging first so all messages are visible
         logging.basicConfig(level=logging.INFO,
@@ -154,7 +164,10 @@ class STEAMBODetector:
                 lang_iso3 = iso1_to_iso3(lang_iso1)
             except ValueError:
                 continue
-            if lang_iso3 == self.target_lang_iso3:
+            # In per-example-attack mode the source language S (passed as
+            # target_lang) must stay in the pivot pool — it is typically the
+            # best pivot. Otherwise keep the original behaviour of excluding it.
+            if not self.per_example_attack and lang_iso3 == self.target_lang_iso3:
                 continue
             if lang_iso3 in self.lang_features.available_languages:
                 self.available_pivots.append(lang_iso3)
@@ -218,9 +231,14 @@ class STEAMBODetector:
         denom = math.sqrt(num_tokens_scored * gamma_lang * (1 - gamma_lang))
         return numer / denom
 
-    def _translate_and_detect(self, text: str, pivot_lang: str) -> Tuple[float, str, bool]:
+    def _translate_and_detect(self, text: str, pivot_lang: str,
+                              src_lang_iso1: str = None) -> Tuple[float, str, bool]:
         """
-        Translate text to pivot language and detect watermark.
+        Translate text (in `src_lang_iso1`) to pivot language and detect watermark.
+
+        `src_lang_iso1` is the language the text is currently in — the attack
+        language for a given example. When None it defaults to the detector's
+        target language (the original English-source behaviour).
 
         The z-score is recomputed using γ_lang (language-specific green token fraction)
         instead of the default γ=0.25, which corrects for tokenizer bias.
@@ -230,17 +248,26 @@ class STEAMBODetector:
         """
         try:
             pivot_iso1 = iso3_to_iso1(pivot_lang)
-            target_iso1 = iso3_to_iso1(self.target_lang_iso3)
+            if src_lang_iso1 is None:
+                src_lang_iso1 = iso3_to_iso1(self.target_lang_iso3)
 
-            if not pivot_iso1 or not target_iso1:
-                self.logger.error(f"Language code conversion failed: {pivot_lang} or {self.target_lang_iso3}")
+            if not pivot_iso1 or not src_lang_iso1:
+                self.logger.error(f"Language code conversion failed: {pivot_lang} or {src_lang_iso1}")
                 return 0.0, "", False
 
-            # Translate: target_lang → pivot_lang
-            translated_text = self.backtranslator.translate_text(text, target_iso1, pivot_iso1)
+            # Identity pivot: text is already in the pivot language, so there is
+            # no recovery translation to do — score the text as-is (the cheap
+            # "no back-translation" candidate). Normalise both sides so that
+            # e.g. zh/zh-CN and iw/he compare equal.
+            if self.backtranslator.normalize_lang_code(pivot_iso1) == \
+                    self.backtranslator.normalize_lang_code(src_lang_iso1):
+                translated_text = text
+            else:
+                # Translate: src_lang → pivot_lang
+                translated_text = self.backtranslator.translate_text(text, src_lang_iso1, pivot_iso1)
 
             if translated_text is None:
-                self.logger.error(f"Translation failed: {target_iso1} → {pivot_iso1}")
+                self.logger.error(f"Translation failed: {src_lang_iso1} → {pivot_iso1}")
                 return 0.0, "", False
 
             # Detect watermark (uses default γ=0.25 for green list partitioning)
@@ -261,9 +288,10 @@ class STEAMBODetector:
             self.logger.error(f"Error in translate_and_detect for {pivot_lang}: {e}")
             return 0.0, "", False
 
-    def _evaluate_pivot_language(self, text: str, pivot_lang: str) -> Dict[str, Any]:
+    def _evaluate_pivot_language(self, text: str, pivot_lang: str,
+                                 src_lang_iso1: str = None) -> Dict[str, Any]:
         """Evaluate a pivot language for a specific text."""
-        z_score, translated_text, success = self._translate_and_detect(text, pivot_lang)
+        z_score, translated_text, success = self._translate_and_detect(text, pivot_lang, src_lang_iso1)
 
         if not success:
             return {
@@ -333,14 +361,18 @@ class STEAMBODetector:
             self.logger.error(f"BO suggestion failed: {e}")
             return np.random.choice(remaining)
 
-    def optimize_single_text(self, text: str, prompt: str, text_id: int) -> Dict[str, Any]:
+    def optimize_single_text(self, text: str, prompt: str, text_id: int,
+                             src_lang_iso1: str = None) -> Dict[str, Any]:
         """
         Run STEAM BO optimization for a single text.
+
+        `src_lang_iso1` is the language the text is currently in (the example's
+        attack language). When None it defaults to the detector target language.
 
         Returns:
             Dict with {z_score, prompt, response} for the best pivot language
         """
-        self.logger.info(f"Starting STEAM BO for text {text_id}")
+        self.logger.info(f"Starting STEAM BO for text {text_id} (source lang={src_lang_iso1 or self.target_lang})")
 
         evaluations = []
 
@@ -349,7 +381,7 @@ class STEAMBODetector:
         self.logger.info(f"  Initial pivots for text {text_id}: {initial_pivots}")
 
         for pivot_lang in initial_pivots:
-            eval_result = self._evaluate_pivot_language(text, pivot_lang)
+            eval_result = self._evaluate_pivot_language(text, pivot_lang, src_lang_iso1)
             evaluations.append(eval_result)
             self.logger.info(f"  Initial {pivot_lang}: z={eval_result['z_score']:.3f}")
 
@@ -369,7 +401,7 @@ class STEAMBODetector:
 
             self.logger.info(f"  BO iteration {iteration + 1}: trying {next_pivot}")
 
-            eval_result = self._evaluate_pivot_language(text, next_pivot)
+            eval_result = self._evaluate_pivot_language(text, next_pivot, src_lang_iso1)
             evaluations.append(eval_result)
 
             if eval_result['success'] and eval_result['z_score'] > best_eval['z_score']:
@@ -393,9 +425,10 @@ class STEAMBODetector:
             'response': best_eval['translated_text']
         }
 
-    def _process_human_text(self, text: str, prompt: str, best_pivot_iso3: str) -> Dict[str, Any]:
+    def _process_human_text(self, text: str, prompt: str, best_pivot_iso3: str,
+                            src_lang_iso1: str = None) -> Dict[str, Any]:
         """Translate human text to the BO-selected pivot and detect with γ_lang correction."""
-        z_score, translated_text, success = self._translate_and_detect(text, best_pivot_iso3)
+        z_score, translated_text, success = self._translate_and_detect(text, best_pivot_iso3, src_lang_iso1)
 
         if not success:
             return {'z_score': 0.0, 'prompt': prompt, 'response': text}
@@ -417,20 +450,32 @@ class STEAMBODetector:
         """
         self.logger.info(f"Starting STEAM BO for {num_texts} texts")
 
-        # Load watermarked texts
-        mod_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
+        # Resolve input files. When explicit --mod_file/--hum_file are given
+        # (per-example-attack mode / arbitrary inputs) use them directly;
+        # otherwise fall back to the English-source naming convention.
+        if self.mod_file:
+            mod_file = self.mod_file
+        else:
+            mod_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.mod.jsonl")
         if not os.path.exists(mod_file):
             raise FileNotFoundError(f"Input file not found: {mod_file}")
         mod_data = read_jsonl(mod_file)[:num_texts]
 
-        # Load corresponding human texts
-        hum_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
+        if self.hum_file:
+            hum_file = self.hum_file
+        else:
+            hum_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
         if not os.path.exists(hum_file):
             raise FileNotFoundError(f"Human text file not found: {hum_file}")
         hum_data = read_jsonl(hum_file)[:num_texts]
 
-        mod_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.z_score.jsonl")
-        hum_output = os.path.join(self.output_dir, f"mc4.{self.target_lang}.bo.hum.z_score.jsonl")
+        # In per-example mode --tgt_lang is the SOURCE language S; tag outputs "-mix".
+        out_stub = f"{self.target_lang}-mix" if self.per_example_attack else self.target_lang
+        mod_output = os.path.join(self.output_dir, f"mc4.{out_stub}.bo.z_score.jsonl")
+        hum_output = os.path.join(self.output_dir, f"mc4.{out_stub}.bo.hum.z_score.jsonl")
+
+        # Default translation source (English-source mode): the target language.
+        default_src_iso1 = iso3_to_iso1(self.target_lang_iso3)
 
         # Resume: drop any partial trailing lines, then realign the two files
         # to a common index so appends stay in lockstep.
@@ -467,9 +512,17 @@ class STEAMBODetector:
                     self.logger.warning(f"Empty text at index {i}, skipping")
                     continue
 
+                # Per-example source (attack) language; fall back to the target
+                # language for the legacy English-source layout.
+                mod_src_iso1 = item.get('attack_lang') or default_src_iso1
+                mod_tier = item.get('attack_tier')
+
                 try:
                     # BO on watermarked text
-                    result = self.optimize_single_text(text_content, prompt, i)
+                    result = self.optimize_single_text(text_content, prompt, i, src_lang_iso1=mod_src_iso1)
+                    if item.get('attack_lang'):
+                        result['attack_lang'] = item['attack_lang']
+                        result['attack_tier'] = mod_tier
                     f_mod.write(json.dumps(result) + '\n')
 
                     # Apply same pivot to human text (no BO, just translate + detect)
@@ -478,15 +531,27 @@ class STEAMBODetector:
                     if i < len(hum_data):
                         hum_text = hum_data[i].get('response', '')
                         hum_prompt = hum_data[i].get('prompt', '')
-                        hum_result = self._process_human_text(hum_text, hum_prompt, best_pivot_iso3)
+                        hum_src_iso1 = hum_data[i].get('attack_lang') or default_src_iso1
+                        hum_result = self._process_human_text(
+                            hum_text, hum_prompt, best_pivot_iso3, src_lang_iso1=hum_src_iso1)
+                        if hum_data[i].get('attack_lang'):
+                            hum_result['attack_lang'] = hum_data[i]['attack_lang']
+                            hum_result['attack_tier'] = hum_data[i].get('attack_tier')
                     else:
                         hum_result = {'z_score': 0.0, 'prompt': '', 'response': ''}
                     f_hum.write(json.dumps(hum_result) + '\n')
 
                 except Exception as e:
                     self.logger.error(f"Error processing text {i}: {e}")
-                    f_mod.write(json.dumps({'z_score': 0.0, 'prompt': prompt, 'response': text_content}) + '\n')
-                    f_hum.write(json.dumps({'z_score': 0.0, 'prompt': '', 'response': ''}) + '\n')
+                    err_mod = {'z_score': 0.0, 'prompt': prompt, 'response': text_content}
+                    err_hum = {'z_score': 0.0, 'prompt': '', 'response': ''}
+                    if item.get('attack_lang'):
+                        err_mod['attack_lang'] = item['attack_lang']
+                        err_mod['attack_tier'] = mod_tier
+                        err_hum['attack_lang'] = item['attack_lang']
+                        err_hum['attack_tier'] = mod_tier
+                    f_mod.write(json.dumps(err_mod) + '\n')
+                    f_hum.write(json.dumps(err_hum) + '\n')
 
         self.logger.info(f"Watermarked results: {mod_output}")
         self.logger.info(f"Human results:       {hum_output}")
@@ -504,6 +569,14 @@ def main():
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed")
+    parser.add_argument("--per_example_attack", action="store_true",
+                        help="Mixed-attack mode: each input line has its own 'attack_lang'; "
+                             "--tgt_lang is the SOURCE language S (kept as an eligible pivot); "
+                             "outputs are named mc4.{S}-mix.bo(.hum).z_score.jsonl")
+    parser.add_argument("--mod_file", type=str, default=None,
+                        help="Explicit watermarked input file (overrides mc4.en-{tgt}.mod.jsonl)")
+    parser.add_argument("--hum_file", type=str, default=None,
+                        help="Explicit human input file (overrides mc4.en-{tgt}.hum.jsonl)")
 
     args = parser.parse_args()
 
@@ -517,7 +590,10 @@ def main():
         gamma_lang_file=args.gamma_lang_file,
         n_initial=args.n_initial,
         max_evaluations=args.max_evaluations,
-        random_state=args.random_state
+        random_state=args.random_state,
+        per_example_attack=args.per_example_attack,
+        mod_file=args.mod_file,
+        hum_file=args.hum_file,
     )
 
     output_file = steam_detector.run(num_texts=args.num_texts)

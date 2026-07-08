@@ -92,6 +92,11 @@ def main(args):
             if is_nan(z_score):
                 z_score = None
             output = {"z_score": z_score, "prompt": dd["prompt"], "response": dd["response"], "biases": biases}
+            # Preserve per-example attack metadata (random-attack pipeline) so the
+            # no-defense baseline can be broken down by attack-language tier.
+            if "attack_lang" in dd:
+                output["attack_lang"] = dd["attack_lang"]
+                output["attack_tier"] = dd.get("attack_tier")
             if num_green_tokens is not None:
                 output["num_green_tokens"] = int(num_green_tokens) if not is_nan(num_green_tokens) else None
             if num_tokens_scored is not None:
