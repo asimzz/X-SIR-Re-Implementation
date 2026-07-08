@@ -42,6 +42,7 @@ from src_watermark.kgw.extended_watermark_processor import (
     WatermarkDetector as KGWDetector
 )
 from src_watermark.distortion_free.watermark import DistortionFreeDetector
+from src_watermark.semstamp.detector import SemStampDetector
 
 
 def get_watermark_detector(base_model: str, **kwargs):
@@ -73,6 +74,18 @@ def get_distortion_free_detector(base_model: str, method: str, **kwargs):
         gamma=kwargs.get('wm_gamma', 1.0),
         tokenizer=tokenizer,
         null_results=None,
+    )
+
+
+def get_semstamp_detector(**kwargs):
+    """Create a SemStamp detector. Scored via the same gamma_lang path as KGW (it reports
+    green/total sentence counts), so no model/tokenizer is needed here."""
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    return SemStampDetector(
+        embedder_name=kwargs.get('embedding_model', 'paraphrase-multilingual-mpnet-base-v2'),
+        lsh_dim=kwargs.get('sp_dim', 3),
+        lmbd=kwargs.get('lmbd', 0.25),
+        device=device,
     )
 
 
@@ -158,9 +171,10 @@ class STEAMBODetector:
                           format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
-        # Load γ_lang values (language-specific green token fractions) — KGW only.
+        # Load γ_lang values (per-language green fraction) — KGW & SemStamp share this path
+        # (SemStamp's fraction is over sentences rather than tokens).
         self._gamma_lang_data = {}
-        if self.watermark_method == "kgw":
+        if self.watermark_method in ("kgw", "semstamp"):
             print("Loading gamma_lang file...")
             with open(gamma_lang_file, 'r') as f:
                 self._gamma_lang_data = json.load(f)
@@ -630,10 +644,14 @@ def main():
     parser.add_argument("--tgt_lang", type=str, required=True, help="Target language")
     parser.add_argument("--input_dir", type=str, required=True, help="Input directory")
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
-    parser.add_argument("--watermark_method", type=str, choices=["kgw", "its", "exp"], default="kgw",
+    parser.add_argument("--watermark_method", type=str, choices=["kgw", "its", "exp", "semstamp"], default="kgw",
                         help="Scoring backend")
     parser.add_argument("--gamma_lang_file", type=str, default=None,
-                        help="Path to gamma_lang.json (required for --watermark_method kgw)")
+                        help="Path to gamma_lang.json (required for kgw / semstamp)")
+    # SemStamp scoring params.
+    parser.add_argument("--embedding_model", type=str, default="paraphrase-multilingual-mpnet-base-v2")
+    parser.add_argument("--sp_dim", type=int, default=3)
+    parser.add_argument("--lmbd", type=float, default=0.25)
     # Distortion-free (ITS/EXP) scoring params — must match generation/precompute.
     parser.add_argument("--null_dir", type=str, default=None,
                         help="Directory of per-language {iso1}.npy null distributions (its/exp)")
@@ -660,6 +678,14 @@ def main():
         if not args.gamma_lang_file:
             parser.error("--gamma_lang_file is required for --watermark_method kgw")
         watermark_detector = get_watermark_detector(base_model=args.base_model)
+    elif args.watermark_method == "semstamp":
+        if not args.gamma_lang_file:
+            parser.error("--gamma_lang_file is required for --watermark_method semstamp")
+        watermark_detector = get_semstamp_detector(
+            embedding_model=args.embedding_model,
+            sp_dim=args.sp_dim,
+            lmbd=args.lmbd,
+        )
     else:
         if not args.null_dir:
             parser.error("--null_dir is required for --watermark_method its/exp")

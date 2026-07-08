@@ -26,6 +26,8 @@ from src_watermark.uw import (
     patch_model
 )
 from src_watermark.distortion_free.watermark import DistortionFreeGenerator
+from src_watermark.semstamp.sentence_model import MultilingualSBERTLSH
+from src_watermark.semstamp.generator import SemStampGenerator
 
 from utils import read_jsonl, append_jsonl
 
@@ -88,9 +90,10 @@ def main(args):
         model = torch.compile(model)
 
     # Load watermark
-    # `df_generator` is set only for distortion-free methods (its/exp), which replace the
-    # sampler in a custom decode loop instead of biasing logits via a LogitsProcessor.
+    # `df_generator` (its/exp) and `sem_generator` (semstamp) replace HF sampling with a custom
+    # loop; only one is ever set, and both leave `logits_processor` None.
     df_generator = None
+    sem_generator = None
     if args.watermark_method in ["xsir", "sir"]:
         if args.watermark_type == "window": # use a window of previous tokens to hash, e.g. KGW
             watermark_model = XSIRWindow(
@@ -137,6 +140,14 @@ def main(args):
             n=args.wm_n,
             vocab_size=model.config.vocab_size,
         )
+    elif args.watermark_method == "semstamp":
+        # Sentence-level semantic watermark: rejection sampling over LSH regions.
+        logits_processor = None
+        sem_lsh_model = MultilingualSBERTLSH(args.embedding_model, args.sp_dim, device=str(device))
+        sem_generator = SemStampGenerator(
+            model, tokenizer, sem_lsh_model, args.sp_dim,
+            lmbd=args.lmbd, margin=args.margin, max_new_tokens=OUTPUT_LENGTH + 5,
+        )
     elif args.watermark_method == "no":
         logits_processor = None
     else:
@@ -152,6 +163,14 @@ def main(args):
         no_repeat_ngram_size=4,
         repetition_penalty=1.05, # reduce repetition (we found that repetition might result in high z-score accidentially, even for non-watermarked text)
     )
+
+    # SemStamp generates one prompt at a time (rejection sampling per sentence, batch size 1).
+    if sem_generator is not None:
+        for prompt in tqdm.tqdm(prompt_list):
+            full_text = sem_generator.generate(prompt)
+            new_text = full_text[len(prompt):]
+            append_jsonl(args.output_file, {"prompt": prompt, "response": new_text})
+        return
 
     for batch in tqdm.tqdm(range(0, len(prompt_list), args.batch_size)):
         batch_prompts = prompt_list[batch:batch+args.batch_size]
@@ -198,7 +217,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, required=True, help="Output file to save generated text")
 
     # Watermark
-    parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "uw", "its", "exp", "no"], default="no", help="Watermarking method")
+    parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "uw", "its", "exp", "semstamp", "no"], default="no", help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
     parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
@@ -218,6 +237,11 @@ if __name__ == "__main__":
     # These must match the values used at detection time.
     parser.add_argument('--wm_key', type=int, default=42, help="Secret key/seed for ITS/EXP")
     parser.add_argument('--wm_n', type=int, default=256, help="Watermark sequence length for ITS/EXP")
+
+    # SemStamp (uses --embedding_model as the sentence encoder).
+    parser.add_argument('--sp_dim', type=int, default=3, help="LSH dimension (2^sp_dim regions)")
+    parser.add_argument('--lmbd', type=float, default=0.25, help="Green-region acceptance rate")
+    parser.add_argument('--margin', type=float, default=0.0, help="Reject sentences within this cosine margin of a hyperplane")
 
     # Generation
     parser.add_argument('--batch_size', type=int, default=4)

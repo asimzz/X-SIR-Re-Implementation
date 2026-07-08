@@ -13,6 +13,7 @@ from src_watermark.kgw.extended_watermark_processor import (
 )
 from src_watermark.uw.detect import Detector as UWDetector
 from src_watermark.distortion_free.watermark import DistortionFreeDetector
+from src_watermark.semstamp.detector import SemStampDetector
 
 import numpy as np
 from utils import read_jsonl, append_jsonl
@@ -83,6 +84,13 @@ def main(args):
             null_results=null_results,
             n_runs=args.wm_n_runs,
         )
+    elif args.watermark_method == "semstamp":
+        watermark_detector = SemStampDetector(
+            embedder_name=args.embedding_model,
+            lsh_dim=args.sp_dim,
+            lmbd=args.lmbd,
+            device=str(device),
+        )
     else:
         raise ValueError(f"Incorrect watermark method: {args.watermark_method}")
 
@@ -133,7 +141,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, required=True, help="Output file to write the z-scores.")
 
     # Watermark
-    parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "sir", "uw", "its", "exp"], required=True, help="Watermarking method")
+    parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "sir", "uw", "its", "exp", "semstamp"], required=True, help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
     parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
@@ -159,6 +167,10 @@ if __name__ == "__main__":
     parser.add_argument('--wm_n_runs', type=int, default=100, help="Permutation runs (exact path)")
     parser.add_argument('--wm_fast', action="store_true", help="Use fast_permutation_test with a precomputed null")
     parser.add_argument('--wm_null_file', type=str, default=None, help="Path to {lang}.npy null distribution (fast path)")
+
+    # SemStamp (uses --embedding_model as the sentence encoder).
+    parser.add_argument('--sp_dim', type=int, default=3, help="LSH dimension (2^sp_dim regions)")
+    parser.add_argument('--lmbd', type=float, default=0.25, help="Green-region acceptance rate")
 
     args = parser.parse_args()
 
