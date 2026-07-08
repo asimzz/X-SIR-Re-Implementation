@@ -12,7 +12,9 @@ from src_watermark.kgw.extended_watermark_processor import (
     WatermarkDetector as KGWDetector
 )
 from src_watermark.uw.detect import Detector as UWDetector
+from src_watermark.distortion_free.watermark import DistortionFreeDetector
 
+import numpy as np
 from utils import read_jsonl, append_jsonl
 
 def get_length(text, tokenizer):
@@ -62,6 +64,24 @@ def main(args):
         watermark_detector = UWDetector(
             model=model,
             tokenizer=tokenizer
+        )
+    elif args.watermark_method in ["its", "exp"]:
+        # Distortion-free detector: returns {"z_score": -log(p_value)}. Exact permutation
+        # test by default; pass --wm_fast with --wm_null_file for the precomputed-null path.
+        null_results = None
+        if args.wm_fast:
+            if not args.wm_null_file:
+                raise ValueError("--wm_fast requires --wm_null_file")
+            null_results = np.load(args.wm_null_file)
+        watermark_detector = DistortionFreeDetector(
+            method=args.watermark_method,
+            key=args.wm_key,
+            n=args.wm_n,
+            k=args.wm_k,
+            gamma=args.wm_gamma,
+            tokenizer=tokenizer,
+            null_results=null_results,
+            n_runs=args.wm_n_runs,
         )
     else:
         raise ValueError(f"Incorrect watermark method: {args.watermark_method}")
@@ -113,7 +133,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, required=True, help="Output file to write the z-scores.")
 
     # Watermark
-    parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "sir", "uw"], required=True, help="Watermarking method")
+    parser.add_argument('--watermark_method', type=str, choices=["xsir", "kgw", "sir", "uw", "its", "exp"], required=True, help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
     parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
@@ -128,6 +148,17 @@ if __name__ == "__main__":
     # KGW
     parser.add_argument('--gamma', type=float, default=0.25)
     parser.add_argument('--seeding_scheme', type=str, default="minhash")
+
+    # Distortion-free (ITS / EXP). key/n must match generation; k/gamma must match the null.
+    parser.add_argument('--wm_key', type=int, default=42, help="Secret key/seed for ITS/EXP")
+    parser.add_argument('--wm_n', type=int, default=256, help="Watermark sequence length for ITS/EXP")
+    parser.add_argument('--wm_k', type=int, default=None,
+                        help="Alignment block length. None=whole sequence (exact path only); "
+                             "fixed int required for the fast path")
+    parser.add_argument('--wm_gamma', type=float, default=1.0, help="Levenshtein indel cost for ITS/EXP")
+    parser.add_argument('--wm_n_runs', type=int, default=100, help="Permutation runs (exact path)")
+    parser.add_argument('--wm_fast', action="store_true", help="Use fast_permutation_test with a precomputed null")
+    parser.add_argument('--wm_null_file', type=str, default=None, help="Path to {lang}.npy null distribution (fast path)")
 
     args = parser.parse_args()
 

@@ -25,6 +25,7 @@ from src_watermark.uw import (
     PrevN_ContextCodeExtractor,
     patch_model
 )
+from src_watermark.distortion_free.watermark import DistortionFreeGenerator
 
 from utils import read_jsonl, append_jsonl
 
@@ -87,6 +88,9 @@ def main(args):
         model = torch.compile(model)
 
     # Load watermark
+    # `df_generator` is set only for distortion-free methods (its/exp), which replace the
+    # sampler in a custom decode loop instead of biasing logits via a LogitsProcessor.
+    df_generator = None
     if args.watermark_method in ["xsir", "sir"]:
         if args.watermark_type == "window": # use a window of previous tokens to hash, e.g. KGW
             watermark_model = XSIRWindow(
@@ -124,6 +128,15 @@ def main(args):
             Delta_Reweight(),
             PrevN_ContextCodeExtractor(5),
         )
+    elif args.watermark_method in ["its", "exp"]:
+        # Distortion-free: no logit bias; a key-driven sampler is applied in the decode loop.
+        logits_processor = None
+        df_generator = DistortionFreeGenerator(
+            method=args.watermark_method,
+            key=args.wm_key,
+            n=args.wm_n,
+            vocab_size=model.config.vocab_size,
+        )
     elif args.watermark_method == "no":
         logits_processor = None
     else:
@@ -151,12 +164,18 @@ def main(args):
         attn_mask = attn_mask[:, :-1] if input_ids[0, -1] == tokenizer.eos_token_id else attn_mask
 
         with torch.no_grad():
-            generated_ids = model.generate(
-                input_ids=input_ids,
-                attention_mask=attn_mask,
-                generation_config=generation_config,
-                logits_processor=LogitsProcessorList([logits_processor]) if logits_processor is not None else None
-            )
+            if df_generator is not None:
+                # Distortion-free (its/exp): custom key-driven decode loop. Ignores the
+                # HF GenerationConfig (repetition_penalty / no_repeat_ngram would break
+                # distortion-freeness). Use --batch_size 1 to avoid left-pad artifacts.
+                generated_ids = df_generator.generate(model, input_ids, m=OUTPUT_LENGTH)
+            else:
+                generated_ids = model.generate(
+                    input_ids=input_ids,
+                    attention_mask=attn_mask,
+                    generation_config=generation_config,
+                    logits_processor=LogitsProcessorList([logits_processor]) if logits_processor is not None else None
+                )
 
             for i, (in_ids, gen_ids) in enumerate(zip(input_ids, generated_ids)):
                 # Remove input tokens from generated tokens
@@ -179,7 +198,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, required=True, help="Output file to save generated text")
 
     # Watermark
-    parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "uw", "no"], default="no", help="Watermarking method")
+    parser.add_argument('--watermark_method', type=str, choices=["xsir", "sir", "kgw", "uw", "its", "exp", "no"], default="no", help="Watermarking method")
     parser.add_argument('--delta', type=float, default=None, help="bias of logit")
     parser.add_argument('--seed', type=int, default=0, help="Seed for watermarking")
 
@@ -194,6 +213,11 @@ if __name__ == "__main__":
     # KGW
     parser.add_argument('--gamma', type=float, default=0.25)
     parser.add_argument('--seeding_scheme', type=str, default="minhash")
+
+    # Distortion-free (ITS / EXP): key = secret seed, n = watermark sequence length.
+    # These must match the values used at detection time.
+    parser.add_argument('--wm_key', type=int, default=42, help="Secret key/seed for ITS/EXP")
+    parser.add_argument('--wm_n', type=int, default=256, help="Watermark sequence length for ITS/EXP")
 
     # Generation
     parser.add_argument('--batch_size', type=int, default=4)

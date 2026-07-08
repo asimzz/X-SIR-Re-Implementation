@@ -41,6 +41,7 @@ from transformers import AutoTokenizer
 from src_watermark.kgw.extended_watermark_processor import (
     WatermarkDetector as KGWDetector
 )
+from src_watermark.distortion_free.watermark import DistortionFreeDetector
 
 
 def get_watermark_detector(base_model: str, **kwargs):
@@ -58,6 +59,20 @@ def get_watermark_detector(base_model: str, **kwargs):
         z_threshold=kwargs.get('z_threshold', 4.0),
         normalizers=kwargs.get('normalizers', []),
         ignore_repeated_ngrams=kwargs.get('ignore_repeated_ngrams', True),
+    )
+
+
+def get_distortion_free_detector(base_model: str, method: str, **kwargs):
+    """Create an ITS/EXP distortion-free detector (fast path; null set per-pivot at score time)."""
+    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+    return DistortionFreeDetector(
+        method=method,
+        key=kwargs.get('wm_key', 42),
+        n=kwargs.get('wm_n', 256),
+        k=kwargs.get('wm_k'),
+        gamma=kwargs.get('wm_gamma', 1.0),
+        tokenizer=tokenizer,
+        null_results=None,
     )
 
 
@@ -109,13 +124,15 @@ class STEAMBODetector:
                  target_lang: str,
                  input_dir: str,
                  output_dir: str,
-                 gamma_lang_file: str,
+                 gamma_lang_file: str = None,
                  n_initial: int = 3,
                  max_evaluations: int = 15,
                  random_state: int = 42,
                  per_example_attack: bool = False,
                  mod_file: str = None,
-                 hum_file: str = None):
+                 hum_file: str = None,
+                 watermark_method: str = "kgw",
+                 null_dir: str = None):
         self.watermark_detector = watermark_detector
         self.target_lang = target_lang
         self.input_dir = input_dir
@@ -123,6 +140,11 @@ class STEAMBODetector:
         self.n_initial = n_initial
         self.max_evaluations = max_evaluations
         self.random_state = random_state
+        # Scoring backend: 'kgw' uses the gamma_lang-corrected z-score; 'its'/'exp' use the
+        # distortion-free detector's -log(p_value) with a per-pivot-language null.
+        self.watermark_method = watermark_method
+        self.null_dir = null_dir
+        self._null_cache = {}
         # Per-example-attack mode: each input line carries its own `attack_lang`
         # (the language it was translated into). The source language S is passed
         # as `target_lang` and is kept as an eligible pivot (back-translating
@@ -136,11 +158,16 @@ class STEAMBODetector:
                           format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
-        # Load γ_lang values (language-specific green token fractions)
-        print("Loading gamma_lang file...")
-        with open(gamma_lang_file, 'r') as f:
-            self._gamma_lang_data = json.load(f)
-        self.logger.info(f"Loaded γ_lang for {len(self._gamma_lang_data)} languages from {gamma_lang_file}")
+        # Load γ_lang values (language-specific green token fractions) — KGW only.
+        self._gamma_lang_data = {}
+        if self.watermark_method == "kgw":
+            print("Loading gamma_lang file...")
+            with open(gamma_lang_file, 'r') as f:
+                self._gamma_lang_data = json.load(f)
+            self.logger.info(f"Loaded γ_lang for {len(self._gamma_lang_data)} languages from {gamma_lang_file}")
+        else:
+            self.logger.info(f"Distortion-free method '{self.watermark_method}': "
+                             f"scoring with -log(p) and per-language nulls from {null_dir}")
 
         # Initialize components
         print("Initializing backtranslator...")
@@ -231,6 +258,52 @@ class STEAMBODetector:
         denom = math.sqrt(num_tokens_scored * gamma_lang * (1 - gamma_lang))
         return numer / denom
 
+    def _get_null(self, pivot_lang: str):
+        """Load (and cache) the per-language null distribution for the fast ITS/EXP path.
+        `pivot_lang` is ISO-3; nulls are stored as {null_dir}/{iso1}.npy. Returns None if
+        unavailable (that pivot is then treated as a failed evaluation)."""
+        if pivot_lang in self._null_cache:
+            return self._null_cache[pivot_lang]
+        null = None
+        try:
+            pivot_iso1 = iso3_to_iso1(pivot_lang)
+            path = os.path.join(self.null_dir, f"{pivot_iso1}.npy")
+            if os.path.exists(path):
+                null = np.load(path)
+            else:
+                self.logger.warning(f"No null distribution for {pivot_iso1} at {path}")
+        except ValueError:
+            self.logger.warning(f"Cannot convert {pivot_lang} to ISO-1 for null lookup")
+        self._null_cache[pivot_lang] = null
+        return null
+
+    def _score_translated(self, translated_text: str, pivot_lang: str) -> Tuple[float, bool]:
+        """Score already-translated text with the active watermark backend.
+
+        Returns (score, success); higher score = more watermarked. For KGW the score is the
+        γ_lang-corrected z-score; for ITS/EXP it is -log(p_value) from the distortion-free
+        detector using `pivot_lang`'s precomputed null (per-language normalization)."""
+        if self.watermark_method in ("its", "exp"):
+            null = self._get_null(pivot_lang)
+            if null is None:
+                return 0.0, False
+            self.watermark_detector.set_null_results(null)
+            try:
+                res = self.watermark_detector.detect(translated_text)
+            except ValueError:
+                # too short for the chosen k
+                return 0.0, False
+            return float(res["z_score"]), True
+
+        # KGW: recompute z-score with the language-specific green-token fraction γ_lang.
+        detection_result = self.watermark_detector.detect(translated_text)
+        num_green = detection_result.get('num_green_tokens')
+        num_scored = detection_result.get('num_tokens_scored')
+        if num_green is None or num_scored is None or num_scored == 0:
+            return 0.0, False
+        gamma_lang = self._get_gamma_lang(pivot_lang)
+        return self._recompute_z_score(int(num_green), int(num_scored), gamma_lang), True
+
     def _translate_and_detect(self, text: str, pivot_lang: str,
                               src_lang_iso1: str = None) -> Tuple[float, str, bool]:
         """
@@ -270,19 +343,12 @@ class STEAMBODetector:
                 self.logger.error(f"Translation failed: {src_lang_iso1} → {pivot_iso1}")
                 return 0.0, "", False
 
-            # Detect watermark (uses default γ=0.25 for green list partitioning)
-            detection_result = self.watermark_detector.detect(translated_text)
-            num_green = detection_result.get('num_green_tokens')
-            num_scored = detection_result.get('num_tokens_scored')
-
-            if num_green is None or num_scored is None or num_scored == 0:
+            # Score with the active backend (KGW γ_lang-corrected z, or ITS/EXP -log p).
+            score, success = self._score_translated(translated_text, pivot_lang)
+            if not success:
                 return 0.0, "", False
 
-            # Recompute z-score using γ_lang
-            gamma_lang = self._get_gamma_lang(pivot_lang)
-            corrected_z = self._recompute_z_score(int(num_green), int(num_scored), gamma_lang)
-
-            return corrected_z, translated_text, True
+            return score, translated_text, True
 
         except Exception as e:
             self.logger.error(f"Error in translate_and_detect for {pivot_lang}: {e}")
@@ -564,7 +630,17 @@ def main():
     parser.add_argument("--tgt_lang", type=str, required=True, help="Target language")
     parser.add_argument("--input_dir", type=str, required=True, help="Input directory")
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
-    parser.add_argument("--gamma_lang_file", type=str, required=True, help="Path to gamma_lang.json")
+    parser.add_argument("--watermark_method", type=str, choices=["kgw", "its", "exp"], default="kgw",
+                        help="Scoring backend")
+    parser.add_argument("--gamma_lang_file", type=str, default=None,
+                        help="Path to gamma_lang.json (required for --watermark_method kgw)")
+    # Distortion-free (ITS/EXP) scoring params — must match generation/precompute.
+    parser.add_argument("--null_dir", type=str, default=None,
+                        help="Directory of per-language {iso1}.npy null distributions (its/exp)")
+    parser.add_argument("--wm_key", type=int, default=42)
+    parser.add_argument("--wm_n", type=int, default=256)
+    parser.add_argument("--wm_k", type=int, default=None, help="Fixed alignment block length (its/exp fast path)")
+    parser.add_argument("--wm_gamma", type=float, default=1.0)
     parser.add_argument("--n_initial", type=int, default=3, help="Initial pivot languages")
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
@@ -580,7 +656,23 @@ def main():
 
     args = parser.parse_args()
 
-    watermark_detector = get_watermark_detector(base_model=args.base_model)
+    if args.watermark_method == "kgw":
+        if not args.gamma_lang_file:
+            parser.error("--gamma_lang_file is required for --watermark_method kgw")
+        watermark_detector = get_watermark_detector(base_model=args.base_model)
+    else:
+        if not args.null_dir:
+            parser.error("--null_dir is required for --watermark_method its/exp")
+        if args.wm_k is None:
+            parser.error("--wm_k is required for --watermark_method its/exp (fast path)")
+        watermark_detector = get_distortion_free_detector(
+            base_model=args.base_model,
+            method=args.watermark_method,
+            wm_key=args.wm_key,
+            wm_n=args.wm_n,
+            wm_k=args.wm_k,
+            wm_gamma=args.wm_gamma,
+        )
 
     steam_detector = STEAMBODetector(
         watermark_detector=watermark_detector,
@@ -594,6 +686,8 @@ def main():
         per_example_attack=args.per_example_attack,
         mod_file=args.mod_file,
         hum_file=args.hum_file,
+        watermark_method=args.watermark_method,
+        null_dir=args.null_dir,
     )
 
     output_file = steam_detector.run(num_texts=args.num_texts)
