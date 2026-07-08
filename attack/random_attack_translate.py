@@ -48,11 +48,13 @@ def read_jsonl(file_path):
 
 
 def normalize_for_google(code):
-    """Map repo language labels to codes the Google backend accepts."""
+    """Map repo language labels to codes the deep_translator Google backend accepts.
+
+    Note: deep_translator uses 'iw' (not 'he') for Hebrew and 'zh-CN' for Chinese,
+    so 'iw' is left untouched here.
+    """
     if code == "zh":
         return "zh-CN"
-    if code == "iw":
-        return "he"
     return code
 
 
