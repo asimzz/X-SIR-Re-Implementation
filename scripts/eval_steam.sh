@@ -16,15 +16,11 @@ MODEL_ABBRS=(
 
 WATERMARK_METHODS=("kgw")
 
-# Load target languages from supported_languages.txt (one code per line).
-# Lines that are empty or start with '#' are ignored.
-SUPPORTED_LANGS_FILE="$WORK_DIR/supported_languages.txt"
-if [ -f "$SUPPORTED_LANGS_FILE" ]; then
-    mapfile -t TGT_LANGS < <(grep -E -v '^\s*(#|$)' "$SUPPORTED_LANGS_FILE")
-else
-    echo "supported languages file not found: $SUPPORTED_LANGS_FILE" >&2
-    exit 1
-fi
+TGT_LANGS=(
+    "en"
+    "de"
+)
+
 SEEDS=(0 42 123)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
@@ -51,12 +47,12 @@ for i in "${!MODEL_NAMES[@]}"; do
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
-                    --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl 
+                    --hm_zscore $WATERMARK_DIR/mc4.fr-${TGT_LANG}.hum.z_score.jsonl \
+                    --wm_zscore $WATERMARK_DIR/mc4.fr-${TGT_LANG}.mod.z_score.jsonl 
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation STEAM ($TGT_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
-                    --hm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}.bo.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}.bo.z_score.jsonl
+                    --hm_zscore $WATERMARK_DIR/fr_translated/mc4.${TGT_LANG}.bo.hum.z_score.jsonl \
+                    --wm_zscore $WATERMARK_DIR/fr_translated/mc4.${TGT_LANG}.bo.z_score.jsonl
             done
             echo "======================================="
         done

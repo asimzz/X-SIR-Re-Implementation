@@ -33,91 +33,13 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("kgw")
 SEEDS=(0)
 TGT_LANGS=(
-    # Target languages
-    "sq" # Albanian
-    "hy" # Armenian
-    "as" # Assamese
-    "ay" # Aymara
-    "az" # Azerbaijani
-    "bm" # Bambara
-    "eu" # Basque
-    "bho" # Bhojpuri
-    "bs" # Bosnian
-    "ceb" # Cebuano
-    "ny" # Chichewa
-    "co" # Corsican
-    "dv" # Dhivehi
-    "doi" # Dogri
-    "en" # English
-    "eo" # Esperanto
-    "ee" # Ewe
-    "tl" # Tagalog
-    "fy" # Frisian
-    "gl" # Galician
-    "gn" # Guarani
-    "gu" # Gujarati
-    "ht" # Haitian Creole
-    "haw" # Hawaiian
-    "hmn" # Hmong
-    "is" # Icelandic
-    "ig" # Igbo
-    "ilo" # Ilocano
-    "ga" # Irish
-    "jw" # Javanese
-    "kn" # Kannada
-    "kk" # Kazakh
-    "km" # Khmer
-    "rw" # Kinyarwanda
-    "gom" # Goan Konkani
-    "kri" # Krio
-    "ku" # Kurdish
-    "ckb" # Central Kurdish
-    "ky" # Kirghiz
-    "lo" # Lao
-    "la" # Latin
-    "ln" # Lingala
-    "lg" # Luganda
-    "lb" # Luxembourgish
-    "mk" # Macedonian
-    # "mai" # Maithili
-    # "mg" # Malagasy
-    # "ms" # Malay
-    # "ml" # Malayala
-    # "mt" # Maltese
-    # "mi" # Māori
-    # "mr" # Marathi
-    # "mni-Mtei" # Manipuri
-    # "lus" # Mizo
-    # "mn" # Mongolian
-    # "my" # Myanmar
-    # "ne" # Nepali
-    # "or" # Odia
-    # "om" # Oromo
-    # "ps" # Pashto
-    # "qu" # Quechua
-    # "sm" # Samoan
-    # "sa" # Sanskrit
-    # "gd" # Scottish Gaelic
-    # "nso" # Northern Sotho
-    # "st" # Sesotho
-    # "sn" # Shona
-    # "sd" # Sindhi
-    # "si" # Sinhala
-    # "so" # Somali
-    # "su" # Sundanese
-    # "tt" # Tatar
-    # "te" # Telugu
-    # "th" # Thai
-    # "ti" # Tigrinya
-    # "ts" # Tsonga
-    # "tk" # Turkmen
-    # "ak" # Twi
-    # "ur" # Urdu
-    # "ug" # Uyghur
-    # "uz" # Uzbek
-    # "cy" # Welsh
-    # "xh" # Xhosa
-    # "yi" # Yiddish
+    # High-resource languages
+    "en" "de" "it" "es" "pt"
+    # Medium-resource languages
+    "pl" "nl" "ru" "hi" "ko" "ja"
+    # Low-resource languages
+    "bn" "fa" "vi" "iw" "uk" "ta"
+    ""
 )
 
 # Validate model list lengths
@@ -149,14 +71,14 @@ for i in "${!MODEL_NAMES[@]}"; do
             fi
 
 
-            # # Step 1: Generate human text
-            # echo "📝 Generating human text for en"
-            # python3 "$WORK_DIR/detect.py" \
-            #     --base_model "$MODEL_NAME" \
-            #     --seed "$SEED" \
-            #     --detect_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-            #     --output_file "$OUT_DIR/mc4.en.hum.z_score.jsonl" \
-            #     $WATERMARK_FLAGS
+            # Step 1: Generate human text
+            echo "📝 Generating human text for fr"
+            python3 "$WORK_DIR/detect.py" \
+                --base_model "$MODEL_NAME" \
+                --seed "$SEED" \
+                --detect_file "$DATA_DIR/dataset/mc4/mc4.fr.jsonl" \
+                --output_file "$OUT_DIR/mc4.fr.hum.z_score.jsonl" \
+                $WATERMARK_FLAGS
 
             # Step 3: Translation & detection for each target language
             for TGT_LANG in "${TGT_LANGS[@]}"; do
@@ -165,20 +87,20 @@ for i in "${!MODEL_NAMES[@]}"; do
                 # Translation of human text
                 echo "🌐 Translating human text to $TGT_LANG"
                 python3 "$ATTACK_DIR/google_translate.py" \
-                    --input_file "$DATA_DIR/dataset/mc4/mc4.en.jsonl" \
-                    --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
+                    --input_file "$DATA_DIR/dataset/mc4/mc4.fr.jsonl" \
+                    --output_file "$OUT_DIR/mc4.fr-${TGT_LANG}.hum.jsonl" \
                     --translation_part response \
-                    --src_lang en \
+                    --src_lang fr \
                     --tgt_lang "$TGT_LANG"
 
                 # echo "🔍 Detecting watermark in translated human text"
-                # # Detect on translated human text
-                # python3 "$WORK_DIR/detect.py" \
-                #     --base_model "$MODEL_NAME" \
-                #     --seed "$SEED" \
-                #     --detect_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.jsonl" \
-                #     --output_file "$OUT_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl" \
-                #     $WATERMARK_FLAGS
+                # Detect on translated human text
+                python3 "$WORK_DIR/detect.py" \
+                    --base_model "$MODEL_NAME" \
+                    --seed "$SEED" \
+                    --detect_file "$OUT_DIR/mc4.fr-${TGT_LANG}.hum.jsonl" \
+                    --output_file "$OUT_DIR/mc4.fr-${TGT_LANG}.hum.z_score.jsonl" \
+                    $WATERMARK_FLAGS
             done
         done
     done

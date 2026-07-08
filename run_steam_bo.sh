@@ -13,14 +13,16 @@ set -e
 BASE_MODEL="CohereForAI/aya-23-8B"
 MODEL_ABBR="aya-23-8B"
 N_INITIAL=3
-MAX_EVALUATIONS=20
+MAX_EVALUATIONS=15
 NUM_TEXTS=500
 
-TARGET_LANGS=("bn" "fa" "vi" "iw" "uk" "ta")
+TARGET_LANGS=(
+   "de" 
+)
 
 # Directories
 INPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0"
-OUTPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0"
+OUTPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0/fr_translated"
 GAMMA_LANG_FILE="gen/${MODEL_ABBR}/kgw_seed0/gamma_lang.json"
 
 # Allow running a single language

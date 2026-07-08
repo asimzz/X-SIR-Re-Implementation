@@ -7,39 +7,25 @@ GEN_DIR=$WORK_DIR/gen
 
 
 MODEL_NAMES=(
-    "meta-llama/Llama-3.2-1B"
     "CohereForAI/aya-23-8B"
 )
 
 MODEL_ABBRS=(
-    "llama-3.2-1B"
     "aya-23-8B"
 )
 
-WATERMARK_METHODS=("xsir")
+WATERMARK_METHODS=("kgw")
 TGT_LANGS=(
-    # # High-resource languages
-    "fr"
-    "de"
-    "it"
-    "es"
-    "pt"
-    # Medium-resource languages
-    "pl"
-    "nl"
-    "ru"
-    "hi"
-    "ko"
-    "ja"
-    # Low-resource languages
-    "bn"
-    "fa"
-    "vi"
-    "iw" # Hebrew
-    "uk"
-    "ta"
+    # Tareget languages
+    "sq" # Albanian
+    "hy" # Armenian
+    "as" # Assamese
+    "ay" # Aymara
+    "az" # Azerbaijani
+    "bm" # Bambara
+    "eu" # Basque
     )
-SEEDS=(0 42 123)
+SEEDS=(0)
 
 if [ ${#MODEL_NAMES[@]} -ne ${#MODEL_ABBRS[@]} ]; then
     echo "Length of MODEL_NAMES and MODEL_ABBRS should be the same"
@@ -65,12 +51,8 @@ for i in "${!MODEL_NAMES[@]}"; do
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
-                    --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl 
-                echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation Human ($TGT_LANG)"
-                python3 $WORK_DIR/eval_detection.py \
-                    --hm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.en-${TGT_LANG}.mod.z_score.jsonl
+                    --hm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}.bo.hum.z_score.jsonl \
+                    --wm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}.bo.z_score.jsonl 
             done
             echo "======================================="
         done
