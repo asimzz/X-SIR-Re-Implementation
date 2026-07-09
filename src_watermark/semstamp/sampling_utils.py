@@ -2,7 +2,13 @@
 import numpy as np
 import torch
 from transformers import StoppingCriteria
+import nltk
 from nltk.tokenize import sent_tokenize
+
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt", quiet=True)
 
 MAX_TRIALS = 100
 PUNCTS = '!.?'
