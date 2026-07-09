@@ -17,13 +17,12 @@ MODEL_ABBRS=(
 WATERMARK_METHODS=("kgw")
 TGT_LANGS=(
     # Tareget languages
-    "sq" # Albanian
-    "hy" # Armenian
-    "as" # Assamese
-    "ay" # Aymara
-    "az" # Azerbaijani
-    "bm" # Bambara
-    "eu" # Basque
+    "fr" # French
+    "de" # German
+    "es" # Spanish
+    "it" # Italian
+    "pt" # Portuguese
+    "ru" # Russian
     )
 SEEDS=(0)
 
@@ -51,8 +50,8 @@ for i in "${!MODEL_NAMES[@]}"; do
             for TGT_LANG in "${TGT_LANGS[@]}"; do
                 echo "$MODEL_NAME $WATERMARK_METHOD (seed=$SEED) Translation ($TGT_LANG)"
                 python3 $WORK_DIR/eval_detection.py \
-                    --hm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}.bo.hum.z_score.jsonl \
-                    --wm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}.bo.z_score.jsonl 
+                    --hm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}-mix.bo.hum.z_score.jsonl \
+                    --wm_zscore $WATERMARK_DIR/mc4.${TGT_LANG}-mix.bo.z_score.jsonl 
             done
             echo "======================================="
         done
