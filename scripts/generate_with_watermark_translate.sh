@@ -17,6 +17,10 @@ TRANSFORM_MODEL="$DATA_DIR/model/transform_model_x-sbert.pth"
 EMBEDDING_MODEL="paraphrase-multilingual-mpnet-base-v2"
 BATCH_SIZE=32
 
+# SemStamp configuration (sentence-level LSH; uses EMBEDDING_MODEL as the encoder)
+SP_DIM=3
+LMBD=0.25
+
 # Model names and abbreviations
 MODEL_NAMES=(
     # "meta-llama/Llama-3.2-1B"
@@ -30,7 +34,7 @@ MODEL_ABBRS=(
 )
 
 # Settings
-WATERMARK_METHODS=("kgw")
+WATERMARK_METHODS=("kgw" "semstamp")
 SEEDS=(0)
 TGT_LANGS=(
     # High-resource languages
@@ -64,6 +68,8 @@ for i in "${!MODEL_NAMES[@]}"; do
                 WATERMARK_FLAGS="--watermark_method kgw"
             elif [ "$WATERMARK_METHOD" == "xsir" ]; then
                 WATERMARK_FLAGS="--watermark_method xsir --transform_model $TRANSFORM_MODEL --embedding_model $EMBEDDING_MODEL --mapping_file $MAPPING_FILE"
+            elif [ "$WATERMARK_METHOD" == "semstamp" ]; then
+                WATERMARK_FLAGS="--watermark_method semstamp --embedding_model $EMBEDDING_MODEL --sp_dim $SP_DIM --lmbd $LMBD"
             else
                 echo "❌ Unknown watermark method: $WATERMARK_METHOD"
                 exit 1
