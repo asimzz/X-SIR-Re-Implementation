@@ -510,6 +510,76 @@ class STEAMBODetector:
         self.logger.info(f"Human results:       {hum_output}")
         return mod_output
 
+    def run_null(self, num_texts: int = 500) -> str:
+        """
+        Independent full BO search on EACH human/null text, producing a TRUE
+        max-over-search null statistic per text.
+
+        Unlike run()/_process_human_text — which score a human text by borrowing
+        the pivot BO selected for its paired *watermarked* text (a single
+        translate+detect) — here every null text gets its own budget-
+        `max_evaluations` BO search. This is the statistic the deployed detector
+        actually produces for an arbitrary suspect text, and is what the FPR
+        calibration of the max-over-search statistic must be characterised on.
+
+        Produces:
+          - mc4.{target_lang}.bo.hum.indep.z_score.jsonl  (human, independent search)
+        """
+        self.logger.info(f"Starting INDEPENDENT null BO search for {num_texts} texts")
+
+        # Null texts are the human halves of the test set (disjoint from the
+        # mc4.{lang}.val.jsonl corpus used to fit γ_lang).
+        hum_file = os.path.join(self.input_dir, f"mc4.en-{self.target_lang}.hum.jsonl")
+        if not os.path.exists(hum_file):
+            raise FileNotFoundError(f"Human text file not found: {hum_file}")
+        hum_data = read_jsonl(hum_file)[:num_texts]
+
+        out_path = os.path.join(
+            self.output_dir, f"mc4.{self.target_lang}.bo.hum.indep.z_score.jsonl"
+        )
+
+        # Single-file resume: drop any partial trailing line, then continue.
+        start_idx = _count_complete_lines_and_truncate(out_path)
+        if start_idx >= num_texts:
+            self.logger.info(
+                f"All {num_texts} null texts already processed for {self.target_lang}, skipping"
+            )
+            return out_path
+        if start_idx > 0:
+            self.logger.info(
+                f"Resuming independent null search from text {start_idx} "
+                f"({start_idx} already processed)"
+            )
+
+        with open(out_path, 'a') as f_out:
+            for i, item in enumerate(hum_data):
+                if i < start_idx:
+                    continue
+                text_content = item.get('response', '')
+                prompt = item.get('prompt', '')
+
+                # Invariant: always write exactly one line per text so that
+                # line-N corresponds to text-N (required for count-based resume).
+                if not text_content:
+                    self.logger.warning(f"Empty null text at index {i}, writing placeholder")
+                    result = {'z_score': 0.0, 'best_pivot': None,
+                              'prompt': prompt, 'response': text_content}
+                else:
+                    try:
+                        # text_id=i seeds _sample_initial_pivots (random_state + i)
+                        # → reproducible, independent per null text.
+                        result = self.optimize_single_text(text_content, prompt, i)
+                    except Exception as e:
+                        self.logger.error(f"Error processing null text {i}: {e}")
+                        result = {'z_score': 0.0, 'best_pivot': None,
+                                  'prompt': prompt, 'response': text_content}
+
+                f_out.write(json.dumps(result) + '\n')
+                f_out.flush()  # per-line flush → a crash loses at most one text
+
+        self.logger.info(f"Independent null results: {out_path}")
+        return out_path
+
 
 def main():
     parser = argparse.ArgumentParser(description="STEAM BO Detector")
@@ -528,6 +598,11 @@ def main():
     parser.add_argument("--pool_seed", type=int, default=42,
                         help="Seed for reproducible candidate-pool subsampling "
                              "(only used when --max_candidate_langs is set)")
+    parser.add_argument("--independent_human", action="store_true",
+                        help="Run an INDEPENDENT full BO search on each human/null "
+                             "text (true max-over-search null) → "
+                             "mc4.{lang}.bo.hum.indep.z_score.jsonl. Skips the "
+                             "paired mod+hum run().")
 
     args = parser.parse_args()
 
@@ -546,7 +621,10 @@ def main():
         pool_seed=args.pool_seed,
     )
 
-    output_file = steam_detector.run(num_texts=args.num_texts)
+    if args.independent_human:
+        output_file = steam_detector.run_null(num_texts=args.num_texts)
+    else:
+        output_file = steam_detector.run(num_texts=args.num_texts)
     print(f"\nOutput: {output_file}")
 
 
