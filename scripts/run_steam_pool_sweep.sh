@@ -51,8 +51,11 @@ TGT_LANGS=(
     "ta" # Tamil
 )
 
-# Pool sizes for the sweep
-POOL_SIZES=(33 66 133)
+# Pool sizes for the sweep. 126 == full pool (target-excluded candidate set is
+# 125 entries, so --max_candidate_langs 126 is a no-op selecting the full pool);
+# pool_126/kgw_seed0 is a symlink → ../kgw_seed0, so full-pool positives are the
+# base run and are reused (skipped) here.
+POOL_SIZES=(33 66 126)
 
 # Reproducible subsampling: same seed across all (method, seed, lang) so the
 # 33-language subset is identical for every run, and likewise for 66.
