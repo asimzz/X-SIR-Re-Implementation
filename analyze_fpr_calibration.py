@@ -23,7 +23,9 @@ controlled, producing four rebuttal deliverables from the TRUE null statistic:
       absorb a disproportionate FPR share even after the γ_lang correction?).
 
   D4. Empirical vs Bonferroni: compare TPR at the empirically-calibrated τ* to TPR at
-      the theory-derived Bonferroni threshold z_bonf = norm.ppf(1 − α/P). Report the
+      the theory-derived Bonferroni threshold z_bonf = norm.ppf(1 − α/n_eval), where
+      n_eval is the per-text BO evaluation budget (the number of hypotheses actually
+      tested), matching the reviewer's "Bonferroni over 20 evaluations". Report the
       effective number of independent tests p_eff = α / SF(τ*); p_eff ≪ P quantifies
       that back-translation z-scores are positively correlated, so empirical
       calibration is tighter than the conservative Bonferroni/Šidák alternative.
@@ -67,7 +69,13 @@ NAIVE_ALPHA = 0.01
 NAIVE_Z = float(norm.ppf(1 - NAIVE_ALPHA))   # 2.32634… — the single-test 1%-FPR point
 CALIB_PCTL = 99.0                            # 99th percentile => 1% target FPR
 SPLIT_AT = 250                               # first SPLIT_AT = calibrate, rest = verify
-FAMILYWISE_ALPHA = 0.01                      # for z_bonf = norm.ppf(1 - α/P)
+FAMILYWISE_ALPHA = 0.01                      # for z_bonf = norm.ppf(1 - α/n_tests)
+# Bonferroni is applied over the number of hypotheses actually tested = the BO
+# evaluation budget per text (3 initial + 17 BO = 20), NOT the pool size. Each
+# suspect text evaluates exactly this many pivots and the statistic is the max
+# over them; the pool size is the search space, not the test count. This matches
+# the reviewer's framing ("Bonferroni/Šidák correction over 20 evaluations").
+N_EVALUATIONS = 20
 
 # Resource tier of each of the 17 target languages (for the per-lang table).
 RESOURCE_TIER = {
@@ -152,7 +160,8 @@ def split_by_index(scores, split_at):
 # ---------------------------------------------------------------------------
 def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
                  split_at=SPLIT_AT, calib_pctl=CALIB_PCTL,
-                 alpha=FAMILYWISE_ALPHA, drop_none=False):
+                 alpha=FAMILYWISE_ALPHA, drop_none=False,
+                 n_evaluations=N_EVALUATIONS):
     """Compute all deliverables for one pool size P.
 
     Returns (overall_row, per_lang_rows, present_langs).
@@ -202,12 +211,19 @@ def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
     naive_fpr_overall = float(np.mean(null_all > NAIVE_Z))
 
     # -- D4: Bonferroni threshold (theory-derived, data-independent) --------------
-    z_bonf = float(norm.ppf(1 - alpha / P))
+    # Correct over the number of hypotheses actually tested = min(budget, pool).
+    # BO evaluates n_evaluations pivots per text (unless the pool is smaller), so
+    # this is the test count the max is taken over — NOT the pool size P.
+    n_tests = min(n_evaluations, P)
+    z_bonf = float(norm.ppf(1 - alpha / n_tests))
     tpr_bonf = float(np.mean(pos_pool > z_bonf)) if len(pos_pool) else float("nan")
     achieved_fpr_bonf = float(np.mean(verify_pool > z_bonf))
     tpr_gain = (tpr_empirical - tpr_bonf
                 if not (np.isnan(tpr_empirical) or np.isnan(tpr_bonf)) else float("nan"))
     # Effective number of independent tests: familywise / single-test tail mass.
+    # Compare against n_tests: p_eff << n_tests => the evaluated pivots are
+    # positively correlated (back-translations of one text), so empirical
+    # calibration is tighter than a Bonferroni correction over n_tests.
     sf_tau = float(norm.sf(tau_star))
     p_eff = float(alpha / sf_tau) if sf_tau > 0 else float("inf")
 
@@ -262,6 +278,7 @@ def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
         "achieved_fpr_verify": achieved_fpr,
         "tpr_empirical": tpr_empirical,
         "tpr_roc_1pct": tpr_roc_1pct,
+        "n_bonferroni_tests": n_tests,
         "z_bonf": z_bonf,
         "achieved_fpr_bonf": achieved_fpr_bonf,
         "tpr_bonf": tpr_bonf,
@@ -319,7 +336,7 @@ def plot_tpr_vs_bonferroni(overall_rows, out_path):
     tpr_bonf = [r["tpr_bonf"] for r in overall_rows]
     plt.figure(figsize=(5, 4))
     plt.plot(Ps, tpr_emp, marker="o", label="TPR @ empirical τ* (true 1% FPR)")
-    plt.plot(Ps, tpr_bonf, marker="s", ls="--", label="TPR @ Bonferroni z (α/P)")
+    plt.plot(Ps, tpr_bonf, marker="s", ls="--", label="TPR @ Bonferroni z (α/n_eval)")
     plt.xlabel("Candidate pool size P")
     plt.ylabel("TPR")
     plt.title("Empirical calibration vs Bonferroni")
@@ -337,7 +354,7 @@ def plot_threshold(overall_rows, out_path):
     zb = [r["z_bonf"] for r in overall_rows]
     plt.figure(figsize=(5, 4))
     plt.plot(Ps, tau, marker="o", label="Empirical τ* (global 99th pct)")
-    plt.plot(Ps, zb, marker="s", ls="--", label="Bonferroni z = Φ⁻¹(1−α/P)")
+    plt.plot(Ps, zb, marker="s", ls="--", label="Bonferroni z = Φ⁻¹(1−α/n_eval)")
     plt.axhline(NAIVE_Z, color="gray", ls=":", lw=1, label=f"naive z = {NAIVE_Z:.3f}")
     plt.xlabel("Candidate pool size P")
     plt.ylabel("Decision threshold (z)")
@@ -391,9 +408,11 @@ def print_rebuttal_table(overall_rows):
               f"{r['global_threshold_tau']:>7.3f} | {r['achieved_fpr_verify']:>7.3f} | "
               f"{r['tpr_empirical']:>8.3f} | {r['z_bonf']:>7.3f} | "
               f"{r['tpr_bonf']:>9.3f} | {r['tpr_gain']:>+7.3f} | {r['p_eff']:>7.1f}")
+    n_tests = overall_rows[0].get("n_bonferroni_tests")
     print("\nReading: NaiveFPR@2.326 > 1% and rising with P = the inflation W3 warns of.")
     print("         AchFPR ≈ 1% at the empirically-calibrated τ* = the fix holds on held-out nulls.")
-    print("         TPR(emp) > TPR(bonf) and p_eff ≪ P = candidate z-scores are correlated,")
+    print(f"         z_bonf is Bonferroni over the {n_tests}-evaluation budget (not the pool size).")
+    print(f"         TPR(emp) > TPR(bonf) and p_eff ≪ {n_tests} = the evaluated pivots are correlated,")
     print("         so empirical calibration is tighter than the conservative Bonferroni bound.")
 
 
@@ -423,6 +442,9 @@ def main():
                     help="Index split: first N null scores calibrate, rest verify")
     ap.add_argument("--calib_pctl", type=float, default=CALIB_PCTL)
     ap.add_argument("--alpha", type=float, default=FAMILYWISE_ALPHA)
+    ap.add_argument("--n_evaluations", type=int, default=N_EVALUATIONS,
+                    help="BO evaluation budget per text = number of hypotheses the "
+                         "Bonferroni correction is applied over (default: 20)")
     ap.add_argument("--drop_none", action="store_true",
                     help="Drop None z-scores instead of flooring to 0.0")
     ap.add_argument("--out_dir", default=os.path.join(here, "results", "fpr_calibration"))
@@ -459,7 +481,8 @@ def main():
                 row, plr, present = analyze_pool(
                     args.gen_dir, args.model_abbr, P, method, seed, args.langs,
                     split_at=args.split_at, calib_pctl=args.calib_pctl,
-                    alpha=args.alpha, drop_none=args.drop_none)
+                    alpha=args.alpha, drop_none=args.drop_none,
+                    n_evaluations=args.n_evaluations)
                 coverage[P] = present
                 if row is None:
                     print(f"  P={P} ({method} seed={seed}): no null data found — skipping")
