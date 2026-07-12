@@ -70,6 +70,10 @@ NAIVE_Z = float(norm.ppf(1 - NAIVE_ALPHA))   # 2.32634… — the single-test 1%
 CALIB_PCTL = 99.0                            # 99th percentile => 1% target FPR
 SPLIT_AT = 250                               # first SPLIT_AT = calibrate, rest = verify
 FAMILYWISE_ALPHA = 0.01                      # for z_bonf = norm.ppf(1 - α/n_tests)
+# Minimum verification-split size for a credible achieved-FPR-at-tau* estimate. The
+# 1% tail must contain enough samples to be stable (~25 => ~2500 verify points); with
+# only a few languages the extreme tail is too sparse, so that column is suppressed.
+MIN_VERIFY_FOR_ACHIEVED_FPR = 2500
 # Bonferroni is applied over the number of hypotheses actually tested = the BO
 # evaluation budget per text (3 initial + 17 BO = 20), NOT the pool size. Each
 # suspect text evaluates exactly this many pivots and the statistic is the max
@@ -445,24 +449,60 @@ def plot_per_lang_heatmap(per_lang_rows, pools, langs, out_path):
     plt.close()
 
 
+def _fnum(x, nd=3):
+    """Format a float, showing an em dash for missing/NaN."""
+    if x is None or (isinstance(x, float) and np.isnan(x)):
+        return "—"
+    return f"{x:.{nd}f}"
+
+
 def print_rebuttal_table(overall_rows):
+    """Print a consistent FPR-calibration table, showing only credible/available columns.
+
+    Always shown (credible even on partial data): the naive-threshold FPR, the
+    Bonferroni-threshold FPR, and the calibrated threshold tau*. Conditionally shown:
+      - achieved FPR at tau*  -> only when n_verify is large enough for a stable
+        1%-tail estimate (the extreme tail is too sparse on a few languages), and
+      - TPR columns           -> only when 125-pool positives are present.
+    p_eff is intentionally excluded from the headline table: it assumes a Gaussian
+    per-test null, which does not hold here (the empirical results show a heavier tail);
+    it remains in the CSV for reference.
+    """
     print("\n=== FPR calibration of the max-over-search statistic ===")
-    hdr = (f"{'Pool P':>7} | {'NaiveFPR@2.326':>14} | {'tau*':>7} | "
-           f"{'AchFPR':>7} | {'TPR(emp)':>8} | {'z_bonf':>7} | "
-           f"{'TPR(bonf)':>9} | {'dTPR':>7} | {'p_eff':>7}")
+    z_bonf = overall_rows[0].get("z_bonf")
+    n_tests = overall_rows[0].get("n_bonferroni_tests")
+    achfpr_ok = all(r["n_verify"] >= MIN_VERIFY_FOR_ACHIEVED_FPR for r in overall_rows)
+    has_tpr = any(not (isinstance(r.get("tpr_empirical"), float) and np.isnan(r["tpr_empirical"]))
+                  and r.get("tpr_empirical") is not None for r in overall_rows)
+
+    # (header, width, cell-fn)
+    cols = [
+        ("Pool P", 6, lambda r: str(r["pool_size"])),
+        ("langs", 5, lambda r: str(r["n_langs"])),
+        ("FPR@2.33", 8, lambda r: _fnum(r["naive_fpr_overall"])),
+        (f"FPR@{z_bonf:.2f}", 8, lambda r: _fnum(r["achieved_fpr_bonf"])),
+        ("tau*", 6, lambda r: _fnum(r["global_threshold_tau"], 2)),
+    ]
+    if achfpr_ok:
+        cols.append(("FPR@tau*", 9, lambda r: _fnum(r["achieved_fpr_verify"])))
+    if has_tpr:
+        cols.append(("TPR@tau*", 9, lambda r: _fnum(r["tpr_empirical"])))
+        cols.append((f"TPR@{z_bonf:.2f}", 9, lambda r: _fnum(r["tpr_bonf"])))
+
+    hdr = " | ".join(f"{h:>{w}}" for h, w, _ in cols)
     print(hdr)
     print("-" * len(hdr))
     for r in overall_rows:
-        print(f"{r['pool_size']:>7} | {r['naive_fpr_overall']:>14.3f} | "
-              f"{r['global_threshold_tau']:>7.3f} | {r['achieved_fpr_verify']:>7.3f} | "
-              f"{r['tpr_empirical']:>8.3f} | {r['z_bonf']:>7.3f} | "
-              f"{r['tpr_bonf']:>9.3f} | {r['tpr_gain']:>+7.3f} | {r['p_eff']:>7.1f}")
-    n_tests = overall_rows[0].get("n_bonferroni_tests")
-    print("\nReading: NaiveFPR@2.326 > 1% and rising with P = the inflation W3 warns of.")
-    print("         AchFPR ≈ 1% at the empirically-calibrated τ* = the fix holds on held-out nulls.")
-    print(f"         z_bonf is Bonferroni over the {n_tests}-evaluation budget (not the pool size).")
-    print(f"         TPR(emp) > TPR(bonf) and p_eff ≪ {n_tests} = the evaluated pivots are correlated,")
-    print("         so empirical calibration is tighter than the conservative Bonferroni bound.")
+        print(" | ".join(f"{fn(r):>{w}}" for _, w, fn in cols))
+
+    print(f"\nColumns: FPR@2.33 = false-positive rate of the max-over-search statistic at the")
+    print(f"  naive single-test 1% threshold (z=2.33) — the inflation W3 warns of.")
+    print(f"  FPR@{z_bonf:.2f} = FPR at the Bonferroni threshold over the {n_tests}-eval budget (Phi^-1(1-a/{n_tests})).")
+    print(f"  tau* = empirically calibrated threshold (99th pct of the calibration-split null).")
+    if not achfpr_ok:
+        print("  (Held-out FPR@tau* omitted: too few languages for a stable 1%-tail estimate.)")
+    if not has_tpr:
+        print("  (TPR columns omitted: 125-pool positives not yet regenerated.)")
 
 
 def print_coverage(coverage, langs):
