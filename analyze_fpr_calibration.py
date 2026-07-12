@@ -325,6 +325,7 @@ def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
         "n_calib": int(len(calib_pool)),
         "n_verify": int(len(verify_pool)),
         "n_pos": int(len(pos_pool)),
+        "n_eval_budget": n_evaluations,
         "naive_z": round(NAIVE_Z, 6),
         "naive_fpr_overall": naive_fpr_overall,
         "global_threshold_tau": tau_star,
@@ -534,10 +535,24 @@ def main():
     ap.add_argument("--n_evaluations", type=int, default=N_EVALUATIONS,
                     help="BO evaluation budget per text = number of hypotheses the "
                          "Bonferroni correction is applied over (default: 20)")
+    ap.add_argument("--pool_budgets", nargs="+", default=None,
+                    metavar="P:BUDGET",
+                    help="Per-pool BO evaluation budget as 'P:budget' pairs "
+                         "(e.g. 33:10 66:20 126:38). Overrides --n_evaluations for "
+                         "the listed pools; pools not listed fall back to "
+                         "--n_evaluations. Use for the constant-budget-fraction "
+                         "experiment where the budget scales with the pool.")
     ap.add_argument("--drop_none", action="store_true",
                     help="Drop None z-scores instead of flooring to 0.0")
     ap.add_argument("--out_dir", default=os.path.join(here, "results", "fpr_calibration"))
     args = parser_defaults(ap)
+
+    # Per-pool budget overrides (constant-budget-fraction experiment). Any pool
+    # not listed falls back to the scalar --n_evaluations.
+    pool_budgets = {}
+    for spec in (args.pool_budgets or []):
+        p_str, _, b_str = spec.partition(":")
+        pool_budgets[int(p_str)] = int(b_str)
 
     pools = args.pool_sizes or discover_pools(args.gen_dir, args.model_abbr)
     if not pools:
@@ -572,7 +587,7 @@ def main():
                     args.gen_dir, args.model_abbr, P, method, seed, args.langs,
                     split_at=args.split_at, calib_pctl=args.calib_pctl,
                     alpha=args.alpha, drop_none=args.drop_none,
-                    n_evaluations=args.n_evaluations)
+                    n_evaluations=pool_budgets.get(P, args.n_evaluations))
                 coverage[P] = present
                 stale_by_pool[P] = stale
                 if row is None:
