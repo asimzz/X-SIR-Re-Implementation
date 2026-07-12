@@ -11,7 +11,7 @@ N = 500
 # Non-English source languages for the "generated language != English" experiment.
 # en/zh/de/fr already exist and are skipped below; add the new source languages here.
 # (es, it, pt, ru high/medium-resource; ja medium.)
-LANGS = ["es", "it", "pt", "ru", "ja"]
+LANGS = ["ja", "ko", "ar", "fa", "vi", "iw", "uk", "ta"]
 
 
 def load_mc4_stream(lang):
@@ -21,10 +21,10 @@ def load_mc4_stream(lang):
     `allenai/c4` (same schema, `text` field) if it is unavailable.
     """
     try:
-        return load_dataset("mc4", lang, streaming=True, split="validation")
+        return load_dataset("mc4", lang, streaming=True, split="train")
     except Exception as e:
         print(f"⚠️ load_dataset('mc4', '{lang}') failed ({e}); falling back to allenai/c4")
-        return load_dataset("allenai/c4", lang, streaming=True, split="validation")
+        return load_dataset("allenai/c4", lang, streaming=True, split="train")
 
 
 for lang in LANGS:
