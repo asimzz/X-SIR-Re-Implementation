@@ -70,12 +70,28 @@ NAIVE_Z = float(norm.ppf(1 - NAIVE_ALPHA))   # 2.32634… — the single-test 1%
 CALIB_PCTL = 99.0                            # 99th percentile => 1% target FPR
 SPLIT_AT = 250                               # first SPLIT_AT = calibrate, rest = verify
 FAMILYWISE_ALPHA = 0.01                      # for z_bonf = norm.ppf(1 - α/n_tests)
+# Minimum verification-split size for a credible achieved-FPR-at-tau* estimate. The
+# 1% tail must contain enough samples to be stable (~25 => ~2500 verify points); with
+# only a few languages the extreme tail is too sparse, so that column is suppressed.
+MIN_VERIFY_FOR_ACHIEVED_FPR = 2500
 # Bonferroni is applied over the number of hypotheses actually tested = the BO
 # evaluation budget per text (3 initial + 17 BO = 20), NOT the pool size. Each
 # suspect text evaluates exactly this many pivots and the statistic is the max
 # over them; the pool size is the search space, not the test count. This matches
 # the reviewer's framing ("Bonferroni/Šidák correction over 20 evaluations").
 N_EVALUATIONS = 20
+
+# Provenance fingerprint: these ISO-1 codes are searchable ONLY when the complete
+# language_code_converter is in effect (the 125-pivot pool). A file whose best_pivot
+# values include any of these was generated on the fixed 125-pool; a file that uses
+# none was generated on the buggy 84-pool (the stale converter dropped these). Used
+# to avoid mixing 84-pool and 125-pool data in one analysis.
+COMPLETE_CONVERTER_ONLY_LANGS = {
+    'ak', 'ay', 'bm', 'bho', 'bs', 'ceb', 'ckb', 'dv', 'ee', 'eo', 'fy', 'haw',
+    'ht', 'ilo', 'jw', 'kri', 'ku', 'ky', 'la', 'lb', 'lg', 'ln', 'lus', 'mai',
+    'mi', 'mk', 'mni-Mtei', 'nso', 'ny', 'rw', 'sa', 'sd', 'sm', 'su', 'tk',
+    'tl', 'ts', 'tt', 'ug', 'yi',
+}
 
 # Resource tier of each of the 17 target languages (for the per-lang table).
 RESOURCE_TIER = {
@@ -120,29 +136,48 @@ def pos_path(gen_dir, model_abbr, P, method, seed, lang):
 def load_scores(path, drop_none=False):
     """Load z-scores from a jsonl file.
 
-    Returns (scores: np.ndarray, n_total, n_none). None z-scores are floored to
+    Returns (scores: np.ndarray, n_none, provenance). None z-scores are floored to
     0.0 by default (consistent with eval_detection.py / analyze_pool_size.py) or
-    dropped when drop_none=True. read_z_scores already maps None -> 0.0, so we
-    count None via a raw pass when drop_none is requested.
+    dropped when drop_none=True. `provenance` is one of:
+      "full125" - best_pivot values include a complete-converter-only language,
+      "legacy84" - has best_pivots but none of them (buggy 84-pool),
+      "unknown" - has scores but no best_pivot field (cannot tell),
+      "missing" - file absent / empty.
     """
     if not os.path.isfile(path):
-        return np.array([]), 0, 0
+        return np.array([]), 0, "missing"
     import json
     scores = []
     n_none = 0
+    n_pivots = 0
+    uses_complete = False
     with open(path, "r") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            z = json.loads(line).get("z_score")
+            obj = json.loads(line)
+            p = obj.get("best_pivot")
+            if p:
+                n_pivots += 1
+                if p in COMPLETE_CONVERTER_ONLY_LANGS:
+                    uses_complete = True
+            z = obj.get("z_score")
             if z is None:
                 n_none += 1
                 if drop_none:
                     continue
                 z = 0.0
             scores.append(float(z))
-    return np.asarray(scores, dtype=float), len(scores) + (0 if not drop_none else n_none), n_none
+    if len(scores) == 0:
+        prov = "missing"
+    elif uses_complete:
+        prov = "full125"
+    elif n_pivots > 0:
+        prov = "legacy84"
+    else:
+        prov = "unknown"
+    return np.asarray(scores, dtype=float), n_none, prov
 
 
 def split_by_index(scores, split_at):
@@ -169,33 +204,48 @@ def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
     per_lang = {}          # lang -> dict of raw arrays + counts
     calib_parts, verify_parts, pos_parts = [], [], []
     present_langs = []
+    stale = {"stale_null": [], "stale_pos": [], "no_pos": []}
 
     for lang in langs:
-        null_scores, _, n_none_null = load_scores(
+        null_scores, n_none_null, null_prov = load_scores(
             null_path(gen_dir, model_abbr, P, method, seed, lang), drop_none)
-        pos_scores, _, n_none_pos = load_scores(
+        pos_scores, n_none_pos, pos_prov = load_scores(
             pos_path(gen_dir, model_abbr, P, method, seed, lang), drop_none)
 
         if len(null_scores) == 0:
             # No null statistic for this language at this pool — cannot contribute.
+            continue
+        if null_prov != "full125":
+            # Never calibrate/measure FPR on a non-125-pool null — it would mix pools.
+            stale["stale_null"].append((lang, null_prov))
             continue
 
         calib_l, verify_l, sp = split_by_index(null_scores, split_at)
         # Disjointness guard (calib and verify index ranges never overlap).
         assert len(calib_l) + len(verify_l) == len(null_scores)
 
+        # Positives count toward TPR only if they too are 125-pool (same detector
+        # config as the null). A stale 84-pool positive is excluded and flagged.
+        pos_ok = (len(pos_scores) > 0 and pos_prov == "full125")
+        if len(pos_scores) == 0:
+            stale["no_pos"].append(lang)
+        elif not pos_ok:
+            stale["stale_pos"].append((lang, pos_prov))
+
         per_lang[lang] = {
             "null": null_scores, "calib": calib_l, "verify": verify_l,
-            "pos": pos_scores, "n_none_null": n_none_null, "n_none_pos": n_none_pos,
+            "pos": pos_scores if pos_ok else np.array([]),
+            "n_none_null": n_none_null, "n_none_pos": n_none_pos,
+            "null_prov": null_prov, "pos_prov": pos_prov, "pos_ok": pos_ok,
         }
         calib_parts.append(calib_l)
         verify_parts.append(verify_l)
-        if len(pos_scores) > 0:
+        if pos_ok:
             pos_parts.append(pos_scores)
         present_langs.append(lang)
 
     if not calib_parts:
-        return None, [], present_langs
+        return None, [], present_langs, stale
 
     calib_pool = np.concatenate(calib_parts)
     verify_pool = np.concatenate(verify_parts)
@@ -255,6 +305,8 @@ def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
             "n_verify_lang": len(verify_l),
             "n_none_null": d["n_none_null"],
             "n_none_pos": d["n_none_pos"],
+            "null_provenance": d["null_prov"],
+            "pos_provenance": d["pos_prov"],
             "naive_fpr_lang": float(np.mean(d["null"] > NAIVE_Z)),
             "fpr_at_global_threshold": fpr_at_global,
             "tpr_lang_empirical": (float(np.mean(pos_l > tau_star))
@@ -269,6 +321,7 @@ def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
     overall_row = {
         "pool_size": P,
         "n_langs": len(present_langs),
+        "n_langs_with_pos": len(pos_parts),
         "n_calib": int(len(calib_pool)),
         "n_verify": int(len(verify_pool)),
         "n_pos": int(len(pos_pool)),
@@ -287,7 +340,7 @@ def analyze_pool(gen_dir, model_abbr, P, method, seed, langs,
         "max_lang_fpr": max_lang_fpr,
         "fpr_spread": fpr_spread,
     }
-    return overall_row, per_lang_rows, present_langs
+    return overall_row, per_lang_rows, present_langs, stale
 
 
 # ---------------------------------------------------------------------------
@@ -396,24 +449,60 @@ def plot_per_lang_heatmap(per_lang_rows, pools, langs, out_path):
     plt.close()
 
 
+def _fnum(x, nd=3):
+    """Format a float, showing an em dash for missing/NaN."""
+    if x is None or (isinstance(x, float) and np.isnan(x)):
+        return "—"
+    return f"{x:.{nd}f}"
+
+
 def print_rebuttal_table(overall_rows):
+    """Print a consistent FPR-calibration table, showing only credible/available columns.
+
+    Always shown (credible even on partial data): the naive-threshold FPR, the
+    Bonferroni-threshold FPR, and the calibrated threshold tau*. Conditionally shown:
+      - achieved FPR at tau*  -> only when n_verify is large enough for a stable
+        1%-tail estimate (the extreme tail is too sparse on a few languages), and
+      - TPR columns           -> only when 125-pool positives are present.
+    p_eff is intentionally excluded from the headline table: it assumes a Gaussian
+    per-test null, which does not hold here (the empirical results show a heavier tail);
+    it remains in the CSV for reference.
+    """
     print("\n=== FPR calibration of the max-over-search statistic ===")
-    hdr = (f"{'Pool P':>7} | {'NaiveFPR@2.326':>14} | {'tau*':>7} | "
-           f"{'AchFPR':>7} | {'TPR(emp)':>8} | {'z_bonf':>7} | "
-           f"{'TPR(bonf)':>9} | {'dTPR':>7} | {'p_eff':>7}")
+    z_bonf = overall_rows[0].get("z_bonf")
+    n_tests = overall_rows[0].get("n_bonferroni_tests")
+    achfpr_ok = all(r["n_verify"] >= MIN_VERIFY_FOR_ACHIEVED_FPR for r in overall_rows)
+    has_tpr = any(not (isinstance(r.get("tpr_empirical"), float) and np.isnan(r["tpr_empirical"]))
+                  and r.get("tpr_empirical") is not None for r in overall_rows)
+
+    # (header, width, cell-fn)
+    cols = [
+        ("Pool P", 6, lambda r: str(r["pool_size"])),
+        ("langs", 5, lambda r: str(r["n_langs"])),
+        ("FPR@2.33", 8, lambda r: _fnum(r["naive_fpr_overall"])),
+        (f"FPR@{z_bonf:.2f}", 8, lambda r: _fnum(r["achieved_fpr_bonf"])),
+        ("tau*", 6, lambda r: _fnum(r["global_threshold_tau"], 2)),
+    ]
+    if achfpr_ok:
+        cols.append(("FPR@tau*", 9, lambda r: _fnum(r["achieved_fpr_verify"])))
+    if has_tpr:
+        cols.append(("TPR@tau*", 9, lambda r: _fnum(r["tpr_empirical"])))
+        cols.append((f"TPR@{z_bonf:.2f}", 9, lambda r: _fnum(r["tpr_bonf"])))
+
+    hdr = " | ".join(f"{h:>{w}}" for h, w, _ in cols)
     print(hdr)
     print("-" * len(hdr))
     for r in overall_rows:
-        print(f"{r['pool_size']:>7} | {r['naive_fpr_overall']:>14.3f} | "
-              f"{r['global_threshold_tau']:>7.3f} | {r['achieved_fpr_verify']:>7.3f} | "
-              f"{r['tpr_empirical']:>8.3f} | {r['z_bonf']:>7.3f} | "
-              f"{r['tpr_bonf']:>9.3f} | {r['tpr_gain']:>+7.3f} | {r['p_eff']:>7.1f}")
-    n_tests = overall_rows[0].get("n_bonferroni_tests")
-    print("\nReading: NaiveFPR@2.326 > 1% and rising with P = the inflation W3 warns of.")
-    print("         AchFPR ≈ 1% at the empirically-calibrated τ* = the fix holds on held-out nulls.")
-    print(f"         z_bonf is Bonferroni over the {n_tests}-evaluation budget (not the pool size).")
-    print(f"         TPR(emp) > TPR(bonf) and p_eff ≪ {n_tests} = the evaluated pivots are correlated,")
-    print("         so empirical calibration is tighter than the conservative Bonferroni bound.")
+        print(" | ".join(f"{fn(r):>{w}}" for _, w, fn in cols))
+
+    print(f"\nColumns: FPR@2.33 = false-positive rate of the max-over-search statistic at the")
+    print(f"  naive single-test 1% threshold (z=2.33) — the inflation W3 warns of.")
+    print(f"  FPR@{z_bonf:.2f} = FPR at the Bonferroni threshold over the {n_tests}-eval budget (Phi^-1(1-a/{n_tests})).")
+    print(f"  tau* = empirically calibrated threshold (99th pct of the calibration-split null).")
+    if not achfpr_ok:
+        print("  (Held-out FPR@tau* omitted: too few languages for a stable 1%-tail estimate.)")
+    if not has_tpr:
+        print("  (TPR columns omitted: 125-pool positives not yet regenerated.)")
 
 
 def print_coverage(coverage, langs):
@@ -477,15 +566,17 @@ def main():
                 seen_real[real] = P
                 use_pools.append(P)
 
+            stale_by_pool = {}
             for P in use_pools:
-                row, plr, present = analyze_pool(
+                row, plr, present, stale = analyze_pool(
                     args.gen_dir, args.model_abbr, P, method, seed, args.langs,
                     split_at=args.split_at, calib_pctl=args.calib_pctl,
                     alpha=args.alpha, drop_none=args.drop_none,
                     n_evaluations=args.n_evaluations)
                 coverage[P] = present
+                stale_by_pool[P] = stale
                 if row is None:
-                    print(f"  P={P} ({method} seed={seed}): no null data found — skipping")
+                    print(f"  P={P} ({method} seed={seed}): no usable 125-pool null data — skipping")
                     continue
                 overall_rows.append(row)
                 per_lang_rows.extend(plr)
@@ -512,7 +603,28 @@ def main():
             print(f"Wrote plots → {out_dir}/*_{tag}.png")
 
             print_coverage(coverage, args.langs)
+            print_provenance_warnings(stale_by_pool)
             print_rebuttal_table(overall_rows)
+
+
+def print_provenance_warnings(stale_by_pool):
+    any_stale = any(s["stale_null"] or s["stale_pos"] or s["no_pos"]
+                    for s in stale_by_pool.values())
+    if not any_stale:
+        return
+    print("\n=== Provenance warnings (mixed-pool data excluded) ===")
+    for P in sorted(stale_by_pool):
+        s = stale_by_pool[P]
+        if s["stale_null"]:
+            langs = ", ".join(f"{l}({p})" for l, p in s["stale_null"])
+            print(f"  P={P}: NULL not 125-pool → EXCLUDED from FPR: {langs}")
+        if s["stale_pos"]:
+            langs = ", ".join(f"{l}({p})" for l, p in s["stale_pos"])
+            print(f"  P={P}: POSITIVE not 125-pool → TPR skipped (FPR still valid): {langs}")
+        if s["no_pos"]:
+            print(f"  P={P}: no positives yet → TPR skipped: {', '.join(s['no_pos'])}")
+    print("  Fix: run scripts/reset_targets_for_126.sh then run_steam_pool_sweep.sh to "
+          "regenerate positives on the 125-pool; FPR-side results above are already valid.")
 
 
 def parser_defaults(ap):
