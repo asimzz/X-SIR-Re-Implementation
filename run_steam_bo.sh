@@ -16,13 +16,23 @@ N_INITIAL=3
 MAX_EVALUATIONS=15
 NUM_TEXTS=500
 
+# Gemini backtranslation settings
+TRANSLATOR="gemini"
+GEMINI_MODEL="gemini-2.5-flash"
+GEMINI_TEMPERATURE=0.2
+
+if [[ "$TRANSLATOR" == "gemini" && -z "$GEMINI_API_KEY" ]]; then
+    echo "ERROR: GEMINI_API_KEY is not set. Export it before running with the gemini translator." >&2
+    exit 1
+fi
+
 TARGET_LANGS=(
-   "de" 
+   "de"
 )
 
 # Directories
 INPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0"
-OUTPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0/fr_translated"
+OUTPUT_DIR="gen/${MODEL_ABBR}/kgw_seed0/gemini_bo"
 GAMMA_LANG_FILE="gen/${MODEL_ABBR}/kgw_seed0/gamma_lang.json"
 
 # Allow running a single language
@@ -41,7 +51,10 @@ for TGT_LANG in "${TARGET_LANGS[@]}"; do
         --gamma_lang_file "$GAMMA_LANG_FILE" \
         --n_initial "$N_INITIAL" \
         --max_evaluations "$MAX_EVALUATIONS" \
-        --num_texts "$NUM_TEXTS"
+        --num_texts "$NUM_TEXTS" \
+        --translator "$TRANSLATOR" \
+        --gemini_model "$GEMINI_MODEL" \
+        --gemini_temperature "$GEMINI_TEMPERATURE"
 
     echo ""
 done

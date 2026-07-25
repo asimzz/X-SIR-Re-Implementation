@@ -31,6 +31,7 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 
 # Import your existing components
 from realtime_backtranslation import RealtimeBacktranslator
+from gemini_backtranslation import GeminiBacktranslator
 from language_features import LanguageFeatures
 from language_code_converter import iso3_to_iso1, iso1_to_iso3, is_valid_iso3
 from utils import read_jsonl
@@ -112,7 +113,10 @@ class STEAMBODetector:
                  gamma_lang_file: str,
                  n_initial: int = 3,
                  max_evaluations: int = 15,
-                 random_state: int = 42):
+                 random_state: int = 42,
+                 translator: str = "google",
+                 gemini_model: str = "gemini-2.5-flash",
+                 gemini_temperature: float = 0.2):
         self.watermark_detector = watermark_detector
         self.target_lang = target_lang
         self.input_dir = input_dir
@@ -133,8 +137,15 @@ class STEAMBODetector:
         self.logger.info(f"Loaded γ_lang for {len(self._gamma_lang_data)} languages from {gamma_lang_file}")
 
         # Initialize components
-        print("Initializing backtranslator...")
-        self.backtranslator = RealtimeBacktranslator()
+        print(f"Initializing backtranslator (translator={translator})...")
+        if translator == "gemini":
+            self.backtranslator = GeminiBacktranslator(
+                model=gemini_model,
+                temperature=gemini_temperature,
+            )
+        else:
+            self.backtranslator = RealtimeBacktranslator()
+        self.logger.info(f"Using {translator} backtranslator")
         print("Initializing language features...")
         self.lang_features = LanguageFeatures(feature_sets=['syntax_knn', 'phonology_knn'])
         print("Language features loaded.")
@@ -504,6 +515,13 @@ def main():
     parser.add_argument("--max_evaluations", type=int, default=15, help="Max BO evaluations")
     parser.add_argument("--num_texts", type=int, default=500, help="Number of texts to process")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed")
+    parser.add_argument("--translator", type=str, default="google",
+                        choices=["google", "gemini"],
+                        help="Backtranslation backend")
+    parser.add_argument("--gemini_model", type=str, default="gemini-2.5-flash",
+                        help="Gemini model id (when --translator gemini)")
+    parser.add_argument("--gemini_temperature", type=float, default=0.2,
+                        help="Gemini sampling temperature (when --translator gemini)")
 
     args = parser.parse_args()
 
@@ -517,7 +535,10 @@ def main():
         gamma_lang_file=args.gamma_lang_file,
         n_initial=args.n_initial,
         max_evaluations=args.max_evaluations,
-        random_state=args.random_state
+        random_state=args.random_state,
+        translator=args.translator,
+        gemini_model=args.gemini_model,
+        gemini_temperature=args.gemini_temperature
     )
 
     output_file = steam_detector.run(num_texts=args.num_texts)
