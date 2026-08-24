@@ -1,0 +1,16 @@
+pool_size,lang,resource_tier,n_verify_lang,n_none_null,n_none_pos,null_provenance,pos_provenance,naive_fpr_lang,fpr_at_global_threshold,tau_lang,fpr_at_own_threshold,tpr_lang_empirical
+33,fr,high,250,0,0,full125,suppressed,0.264,0.004,4.635114538809683,0.0,nan
+33,de,high,250,0,0,full125,suppressed,0.258,0.0,3.7271947133282604,0.0,nan
+33,it,high,250,0,0,full125,suppressed,0.288,0.0,4.058718265731819,0.004,nan
+33,es,high,250,0,0,full125,suppressed,0.302,0.0,4.267435302052346,0.0,nan
+33,pt,high,250,0,0,full125,suppressed,0.266,0.008,4.409488935033101,0.008,nan
+66,fr,high,250,0,0,full125,suppressed,0.228,0.0,3.9344511915752975,0.0,nan
+66,de,high,250,0,0,full125,suppressed,0.26,0.008,3.613563653345138,0.008,nan
+66,it,high,250,0,0,full125,suppressed,0.262,0.0,4.046096733338112,0.0,nan
+66,es,high,250,0,0,full125,suppressed,0.278,0.0,4.296330953598368,0.0,nan
+66,pt,high,250,0,0,full125,suppressed,0.266,0.0,4.032098030262942,0.0,nan
+126,fr,high,250,0,0,full125,suppressed,0.236,0.004,4.557353340264009,0.0,nan
+126,de,high,250,0,0,full125,suppressed,0.242,0.0,3.6397268702017502,0.016,nan
+126,it,high,250,0,0,full125,suppressed,0.26,0.0,4.1820813147110245,0.0,nan
+126,es,high,250,0,0,full125,suppressed,0.256,0.0,3.8845194756670796,0.004,nan
+126,pt,high,250,0,0,full125,suppressed,0.264,0.004,4.554223790134258,0.0,nan
