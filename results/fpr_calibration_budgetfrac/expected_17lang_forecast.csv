@@ -1,0 +1,31 @@
+budget,P,B,status,n_langs_observed,n_langs_synthesised,metric,observed_5lang,expected,low,high,estimator,actual,in_band,notes
+fixed,33,20,final,17,0,naive_fpr_pct,,29.224,29.224,29.224,measured,29.224,,"17 langs, B=20"
+fixed,33,20,final,17,0,naive_fpr_overall_pct,,28.518,28.518,28.518,measured,28.518,,"17 langs, B=20"
+fixed,33,20,final,17,0,tau_star,,3.941,3.941,3.941,measured,3.941,,"17 langs, B=20"
+fixed,33,20,final,17,0,fpr_at_tau_pct,,1.129,1.129,1.129,measured,1.129,,"17 langs, B=20"
+fixed,33,20,final,17,0,bonf_fpr_pct,,5.365,5.365,5.365,measured,5.365,,"17 langs, B=20"
+fixed,66,20,final,17,0,naive_fpr_pct,,25.812,25.812,25.812,measured,25.812,,"17 langs, B=20"
+fixed,66,20,final,17,0,naive_fpr_overall_pct,,26.541,26.541,26.541,measured,26.541,,"17 langs, B=20"
+fixed,66,20,final,17,0,tau_star,,3.875,3.875,3.875,measured,3.875,,"17 langs, B=20"
+fixed,66,20,final,17,0,fpr_at_tau_pct,,1.012,1.012,1.012,measured,1.012,,"17 langs, B=20"
+fixed,66,20,final,17,0,bonf_fpr_pct,,4.447,4.447,4.447,measured,4.447,,"17 langs, B=20"
+fixed,126,20,final,17,0,naive_fpr_pct,,25.788,25.788,25.788,measured,25.788,,"17 langs, B=20"
+fixed,126,20,final,17,0,naive_fpr_overall_pct,,26.247,26.247,26.247,measured,26.247,,"17 langs, B=20"
+fixed,126,20,final,17,0,tau_star,,3.898,3.898,3.898,measured,3.898,,"17 langs, B=20"
+fixed,126,20,final,17,0,fpr_at_tau_pct,,0.965,0.965,0.965,measured,0.965,,"17 langs, B=20"
+fixed,126,20,final,17,0,bonf_fpr_pct,,4.212,4.212,4.212,measured,4.212,,"17 langs, B=20"
+proportional,33,10,forecast,5,12,naive_fpr_pct,17.68,17.741,15.788,19.176,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 17.144 (delta -0.536 from fixed-budget 17 vs 5)
+proportional,33,10,forecast,5,12,naive_fpr_overall_pct,16.36,16.788,15.259,18.577,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 17.318 (delta 0.958 from fixed-budget 17 vs 5)
+proportional,33,10,forecast,5,12,tau_star,3.776,3.591,3.441,3.752,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 3.492 (delta -0.284 from fixed-budget 17 vs 5)
+proportional,33,10,forecast,5,12,fpr_at_tau_pct,0.72,1.176,1.106,1.671,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 1.129 (delta 0.409 from fixed-budget 17 vs 5)
+proportional,33,10,forecast,5,12,bonf_fpr_pct,4.0,4.8,4.024,5.318,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 4.645 (delta 0.645 from fixed-budget 17 vs 5)
+proportional,66,20,final,17,0,naive_fpr_pct,25.84,25.812,25.812,25.812,measured,25.812,,"17 langs, B=20"
+proportional,66,20,final,17,0,naive_fpr_overall_pct,25.88,26.541,26.541,26.541,measured,26.541,,"17 langs, B=20"
+proportional,66,20,final,17,0,tau_star,3.982,3.875,3.875,3.875,measured,3.875,,"17 langs, B=20"
+proportional,66,20,final,17,0,fpr_at_tau_pct,0.56,1.012,1.012,1.012,measured,1.012,,"17 langs, B=20"
+proportional,66,20,final,17,0,bonf_fpr_pct,4.0,4.447,4.447,4.447,measured,4.447,,"17 langs, B=20"
+proportional,126,38,forecast,5,12,naive_fpr_pct,41.12,41.294,38.729,43.648,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 41.148 (delta 0.028 from fixed-budget 17 vs 5)
+proportional,126,38,forecast,5,12,naive_fpr_overall_pct,40.24,41.247,39.094,43.859,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 41.327 (delta 1.087 from fixed-budget 17 vs 5)
+proportional,126,38,forecast,5,12,tau_star,4.13,4.073,3.996,4.341,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 4.059 (delta -0.071 from fixed-budget 17 vs 5)
+proportional,126,38,forecast,5,12,fpr_at_tau_pct,1.28,1.059,0.776,1.294,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 1.285 (delta 0.005 from fixed-budget 17 vs 5)
+proportional,126,38,forecast,5,12,bonf_fpr_pct,5.52,4.965,4.306,5.506,qq_transfer(band widened to tier_offset),,,tier_offset cross-check 4.932 (delta -0.588 from fixed-budget 17 vs 5)
